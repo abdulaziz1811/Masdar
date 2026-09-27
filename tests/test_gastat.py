@@ -173,25 +173,36 @@ class TestEndToEndOverGastatShapes:
 
 
 class TestCredentialHygiene:
-    def test_no_secret_is_committed_to_the_registry(self):
-        """The registry may name where a secret lives, never the secret."""
+    def test_registry_names_where_secrets_live_not_their_values(self):
         from masdar.sources.registry import load_descriptors
 
-        gateway = next(d for d in load_descriptors() if d.id == "gastat_gateway")
-        assert gateway.auth.get("key_env") == "GASTAT_API_KEY"
-        # Only variable names, no values that look like credentials.
-        for value in gateway.auth.values():
+        cdata = next(d for d in load_descriptors() if d.id == "gastat_cdata")
+        assert cdata.auth.get("key_env") == "GASTAT_API_KEY"
+        # Variable names and a header name only -- nothing credential-shaped.
+        for value in cdata.auth.values():
             assert len(str(value)) < 40
 
-    def test_unusable_source_is_disabled_rather_than_guessed(self):
-        from masdar.sources.registry import load_registry
+    def test_no_key_is_sent_when_the_environment_has_none(self, monkeypatch):
+        from masdar.sources.http import HttpClient
+        from masdar.sources.registry import Registry, load_descriptors
 
-        gateway = load_registry().get("gastat_gateway")
-        assert gateway.enabled is False
-        assert gateway.base_url == ""
-        # A disabled source is never planned into a search.
-        planned = load_registry().plan("electricity", ())
-        assert all(d.id != "gastat_gateway" for d in planned)
+        monkeypatch.delenv("GASTAT_API_KEY", raising=False)
+        descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+        adapter = Registry(descriptors, HttpClient(offline=True, retries=1)).adapter(
+            "gastat_cdata"
+        )
+        assert adapter._auth_headers() == {}
+
+    def test_a_configured_key_is_read_from_the_environment(self, monkeypatch):
+        from masdar.sources.http import HttpClient
+        from masdar.sources.registry import Registry, load_descriptors
+
+        monkeypatch.setenv("GASTAT_API_KEY", "test-value-not-a-real-key")
+        descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+        adapter = Registry(descriptors, HttpClient(offline=True, retries=1)).adapter(
+            "gastat_cdata"
+        )
+        assert adapter._auth_headers() == {"apikey": "test-value-not-a-real-key"}
 
     def test_config_contains_no_long_opaque_tokens(self):
         """Guards against a key being pasted into the repo by accident."""

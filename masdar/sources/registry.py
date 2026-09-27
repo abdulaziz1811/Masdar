@@ -52,12 +52,14 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
     # Imported here so the adapter modules can import from this package.
     from masdar.sources.adapters.fixture import FixtureAdapter
     from masdar.sources.adapters.gastat_api import GastatApiAdapter
+    from masdar.sources.adapters.gastat_cdata import GastatCdataAdapter
     from masdar.sources.adapters.html_index import HtmlIndexAdapter
     from masdar.sources.adapters.saudi_open_data import SaudiOpenDataAdapter
 
     registry: dict[str, type[SourceAdapter]] = {
         "saudi_open_data": SaudiOpenDataAdapter,
         "gastat_api": GastatApiAdapter,
+        "gastat_cdata": GastatCdataAdapter,
         "html_index": HtmlIndexAdapter,
         "fixture": FixtureAdapter,
     }

@@ -215,31 +215,50 @@ sources:
              transport, environment, housing, energy, electricity, water, ict,
              agriculture, finance]
 
-  - id: gastat_gateway
-    name_ar: بوابة واجهات الهيئة العامة للإحصاء (بمفتاح)
-    name_en: GASTAT API gateway (key-based)
+  - id: gastat_cdata
+    name_ar: واجهة إحصاءات الهيئة العامة للإحصاء (cdata)
+    name_en: GASTAT cdata statistics API
     operator_ar: الهيئة العامة للإحصاء
     operator_en: GASTAT
-    # UNKNOWN: the gateway's base URL is only visible behind the developer
-    # portal login. Fill it in from the API's detail page, then set
-    # enabled: true.
-    base_url: ""
-    adapter: gastat_api
+    base_url: https://api.stats.gov.sa
+    adapter: gastat_cdata
     authority: 100
-    api_verified: false
-    enabled: false
+    # VERIFIED by direct call on 2026-09-27: HTTP 200, application/json, and
+    # anonymous -- the "Public" APIs need no key. Spec is OpenAPI 3.0, served
+    # from the GASTAT developer portal.
+    api_verified: true
     access_checked: "2026-09-27"
     access_notes_ar: >-
-      برنامج واجهات رسمي يتطلب مفتاحاً ومفتاحاً سرياً من بوابة المطوّرين، وفيه
-      واجهات مُعتمدة بالاسم منها "Energy Statistics - Electrical Energy
-      Statistics" و"Prices Statistics" و"National Accounts" وإحصاءات التعداد
-      2022. معطّل حتى يُعرف عنوانه الأساسي ومسارات الطلب، وهي ظاهرة فقط في
-      صفحة تفاصيل كل واجهة داخل البوابة بعد تسجيل الدخول.
-    # Credential LOCATIONS only. The values live in the environment and are
-    # never committed; see .env.example.
+      أفضل مسار بيانات مؤكَّد حتى الآن. التجميع يحدث في الخادم عبر
+      dimensions[]، فطلب "حسب المناطق" يُنفَّذ مباشرة لا بمعالجة لاحقة.
+      واستعلام dimensions[]=YEAR وحده يُعيد صفاً لكل سنة متاحة، فيُستخرج
+      نطاق التغطية بتكلفة صفوف قليلة وبدليل من المصدر نفسه. الأعمدة موسومة
+      بدورها: YEAR_TIME للفترة، و*_OBSV للقيم، و*_ARAB/*_ENGL/*_CODE
+      لمسميات التصنيفات. تدعم أيضاً format=CSV وHTML و$top/$skip/$orderby.
+      الواجهات العامة لا تحتاج مفتاحاً؛ يُرسل المفتاح فقط إن كان مُعيَّناً
+      في البيئة، لواجهة تطلبه.
+    api:
+      dataset_path: /v1/stats/{id}
+      # No catalogue endpoint exists, so datasets are declared here. Add one
+      # by copying its id and dimensions from the portal's API page.
+      datasets:
+        - id: DPV_HES_EHE_IT_HES0301
+          title_ar: المساكن المتصلة بالكهرباء حسب مصدر الكهرباء ونوع الحيازة والمنطقة الإدارية
+          title_en: >-
+            Housing units with electricity connection by network, tenure type
+            and region
+          description: >-
+            نسبة المساكن المتصلة بالكهرباء من إجمالي المساكن. السنوات المتاحة
+            عند الفحص: 2017-2019 و2021-2022 (لا يوجد 2020).
+          keywords: كهرباء الطاقة الكهربائية مساكن توصيل الكهرباء
+          dimensions: [ELECTRICITY_NETWORK_TYPE, HOUSE_TYPE, POSSESSION_TYPE,
+                       REGION, YEAR]
+          topics: [electricity, energy, housing]
+    # Credential LOCATIONS only; values live in the environment. Optional
+    # here, since the Public APIs are anonymous.
     auth:
       type: api_key
       key_env: GASTAT_API_KEY
       secret_env: GASTAT_API_SECRET
-    topics: [electricity, energy, population, prices, gdp, health, tourism,
-             education, housing, trade, finance]
+      header: apikey
+    topics: [electricity, energy, housing]

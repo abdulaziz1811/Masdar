@@ -200,7 +200,7 @@ class Agent:
                     notes.append(problem)
                     audit.append(f"{candidate.title_ar}: {problem}")
                 if observed is not None:
-                    coverage = observed
+                    coverage = _merge_coverage(candidate.claimed_coverage, observed)
                     audit.append(
                         f"{candidate.title_ar}: تم فتح الملف والتحقق من "
                         f"{len(observed.years)} سنة"
@@ -340,6 +340,27 @@ class Agent:
             media_type=fetched.media_type if fetched else None,
             license_name=candidate.license_name,
         )
+
+
+def _merge_coverage(enumerated: Coverage, observed: Coverage) -> Coverage:
+    """Combine coverage a source enumerated with coverage seen in a download.
+
+    A downloaded response can be one page of a larger result -- APIs cap rows
+    by default -- so the years visible in it may be fewer than the years that
+    exist. Where a source has already enumerated its coverage authoritatively
+    (GASTAT answers a `dimensions[]=YEAR` query with one row per year), that
+    enumeration must not be narrowed by a partial page: doing so would
+    manufacture a false absence, which is the one error this system must never
+    make. The two are therefore unioned, never replaced.
+    """
+    if enumerated.origin is CoverageOrigin.OBSERVED_DATA and not enumerated.is_empty:
+        return Coverage(
+            years=enumerated.years | observed.years,
+            origin=CoverageOrigin.OBSERVED_DATA,
+            is_exhaustive=enumerated.is_exhaustive,
+            note=enumerated.note,
+        )
+    return observed
 
 
 _VERDICT_RANK = {

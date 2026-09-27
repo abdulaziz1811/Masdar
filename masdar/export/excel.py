@@ -130,6 +130,8 @@ def _write_source_sheet(
         "السنوات المتاحة في المصدر",
         "، ".join(str(y) for y in sorted(coverage.years)) or "غير معروفة",
     )
+    if coverage.years:
+        field("نطاق التغطية", coverage.describe())
     field("أساس التحقق", COVERAGE_ORIGIN_LABELS.get(coverage.origin.value, coverage.origin.value))
     row += 1
 

@@ -21,6 +21,7 @@ def _years(values: tuple[int, ...]) -> str:
     return "، ".join(str(v) for v in values)
 
 
+
 def _finding_block(finding: Finding, index: int | None = None) -> list[str]:
     candidate = finding.candidate
     provenance = finding.provenance
@@ -36,10 +37,7 @@ def _finding_block(finding: Finding, index: int | None = None) -> list[str]:
     if finding.matched_years:
         lines.append(f"   🗓 السنوات المتاحة المطابقة: {_years(finding.matched_years)}")
     if finding.coverage.years:
-        lines.append(
-            "   📚 تغطية المصدر: "
-            f"{min(finding.coverage.years)}–{max(finding.coverage.years)}"
-        )
+        lines.append(f"   📚 تغطية المصدر: {finding.coverage.describe()}")
     lines.append(f"   🔗 صفحة المصدر: {provenance.landing_url or '—'}")
     if provenance.resource_url:
         lines.append(f"   📎 رابط الملف: {provenance.resource_url}")

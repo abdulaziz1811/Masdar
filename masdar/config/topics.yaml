@@ -13,14 +13,14 @@ topics:
     keywords_ar: [كهرباء, الكهرباء, كهربائية, الطاقة الكهربائية, استهلاك الكهرباء,
                   مشتركي الكهرباء, الأحمال الكهربائية, توليد الكهرباء, شبكة الكهرباء]
     keywords_en: [electricity, power consumption, electric load, power generation]
-    preferred_sources: [wera, gastat_db, saudi_open_data, moenergy, gastat]
+    preferred_sources: [gastat_cdata, wera, gastat_db, saudi_open_data, moenergy, gastat]
 
   - id: energy
     label_ar: الطاقة
     label_en: Energy
     keywords_ar: [الطاقة, النفط, الغاز, الطاقة المتجددة, البتروكيماويات, وقود]
     keywords_en: [energy, oil, gas, renewable energy, fuel]
-    preferred_sources: [gastat_db, moenergy, saudi_open_data, gastat]
+    preferred_sources: [gastat_cdata, gastat_db, moenergy, saudi_open_data, gastat]
 
   - id: population
     label_ar: السكان

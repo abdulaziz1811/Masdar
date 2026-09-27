@@ -182,6 +182,26 @@ class Coverage:
     def latest(self) -> int | None:
         return max(self.years) if self.years else None
 
+    def describe(self) -> str:
+        """Human-readable coverage that does not imply continuity.
+
+        Printing "2017–2022" for a source missing 2020 reads as an unbroken
+        run, so gaps are named. Real series have them: GASTAT's
+        electricity-connection data skips 2020.
+        """
+        if not self.years:
+            return "غير معروفة"
+        ordered = sorted(self.years)
+        if len(ordered) == 1:
+            return str(ordered[0])
+        missing = [y for y in range(ordered[0], ordered[-1] + 1) if y not in self.years]
+        span = f"{ordered[0]}\u2013{ordered[-1]}"
+        if not missing:
+            return span
+        if len(missing) <= 5:
+            return f"{span} (ناقصة: {'، '.join(str(y) for y in missing)})"
+        return f"{span} (متقطعة، المتاح {len(ordered)} سنة)"
+
 
 @dataclass(frozen=True)
 class Provenance:

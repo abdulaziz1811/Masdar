@@ -132,3 +132,25 @@ class TestSuggestions:
     def test_never_suggests_from_a_title_hint(self):
         request = parse("الكهرباء 2026")
         assert suggest_years(request, hinted(), ()) == ()
+
+
+class TestCoverageDescription:
+    """Coverage must not be described as a run when it has holes."""
+
+    def test_contiguous_years_read_as_a_span(self):
+        assert observed(frozenset(range(2015, 2025))).describe() == "2015–2024"
+
+    def test_a_gap_is_named(self):
+        # The real GASTAT electricity series skips 2020.
+        coverage = observed(frozenset({2017, 2018, 2019, 2021, 2022}))
+        assert coverage.describe() == "2017–2022 (ناقصة: 2020)"
+
+    def test_a_single_year_is_not_a_span(self):
+        assert observed(frozenset({2024})).describe() == "2024"
+
+    def test_a_very_sparse_series_says_so(self):
+        coverage = observed(frozenset({2000, 2005, 2010, 2015, 2020}))
+        assert "متقطعة" in coverage.describe()
+
+    def test_unknown_coverage_says_unknown(self):
+        assert Coverage.unknown().describe() == "غير معروفة"
