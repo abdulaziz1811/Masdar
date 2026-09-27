@@ -12,7 +12,7 @@ reporting the year as available.
 from __future__ import annotations
 
 from html.parser import HTMLParser
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 from masdar.domain.models import (
     Coverage,
@@ -65,20 +65,50 @@ def _suffix_of(url: str) -> str:
 class HtmlIndexAdapter(SourceAdapter):
     """Scrapes a configured publications index for data files."""
 
-    def _index_url(self) -> str:
-        path = self.descriptor.api.get("publications_index", "/")
-        return self.descriptor.url(path)
+    def _index_url(self, query: str = "") -> str:
+        """The page to read: a keyword search when the source offers one.
+
+        GASTAT and similar portals expose faceted search, which finds far
+        more than a static publications page. `search_path` may contain
+        `{query}`; without it we fall back to the plain index.
+        """
+        search_path = self.descriptor.api.get("search_path")
+        if query and search_path:
+            return self.descriptor.url(search_path.replace("{query}", quote(query)))
+        return self.descriptor.url(self.descriptor.api.get("publications_index", "/"))
+
+    def _guard_rendering(self) -> None:
+        """Refuse to scrape a single-page app over plain HTTP.
+
+        An SPA's HTML is an empty shell; its data arrives over XHR. Scraping
+        it would yield zero links and read as "this source has nothing",
+        which is exactly the false negative this project must not produce.
+        A JavaScript-executing transport can handle it, so only plain HTTP
+        is refused.
+        """
+        if self.descriptor.rendering != "spa":
+            return
+        transport = getattr(self.http, "transport", None)
+        if getattr(transport, "name", "") == "firecrawl":
+            return
+        raise SourceError(
+            self.id,
+            "هذا المصدر تطبيق صفحة واحدة (SPA) ولا يمكن قراءة بياناته من HTML. "
+            "استخدم واجهته البرمجية، أو شغّل MASDAR_HTTP_BACKEND=firecrawl "
+            "لتنفيذ جافاسكربت الصفحة.",
+        )
 
     def search(self, request: DataRequest, limit: int = 10) -> list[DatasetCandidate]:
         if self.http is None:
             raise SourceError(self.id, "no HTTP client configured")
+        self._guard_rendering()
 
-        index_url = self._index_url()
+        terms = request.search_terms()
+        index_url = self._index_url(terms[0] if terms else "")
         fetched = self.http.get(index_url, source_id=self.id)
         parser = _LinkExtractor()
         parser.feed(fetched.text())
 
-        terms = request.search_terms()
         scored: list[tuple[float, DatasetCandidate]] = []
         seen: set[str] = set()
 
@@ -125,6 +155,7 @@ class HtmlIndexAdapter(SourceAdapter):
         return [candidate for _, candidate in scored[:limit]]
 
     def probe(self) -> str:
+        self._guard_rendering()
         fetched = self.http.get(self._index_url(), source_id=self.id)
         parser = _LinkExtractor()
         parser.feed(fetched.text())

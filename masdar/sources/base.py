@@ -27,6 +27,20 @@ class SourceUnreachable(SourceError):
     """Network, DNS, TLS or policy blocked us before we saw any data."""
 
 
+class RetryableSourceError(SourceError):
+    """A transient failure (429 or 5xx) that is worth trying again."""
+
+
+class SourceRejected(SourceUnreachable):
+    """The host answered, but a WAF refused the request.
+
+    Kept apart from a plain network failure because the remedy is different:
+    a rejection means the request did not look legitimate to the edge (wrong
+    headers, a path the WAF guards, an out-of-region address), not that the
+    host is down. It is still a form of "unknown", never of "absent".
+    """
+
+
 @dataclass(frozen=True)
 class SourceDescriptor:
     """One entry from sources.yaml."""
@@ -43,6 +57,15 @@ class SourceDescriptor:
     api: dict = field(default_factory=dict)
     notes_ar: str = ""
     topics: tuple[str, ...] = ()
+    # How the site serves its content. An SPA cannot be read by scraping
+    # HTML -- its data arrives over XHR -- so this decides whether an
+    # HTML adapter can work at all.
+    rendering: str = "server"          # "server" | "spa"
+    # Verified access facts, so the next person does not re-derive them.
+    geo_restricted: bool = False       # refuses connections outside Saudi Arabia
+    waf: bool = False                  # edge rejects non-browser-looking requests
+    access_checked: str = ""           # ISO date of the last verification
+    access_notes_ar: str = ""
     # True for fixture/demo sources. Anything derived from one is labelled
     # as sample data so it can never be mistaken for an official figure.
     synthetic: bool = False

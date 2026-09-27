@@ -30,6 +30,11 @@ def load_descriptors(path: Path | None = None) -> tuple[SourceDescriptor, ...]:
             notes_ar=(entry.get("notes_ar") or "").strip(),
             topics=tuple(entry.get("topics", ())),
             synthetic=bool(entry.get("synthetic", False)),
+            rendering=entry.get("rendering", "server"),
+            geo_restricted=bool(entry.get("geo_restricted", False)),
+            waf=bool(entry.get("waf", False)),
+            access_checked=str(entry.get("access_checked", "") or ""),
+            access_notes_ar=(entry.get("access_notes_ar") or "").strip(),
         )
         for entry in raw.get("sources", [])
     )

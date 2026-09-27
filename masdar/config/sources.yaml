@@ -8,6 +8,33 @@
 # against the live service. Anything false is a documented expectation, not
 # a promise -- run `masdar doctor` from a network that can reach the host to
 # confirm, and correct this file from what comes back.
+#
+# ACCESS FACTS, checked 2026-09-27 from a Saudi egress address.
+# `geo_restricted: true` is asserted only where it was actually demonstrated;
+# everything else that is merely likely is written in access_notes_ar.
+#
+#   * open.data.gov.sa is GEO-RESTRICTED: every fetch from non-Saudi exits
+#     failed across several engines, and the same URL returned HTTP 200 from
+#     a Saudi exit. www.stats.gov.sa likewise answered from a Saudi exit; it
+#     was not tested from outside, so its restriction is inferred, not
+#     verified. The other hosts were not reachable from the build container
+#     at all -- but that is this environment's own egress policy denying
+#     *.gov.sa, which proves nothing either way about geo-restriction. Only
+#     `geo_restricted: true` below means verified.
+#     Set MASDAR_HTTP_BACKEND=firecrawl (see masdar/sources/http.py) to route
+#     through a Saudi exit, or run Masdar from inside the Kingdom.
+#   * open.data.gov.sa sits behind a WAF that answers "Request Rejected" with
+#     a support ID for requests it does not consider browser-like. Page
+#     navigations pass; direct /data/api/... paths were rejected. The API
+#     path below is therefore still UNCONFIRMED.
+#   * open.data.gov.sa is an Angular single-page app. Its dataset list is
+#     fetched over XHR, so scraping its HTML returns an empty shell. It needs
+#     the JSON API, which is why its adapter is not html_index.
+#   * www.stats.gov.sa (GASTAT) is a server-rendered Liferay portal and does
+#     return real HTML, including facet counts (4113 data tables, 1418
+#     bulletins, 60 API entries; year facets 2016-2025 as of the check).
+#     Its result rows come from a namespaced Liferay portlet parameter that
+#     `?q=` alone does not drive -- see search_path below.
 
 version: 1
 
@@ -21,7 +48,18 @@ sources:
     adapter: saudi_open_data
     authority: 90
     api_verified: false
+    rendering: spa
+    geo_restricted: true
+    waf: true
+    access_checked: "2026-09-27"
+    access_notes_ar: >-
+      وصلنا للصفحات عبر منفذ سعودي (HTTP 200)، لكن مسارات /data/api/... رُفضت
+      من جدار الحماية برسالة "Request Rejected". المسار أدناه غير مؤكَّد.
+      أسرع طريقة لتأكيده: افتح open.data.gov.sa/ar/datasets في المتصفح ثم
+      أدوات المطور ← Network ← فلتر XHR، وسيظهر المسار الحقيقي فوراً.
     api:
+      # UNCONFIRMED -- rejected by the WAF when called directly. Correct this
+      # from the browser's network tab, then set api_verified: true.
       dataset_search: /data/api/v1/datasets
       dataset_detail: /data/api/v1/datasets/{id}
       # Portal UI language is switched by path segment, mirrored by the API.
@@ -42,11 +80,21 @@ sources:
     adapter: html_index
     authority: 100
     api_verified: false
+    rendering: server
+    access_checked: "2026-09-27"
+    access_notes_ar: >-
+      بوابة Liferay تُرجع HTML حقيقياً عبر منفذ سعودي (لم تُجرَّب من خارج
+      المملكة، فالتقييد الجغرافي مُستنتج لا مُتحقَّق). عدّادات التصنيفات
+      تظهر (جداول البيانات 4113، النشرات 1418، APIs 60، وسنوات 2016-2025)،
+      لكن صفوف النتائج تحتاج معامل البورتلت المُسمّى ولا يكفي ?q=. كما أن
+      تصنيف "APIs" فيه 60 مدخلاً يستحق الفحص كمسار بيانات مباشر.
     api:
-      # GASTAT exposes a statistical database UI; publications are listed as
-      # HTML with attached XLSX/PDF releases.
-      publications_index: /en/statistics-tabs
+      # Liferay faceted search. `{query}` is substituted by the adapter.
+      publications_index: /ar/statistics-tabs
+      search_path: /ar/statistics-tabs?q={query}&delta=60
       database_portal: https://database.stats.gov.sa
+      # Liferay serves attachments from this prefix.
+      document_prefix: /documents/
     notes_ar: >-
       الجهة الرسمية المسؤولة عن الإحصاءات الوطنية. تصدر نشرات سنوية وربعية،
       وعادة ما تكون المرجع النهائي عند تعارض الأرقام.

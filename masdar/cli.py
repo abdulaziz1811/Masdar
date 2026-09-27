@@ -18,7 +18,7 @@ from masdar.domain.models import Answer, Verdict
 from masdar.nlu.lexicon import load_lexicon
 from masdar.nlu.parser import parse as parse_query
 from masdar.pipeline.orchestrator import Agent, AgentConfig
-from masdar.sources.base import SourceError
+from masdar.sources.base import SourceError, SourceRejected, SourceUnreachable
 from masdar.sources.http import HttpClient
 from masdar.sources.registry import load_registry
 
@@ -144,40 +144,92 @@ def cmd_sources(args: argparse.Namespace) -> int:
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
-    """Contact every source and report what it actually returns."""
+    """Contact every source and report what it actually returns.
+
+    The point is not a pass/fail tally but a diagnosis: which of
+    geo-restriction, a WAF, a single-page app or a wrong path is in the way,
+    and what to do about each.
+    """
     http = HttpClient(timeout=args.timeout, use_cache=not args.no_cache)
     registry = load_registry(demo=args.demo, http=http)
-    failures = 0
 
-    print("فحص المصادر:\n")
+    print(f"منفذ الجلب: {http.describe_transport()}")
+    if http.transport.name == "direct":
+        print(
+            "ملاحظة: بعض نطاقات gov.sa مقيَّدة جغرافياً (تم التحقق من\n"
+            "        open.data.gov.sa). من خارج السعودية استخدم\n"
+            "        MASDAR_HTTP_BACKEND=firecrawl مع FIRECRAWL_API_KEY."
+        )
+    print()
+
+    rejected: list[str] = []
+    unreachable: list[str] = []
+    failed: list[str] = []
+    ok = 0
+
     for descriptor in registry.descriptors:
         label = f"{descriptor.id:18}"
+        facts = []
+        if descriptor.geo_restricted:
+            facts.append("مقيَّد جغرافياً")
+        if descriptor.waf:
+            facts.append("جدار حماية")
+        if descriptor.rendering == "spa":
+            facts.append("SPA")
+        suffix = f"  [{'، '.join(facts)}]" if facts else ""
+
         try:
             adapter = registry.adapter(descriptor.id)
             result = adapter.probe()
         except NotImplementedError:
-            print(f"{label} ⚪ لا يوجد فحص لهذا المحول")
+            print(f"{label} ⚪ لا يوجد فحص لهذا المحول{suffix}")
+            continue
+        except SourceRejected as exc:
+            rejected.append(descriptor.id)
+            print(f"{label} 🛡 رُفض: {exc.reason}{suffix}")
+            continue
+        except SourceUnreachable as exc:
+            unreachable.append(descriptor.id)
+            print(f"{label} 🚫 تعذّر الوصول: {exc.reason}{suffix}")
             continue
         except SourceError as exc:
-            failures += 1
-            print(f"{label} ❌ {exc.reason}")
+            failed.append(descriptor.id)
+            print(f"{label} ❌ {exc.reason}{suffix}")
             continue
         except Exception as exc:
-            failures += 1
-            print(f"{label} ❌ خطأ غير متوقع: {exc}")
+            failed.append(descriptor.id)
+            print(f"{label} ❌ خطأ غير متوقع: {exc}{suffix}")
             continue
-        verified = "" if descriptor.api_verified else "  (⚠️ api_verified: false في sources.yaml)"
-        print(f"{label} ✅ {result}{verified}")
 
-    print(
-        f"\nالنتيجة: {len(registry.descriptors) - failures} ناجح، {failures} فاشل."
-    )
-    if failures:
+        ok += 1
+        unverified = "" if descriptor.api_verified else "  (⚠️ api_verified: false)"
+        print(f"{label} ✅ {result}{unverified}{suffix}")
+
+    total = len(registry.descriptors)
+    print(f"\nالنتيجة: {ok} من {total} استجاب.")
+
+    if unreachable:
         print(
-            "المصادر الفاشلة قد تكون محجوبة بسياسة الشبكة أو تحتاج تصحيح المسار "
-            "في masdar/config/sources.yaml."
+            f"\n🚫 لم يُستجَب ({', '.join(unreachable)}): الاتصال لم يكتمل. الأسباب\n"
+            "   المرجّحة: تقييد جغرافي، أو سياسة شبكة تحجب gov.sa، أو المضيف متوقف.\n"
+            "   جرّب MASDAR_HTTP_BACKEND=firecrawl، أو شغّل الأداة من داخل السعودية."
         )
-    return 1 if failures else 0
+    if rejected:
+        print(
+            f"\n🛡 رُفض ({', '.join(rejected)}): المضيف رد لكن جدار الحماية رفض الطلب.\n"
+            "   هذا لا يعني عدم وجود البيانات. المسار قد يكون محمياً أو خاطئاً —\n"
+            "   افتح الموقع في المتصفح، ثم أدوات المطور ← Network ← فلتر XHR،\n"
+            "   وصحّح المسار في masdar/config/sources.yaml."
+        )
+    if failed:
+        print(
+            f"\n❌ أخطاء ({', '.join(failed)}): استجاب المضيف بشكل غير متوقع —\n"
+            "   راجع المسار في masdar/config/sources.yaml."
+        )
+    if ok and not (unreachable or rejected or failed):
+        print("كل المصادر استجابت. حدّث api_verified: true لكل مصدر تأكّد شكل استجابته.")
+
+    return 1 if (unreachable or rejected or failed) else 0
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -1,13 +1,16 @@
 """HTTP access with caching, retries and honest failure reporting.
 
-Two things here matter to the rest of the system:
+Three things here matter to the rest of the system:
 
 1. Every fetch returns a `Fetched` carrying a sha256 and a retrieval
    timestamp, so provenance is a by-product of downloading rather than
    something a later layer has to remember to attach.
 2. Being blocked is reported as `SourceUnreachable`, never as an empty
-   result. A corporate proxy, a geo-block and a policy denial all look the
-   same from here, and all of them mean "unknown", not "absent".
+   result. A geo-block, a WAF rejection and a proxy denial all mean
+   "unknown", not "absent".
+3. How bytes arrive is a transport's concern (see `transport.py`), because
+   the Saudi portals require a Saudi exit and one of them requires a real
+   browser. Swapping routes must not touch any adapter.
 """
 
 from __future__ import annotations
@@ -24,13 +27,16 @@ from urllib.request import url2pathname
 
 import requests
 
-from masdar.sources.base import SourceError, SourceUnreachable
-
-USER_AGENT = "Masdar/0.1 (open-data research agent; +https://github.com/abdulaziz1811/masdar)"
+from masdar.sources.base import (
+    RetryableSourceError,
+    SourceError,
+    SourceRejected,
+    SourceUnreachable,
+)
+from masdar.sources.transport import Transport, build_transport, looks_rejected
 
 DEFAULT_TIMEOUT = 20.0
 DEFAULT_RETRIES = 3
-MAX_BYTES = 80 * 1024 * 1024
 
 
 def concise_reason(exc: Exception, host: str) -> str:
@@ -52,19 +58,18 @@ def concise_reason(exc: Exception, host: str) -> str:
     if "NameResolutionError" in text or "getaddrinfo" in text:
         return f"{host}: فشل تحويل اسم النطاق (DNS)"
     if isinstance(exc, requests.exceptions.ConnectionError):
-        return f"{host}: تعذّر الاتصال بالمضيف"
+        return f"{host}: تعذّر الاتصال بالمضيف — قد يكون مقيَّداً جغرافياً"
     return f"{host}: {type(exc).__name__}"
 
 
 def cache_dir() -> Path:
     configured = os.environ.get("MASDAR_CACHE_DIR")
-    base = Path(configured) if configured else Path.home() / ".cache" / "masdar"
-    return base
+    return Path(configured) if configured else Path.home() / ".cache" / "masdar"
 
 
 @dataclass(frozen=True)
 class Fetched:
-    """One successful HTTP response, with everything provenance needs."""
+    """One successful fetch, with everything provenance needs."""
 
     url: str
     final_url: str
@@ -74,7 +79,7 @@ class Fetched:
     retrieved_at: datetime
     sha256: str
     from_cache: bool = False
-    headers: dict[str, str] = None  # type: ignore[assignment]
+    headers: dict[str, str] | None = None
 
     @property
     def byte_size(self) -> int:
@@ -104,7 +109,7 @@ class Fetched:
 
 
 class HttpClient:
-    """Thin `requests` wrapper. One instance per run."""
+    """Caching, retrying wrapper around a transport. One instance per run."""
 
     def __init__(
         self,
@@ -112,6 +117,7 @@ class HttpClient:
         retries: int = DEFAULT_RETRIES,
         use_cache: bool = True,
         offline: bool = False,
+        transport: Transport | None = None,
     ):
         self.timeout = timeout
         self.retries = retries
@@ -119,8 +125,10 @@ class HttpClient:
         # `offline` makes any un-cached request fail loudly instead of
         # silently degrading, which keeps test runs honest.
         self.offline = offline
-        self._session = requests.Session()
-        self._session.headers.update({"User-Agent": USER_AGENT})
+        self.transport = transport or build_transport(timeout=timeout)
+
+    def describe_transport(self) -> str:
+        return self.transport.describe()
 
     # -- cache ---------------------------------------------------------
     def _cache_path(self, url: str) -> Path:
@@ -172,6 +180,62 @@ class HttpClient:
         except OSError:
             pass  # a cache that cannot be written must not fail the request
 
+    # -- fetch ---------------------------------------------------------
+    def get(self, url: str, source_id: str = "", params: dict | None = None) -> Fetched:
+        source_id = source_id or urlparse(url).netloc or "local"
+        if url.startswith("file://"):
+            return self._get_file(url, source_id)
+
+        if self.use_cache and params is None:
+            cached = self._read_cache(url)
+            if cached is not None:
+                return cached
+
+        if self.offline:
+            raise SourceUnreachable(source_id, f"offline mode and no cached copy of {url}")
+
+        last_error: Exception | None = None
+        for attempt in range(self.retries):
+            try:
+                response = self.transport.get(url, source_id, params)
+            except SourceRejected:
+                # A policy or WAF refusal is deterministic; repeating it only
+                # wastes time and looks like abuse.
+                raise
+            except (SourceUnreachable, RetryableSourceError) as exc:
+                last_error = exc
+                if attempt < self.retries - 1:
+                    time.sleep(2 ** attempt)
+                    continue
+                if isinstance(exc, SourceUnreachable):
+                    raise
+                raise SourceUnreachable(
+                    source_id, f"{exc.reason} (بعد {self.retries} محاولات)"
+                ) from exc
+
+            if looks_rejected(response.content, response.media_type):
+                raise SourceRejected(
+                    source_id,
+                    "جدار الحماية رفض الطلب (صفحة Request Rejected) — الطلب لم يبدُ "
+                    "كطلب متصفح، أو المسار محمي. هذا ليس دليلاً على عدم وجود البيانات.",
+                )
+
+            fetched = Fetched(
+                url=url,
+                final_url=response.final_url,
+                status=response.status,
+                content=response.content,
+                media_type=response.media_type,
+                retrieved_at=datetime.now(UTC),
+                sha256=hashlib.sha256(response.content).hexdigest(),
+                headers=response.headers,
+            )
+            if self.use_cache and params is None:
+                self._write_cache(fetched)
+            return fetched
+
+        raise SourceUnreachable(source_id, f"exhausted retries for {url}: {last_error}")
+
     def _get_file(self, url: str, source_id: str) -> Fetched:
         """Read a local file through the same interface as a remote one.
 
@@ -205,77 +269,3 @@ class HttpClient:
                 )
             },
         )
-
-    # -- fetch ---------------------------------------------------------
-    def get(self, url: str, source_id: str = "", params: dict | None = None) -> Fetched:
-        source_id = source_id or urlparse(url).netloc or "local"
-        if url.startswith("file://"):
-            return self._get_file(url, source_id)
-        if self.use_cache and params is None:
-            cached = self._read_cache(url)
-            if cached is not None:
-                return cached
-
-        if self.offline:
-            raise SourceUnreachable(source_id, f"offline mode and no cached copy of {url}")
-
-        last_error: Exception | None = None
-        for attempt in range(self.retries):
-            try:
-                response = self._session.get(
-                    url, params=params, timeout=self.timeout, stream=True, allow_redirects=True
-                )
-            except requests.exceptions.SSLError as exc:
-                raise SourceUnreachable(
-                    source_id, f"{urlparse(url).netloc}: فشل التحقق من شهادة TLS"
-                ) from exc
-            except requests.exceptions.RequestException as exc:
-                last_error = exc
-                if attempt < self.retries - 1:
-                    time.sleep(2 ** attempt)
-                    continue
-                host = urlparse(url).netloc
-                raise SourceUnreachable(
-                    source_id,
-                    f"{concise_reason(exc, host)} (بعد {self.retries} محاولات)",
-                ) from exc
-
-            if response.status_code in (429, 500, 502, 503, 504) and attempt < self.retries - 1:
-                time.sleep(2 ** attempt)
-                continue
-
-            if response.status_code == 404:
-                raise SourceError(source_id, f"not found: {url}")
-            if response.status_code in (401, 403, 407):
-                raise SourceUnreachable(
-                    source_id,
-                    f"رُفض الوصول (HTTP {response.status_code}) — قد يكون المضيف "
-                    "محجوباً جغرافياً أو بسياسة الشبكة",
-                )
-            if response.status_code >= 400:
-                raise SourceError(source_id, f"HTTP {response.status_code} for {url}")
-
-            chunks: list[bytes] = []
-            total = 0
-            for chunk in response.iter_content(chunk_size=64 * 1024):
-                chunks.append(chunk)
-                total += len(chunk)
-                if total > MAX_BYTES:
-                    raise SourceError(source_id, f"response exceeds {MAX_BYTES} bytes: {url}")
-            content = b"".join(chunks)
-
-            fetched = Fetched(
-                url=url,
-                final_url=response.url,
-                status=response.status_code,
-                content=content,
-                media_type=(response.headers.get("Content-Type", "") or "").split(";")[0].strip(),
-                retrieved_at=datetime.now(UTC),
-                sha256=hashlib.sha256(content).hexdigest(),
-                headers=dict(response.headers),
-            )
-            if self.use_cache and params is None:
-                self._write_cache(fetched)
-            return fetched
-
-        raise SourceUnreachable(source_id, f"exhausted retries for {url}: {last_error}")
