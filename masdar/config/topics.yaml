@@ -139,3 +139,19 @@ dimensions:
   month: [شهري, الشهور, حسب الشهر, شهرياً, الأشهر, month, monthly, months, by month]
   quarter: [ربعي, الربع, ربع سنوي, الأرباع, حسب الربع, quarter, quarterly, quarters, by quarter]
   activity: [النشاط, الأنشطة, حسب النشاط, activity, activities, by activity]
+
+# Words that carry no subject meaning: request verbs, time nouns, generic
+# data words, politeness. Matched after normalisation, so plain spelling is
+# fine. A word here is only ever excluded from the free-text search terms --
+# it never suppresses a topic or dimension match.
+stopwords: >
+  ابي ابغى ابحث اريد اريدك ودي عايز عاوز جيب هات اعطني اعطيني وريني اطلع الاقي
+  لي لك له من في عن على الى حتى مع بعد قبل عند كل لكل بين حسب بحسب وفق بناء
+  سنه سنة عام لعام لسنه للسنه العام السنه سنوي سنويه فتره الفتره
+  عدد اعداد اجمالي الاجمالي نسبه معدل السعوديه المملكه العربيه
+  بيانات البيانات احصاءات الاحصاءات احصائيات الاحصائيات ارقام الارقام
+  معلومات المعلومات تقرير التقرير نشره النشره جدول الجدول ملف الملف اكسل
+  هل ما ماهي ماهو كم وش ايش هو هي انا لو سمحت ممكن الرجاء رجاء شكرا
+  data statistics numbers report file give me show find want need please
+  the of for by in and a an is are latest table dataset excel csv
+  saudi arabia ksa kingdom

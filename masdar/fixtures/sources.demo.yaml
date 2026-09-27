@@ -1,0 +1,34 @@
+# Demo sources, loaded only with --demo. Never part of a normal run.
+#
+# These exist so the pipeline can be run and tested without network access.
+# `synthetic: true` makes the exporter stamp every workbook produced from
+# them as sample data.
+
+version: 1
+
+sources:
+  - id: demo_wera
+    name_ar: مصدر تجريبي — قطاع الكهرباء
+    name_en: Demo source - electricity
+    operator_ar: بيانات تجريبية (غير رسمية)
+    operator_en: Demo data (not official)
+    base_url: https://example.invalid/demo
+    adapter: fixture
+    authority: 1
+    api_verified: true
+    synthetic: true
+    notes_ar: بيانات مُولّدة للاختبار فقط، لا تُستخدم كمرجع.
+    topics: [electricity, energy]
+
+  - id: demo_gastat
+    name_ar: مصدر تجريبي — السكان
+    name_en: Demo source - population
+    operator_ar: بيانات تجريبية (غير رسمية)
+    operator_en: Demo data (not official)
+    base_url: https://example.invalid/demo
+    adapter: fixture
+    authority: 1
+    api_verified: true
+    synthetic: true
+    notes_ar: بيانات مُولّدة للاختبار فقط، لا تُستخدم كمرجع.
+    topics: [population, housing]

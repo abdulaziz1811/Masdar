@@ -12,7 +12,6 @@ import enum
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 
-
 # --------------------------------------------------------------------------
 # Time
 # --------------------------------------------------------------------------
@@ -73,6 +72,23 @@ class Dimension(enum.Enum):
     MONTH = "month"
     QUARTER = "quarter"
     ACTIVITY = "activity"
+
+    @property
+    def label_ar(self) -> str:
+        return _DIMENSION_LABELS_AR.get(self, self.value)
+
+
+_DIMENSION_LABELS_AR = {
+    Dimension.REGION: "المناطق",
+    Dimension.CITY: "المدن",
+    Dimension.SECTOR: "القطاع",
+    Dimension.GENDER: "الجنس",
+    Dimension.NATIONALITY: "الجنسية",
+    Dimension.AGE: "الفئة العمرية",
+    Dimension.MONTH: "الشهر",
+    Dimension.QUARTER: "الربع",
+    Dimension.ACTIVITY: "النشاط",
+}
 
 
 @dataclass(frozen=True)
@@ -152,8 +168,12 @@ class Coverage:
     note: str = ""
 
     @classmethod
-    def unknown(cls) -> "Coverage":
-        return cls(years=frozenset(), origin=CoverageOrigin.INFERRED_TITLE, note="لا توجد بيانات عن التغطية الزمنية")
+    def unknown(cls) -> Coverage:
+        return cls(
+            years=frozenset(),
+            origin=CoverageOrigin.INFERRED_TITLE,
+            note="لا توجد بيانات عن التغطية الزمنية",
+        )
 
     @property
     def is_empty(self) -> bool:
@@ -247,7 +267,11 @@ class Verdict(enum.Enum):
     PARTIAL = "partial"                 # verified present for part of it
     NOT_AVAILABLE = "not_available"     # verified absent
     UNVERIFIED = "unverified"           # found something, cannot confirm the period
-    NO_SOURCE = "no_source"             # found nothing credible at all
+    NO_SOURCE = "no_source"             # searched successfully, found nothing
+    # Distinct from NO_SOURCE on purpose: "I could not reach the sources" is
+    # not the same claim as "the data does not exist", and conflating the two
+    # is the most misleading thing this system could do.
+    SOURCE_UNREACHABLE = "source_unreachable"
 
     @property
     def is_positive(self) -> bool:
@@ -286,11 +310,14 @@ class Answer:
     suggestions: tuple[YearSuggestion, ...] = ()
     # Human-readable trace of what was searched and why it was rejected.
     audit: tuple[str, ...] = ()
+    # Sources that failed to answer, as (source_id, reason). Reported
+    # alongside any verdict so partial outages are never invisible.
+    source_errors: tuple[tuple[str, str], ...] = ()
     message_ar: str = ""
 
     @property
     def primary(self) -> Finding | None:
         return self.findings[0] if self.findings else None
 
-    def with_message(self, message: str) -> "Answer":
+    def with_message(self, message: str) -> Answer:
         return replace(self, message_ar=message)

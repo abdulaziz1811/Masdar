@@ -1,0 +1,34 @@
+{
+  "source_id": "demo_gastat",
+  "datasets": [
+    {
+      "dataset_id": "demo-population-by-region-gender",
+      "title_ar": "بيانات تجريبية: السكان حسب المنطقة والجنس",
+      "title_en": "SAMPLE: Population by region and gender",
+      "description": "بيانات تجريبية مُولّدة للاختبار فقط — ليست بيانات رسمية.",
+      "landing_url": "https://example.invalid/demo/population",
+      "publisher_ar": "مصدر تجريبي (غير رسمي)",
+      "publisher_en": "Demo source (not official)",
+      "last_updated": "2024-09-15",
+      "license": "Demo / sample data",
+      "topics": [
+        "population"
+      ],
+      "claimed_years": [
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "claimed_years_exhaustive": true,
+      "resources": [
+        {
+          "path": "population_by_region_gender.csv",
+          "format": "CSV",
+          "title": "السكان حسب المنطقة والجنس"
+        }
+      ]
+    }
+  ]
+}

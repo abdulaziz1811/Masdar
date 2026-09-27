@@ -51,7 +51,8 @@ sources:
       الجهة الرسمية المسؤولة عن الإحصاءات الوطنية. تصدر نشرات سنوية وربعية،
       وعادة ما تكون المرجع النهائي عند تعارض الأرقام.
     topics: [population, labour, prices, gdp, trade, education, health, tourism,
-             transport, environment, housing, energy, ict, agriculture]
+             transport, environment, housing, energy, electricity, water, ict,
+             agriculture, finance]
 
   - id: wera
     name_ar: هيئة تنظيم المياه والكهرباء

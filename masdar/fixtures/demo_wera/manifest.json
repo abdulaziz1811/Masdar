@@ -1,0 +1,40 @@
+{
+  "source_id": "demo_wera",
+  "datasets": [
+    {
+      "dataset_id": "demo-electricity-by-region",
+      "title_ar": "بيانات تجريبية: الطاقة الكهربائية حسب المناطق",
+      "title_en": "SAMPLE: Electricity by administrative region",
+      "description": "بيانات تجريبية مُولّدة للاختبار فقط — ليست بيانات رسمية. تغطي استهلاك الكهرباء وعدد المشتركين حسب المنطقة الإدارية.",
+      "landing_url": "https://example.invalid/demo/electricity",
+      "publisher_ar": "مصدر تجريبي (غير رسمي)",
+      "publisher_en": "Demo source (not official)",
+      "last_updated": "2025-06-30",
+      "license": "Demo / sample data",
+      "topics": [
+        "electricity",
+        "energy"
+      ],
+      "claimed_years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "claimed_years_exhaustive": true,
+      "resources": [
+        {
+          "path": "electricity_by_region.csv",
+          "format": "CSV",
+          "title": "الاستهلاك وعدد المشتركين حسب المنطقة"
+        }
+      ]
+    }
+  ]
+}

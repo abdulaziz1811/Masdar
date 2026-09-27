@@ -31,7 +31,7 @@ _CONNECTOR_RE = "|".join(re.escape(c) for c in _CONNECTORS)
 # "من 2019 إلى 2024" / "بين 2019 و 2024" / "2019-2024" / "from 2019 to 2024"
 _RANGE_PATTERNS = (
     re.compile(rf"\bمن\s*(\d{{4}})\s*(?:{_CONNECTOR_RE})\s*(\d{{4}})"),
-    re.compile(rf"\bبين\s*(\d{{4}})\s*(?:و|الي)\s*(\d{{4}})"),
+    re.compile(r"\bبين\s*(\d{4})\s*(?:و|الي)\s*(\d{4})"),
     re.compile(r"(\d{4})\s*[-–—/]\s*(\d{4})"),
     re.compile(rf"\bfrom\s*(\d{{4}})\s*(?:{_CONNECTOR_RE})\s*(\d{{4}})", re.IGNORECASE),
     re.compile(r"(\d{4})\s*(?:to|through)\s*(\d{4})", re.IGNORECASE),
@@ -45,19 +45,6 @@ _LATEST_MARKERS = (
     "latest", "newest", "most recent", "last",
 )
 
-# Words that carry no subject meaning. Kept in normalised form.
-_STOPWORDS = frozenset("""
-ابي ابغى ابحث اريد اريدك ودي عايز عاوز جيب هات اعطني اعطيني وريني اطلع الاقي
-لي لك له من في عن على الى حتى مع بعد قبل عند كل لكل بين حسب بحسب وفق بناء
-سنه سنة عام لعام لسنه للسنه العام السنه سنوي سنويه فتره الفتره
-بيانات البيانات احصاءات الاحصاءات احصائيات الاحصائيات ارقام الارقام معلومات
-المعلومات تقرير التقرير نشره النشره جدول الجدول ملف الملف اكسل excel csv
-هل ما ماهي ماهو كم وش ايش هو هي انا لو سمحت ممكن الرجاء رجاء شكرا
-عدد اعداد اجمالي الاجمالي نسبه معدل السعوديه المملكه العربيه
-data statistics numbers report file give me show find want need please the of for by in
-saudi arabia ksa kingdom
-and a an is are latest table dataset
-""".split())
 
 # Phrases that mean "give me the file" rather than naming a subject.
 _FORMAT_HINTS = ("اكسل", "excel", "xlsx", "csv", "ملف", "جدول")
@@ -175,13 +162,13 @@ def detect_dimensions(text: str, lexicon: Lexicon) -> tuple[tuple[Dimension, ...
 _YEARISH = re.compile(r"^\d{3,4}\D{0,3}$")
 
 
-def _free_terms(text: str, consumed: set[str]) -> tuple[str, ...]:
+def _free_terms(text: str, consumed: set[str], stopwords: frozenset[str]) -> tuple[str, ...]:
     result: list[str] = []
     for token in tokens(text):
         stem = strip_article(token)
         if token.isdigit() or _YEARISH.match(token):
             continue
-        if token in _STOPWORDS or stem in _STOPWORDS:
+        if token in stopwords or stem in stopwords:
             continue
         if token in consumed or stem in consumed:
             continue
@@ -201,7 +188,6 @@ def detect_language(text: str) -> str:
 def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
     """Parse a user question into a `DataRequest`."""
     lexicon = lexicon or load_lexicon()
-    flat = normalize(query)
 
     period = parse_period(query)
     topic, topic_hits = detect_topic(query, lexicon)
@@ -217,7 +203,7 @@ def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
         consumed.update(normalize(marker).split())
     consumed.update(normalize(period.raw).split())
 
-    free = _free_terms(query, consumed)
+    free = _free_terms(query, consumed, lexicon.stopwords)
 
     unresolved: list[str] = []
     if topic is None:
@@ -234,3 +220,20 @@ def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
         language=detect_language(query),
         unresolved=tuple(unresolved),
     )
+
+
+def extract_years(text: str) -> tuple[int, ...]:
+    """Every year mentioned in a title or description, as Gregorian years.
+
+    Used to read coverage hints out of dataset titles and filenames. The
+    result is only ever a hint: `CoverageOrigin.INFERRED_TITLE` data may not
+    be used to promise that a year is present.
+    """
+    light = normalize_light(text)
+    years: set[int] = set()
+    for match in _YEAR.finditer(light):
+        value = int(match.group(1))
+        calendar = _classify_year(value, light, match.start(1))
+        if calendar is not None:
+            years.update(_expand(value, calendar))
+    return tuple(sorted(years))

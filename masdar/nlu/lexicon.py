@@ -8,17 +8,24 @@ from pathlib import Path
 import yaml
 
 from masdar.domain.models import Dimension, Topic
+from masdar.nlu.normalize import normalize
 
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 TOPICS_FILE = CONFIG_DIR / "topics.yaml"
 
 
 class Lexicon:
-    """Topics plus the dimension vocabulary, ready for matching."""
+    """Topics, dimension vocabulary and stopwords, ready for matching."""
 
-    def __init__(self, topics: tuple[Topic, ...], dimension_words: dict[Dimension, tuple[str, ...]]):
+    def __init__(
+        self,
+        topics: tuple[Topic, ...],
+        dimension_words: dict[Dimension, tuple[str, ...]],
+        stopwords: frozenset[str] = frozenset(),
+    ):
         self.topics = topics
         self.dimension_words = dimension_words
+        self.stopwords = stopwords
         self._by_id = {t.id: t for t in topics}
 
     def get(self, topic_id: str) -> Topic | None:
@@ -52,7 +59,11 @@ def _load(path: Path) -> Lexicon:
             continue
         dimension_words[dimension] = tuple(words)
 
-    return Lexicon(topics=topics, dimension_words=dimension_words)
+    stopwords = frozenset(
+        word for word in normalize(raw.get("stopwords") or "").split() if word
+    )
+
+    return Lexicon(topics=topics, dimension_words=dimension_words, stopwords=stopwords)
 
 
 @functools.lru_cache(maxsize=1)
