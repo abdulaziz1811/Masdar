@@ -1,0 +1,11 @@
+{
+  "@odata.context": "https://database.stats.gov.sa/$metadata#Collection",
+  "value": [
+    {"@odata.id": "n/1", "ELEC_TIME": "2022", "ELEC_OBSV": "1200.5", "REGION": "الرياض"},
+    {"@odata.id": "n/2", "ELEC_TIME": "2022", "ELEC_OBSV": "800", "REGION": "جازان"},
+    {"@odata.id": "n/3", "ELEC_TIME": "2023", "ELEC_OBSV": "1300", "REGION": "الرياض"},
+    {"@odata.id": "n/4", "ELEC_TIME": "2023", "ELEC_OBSV": "850", "REGION": "جازان"},
+    {"@odata.id": "n/5", "ELEC_TIME": "2024", "ELEC_OBSV": "1400", "REGION": "الرياض"},
+    {"@odata.id": "n/6", "ELEC_TIME": "2024", "ELEC_OBSV": "900", "REGION": "جازان"}
+  ]
+}

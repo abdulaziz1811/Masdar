@@ -1,0 +1,34 @@
+[
+  {
+    "id": 101,
+    "node_type": "REP",
+    "title_ar": "استهلاك الطاقة الكهربائية حسب المنطقة الإدارية",
+    "title_en": "Electrical energy consumption by administrative region",
+    "frequency_en": "Annual",
+    "frequency_ar": "سنوي",
+    "index_name_en": "Energy Statistics",
+    "security": "public",
+    "api_url": "TOKEN-ELEC-101"
+  },
+  {
+    "id": 102,
+    "node_type": "FOLDER",
+    "title_ar": "إحصاءات الطاقة",
+    "title_en": "Energy statistics",
+    "frequency_en": "",
+    "index_name_en": "Energy Statistics",
+    "security": "public",
+    "api_url": null
+  },
+  {
+    "id": 103,
+    "node_type": "REP",
+    "title_ar": "عدد السكان حسب الجنس",
+    "title_en": "Population by gender",
+    "frequency_en": "Annual",
+    "frequency_ar": "سنوي",
+    "index_name_en": "Population Statistics",
+    "security": "public",
+    "api_url": "TOKEN-POP-103"
+  }
+]

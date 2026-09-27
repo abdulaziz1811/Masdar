@@ -187,3 +187,59 @@ sources:
       publications_index: /ar/InformationCenter/Researchs/Reports/Pages/default.aspx
     notes_ar: إحصاءات المياه والزراعة والبيئة.
     topics: [water, agriculture, environment]
+
+  - id: gastat_db
+    name_ar: قاعدة بيانات الهيئة العامة للإحصاء
+    name_en: GASTAT statistical database
+    operator_ar: الهيئة العامة للإحصاء
+    operator_en: GASTAT
+    base_url: https://database.stats.gov.sa
+    adapter: gastat_api
+    authority: 100
+    # VERIFIED by direct call on 2026-09-27: HTTP 200, application/json,
+    # anonymous. See masdar/sources/adapters/gastat_api.py for the shapes.
+    api_verified: true
+    access_checked: "2026-09-27"
+    access_notes_ar: >-
+      واجهة مؤشرات مفتوحة بلا مفتاح. تم التحقق من cardsinfo مباشرةً (يعيد
+      {"info": [...]} مع ar_title/en_title وfrequency)، ومن أن indicators/public
+      يعيد JSON بحالة 200 (نحو 2600 مؤشر، ~4.5 ميغابايت). لا يوجد بحث من جهة
+      الخدمة — جدار الحماية يرفض معاملات الاستعلام على الفهرس — فالتصفية تحدث
+      محلياً بعد جلب الفهرس مرة واحدة. حقول frequency تعني التكرار (سنوي/شهري)
+      ولا تدل على السنوات المتاحة، فالسنوات تُستخرج من البيانات نفسها.
+    api:
+      catalog: /gastatapi/portal/api/v1/indicators/public
+      headlines: /gastatapi/portal/api/v1/indicators/cardsinfo
+      observations: /gastatapi/portal/api/v1/indicators/getDataForChart
+    topics: [population, labour, prices, gdp, trade, education, health, tourism,
+             transport, environment, housing, energy, electricity, water, ict,
+             agriculture, finance]
+
+  - id: gastat_gateway
+    name_ar: بوابة واجهات الهيئة العامة للإحصاء (بمفتاح)
+    name_en: GASTAT API gateway (key-based)
+    operator_ar: الهيئة العامة للإحصاء
+    operator_en: GASTAT
+    # UNKNOWN: the gateway's base URL is only visible behind the developer
+    # portal login. Fill it in from the API's detail page, then set
+    # enabled: true.
+    base_url: ""
+    adapter: gastat_api
+    authority: 100
+    api_verified: false
+    enabled: false
+    access_checked: "2026-09-27"
+    access_notes_ar: >-
+      برنامج واجهات رسمي يتطلب مفتاحاً ومفتاحاً سرياً من بوابة المطوّرين، وفيه
+      واجهات مُعتمدة بالاسم منها "Energy Statistics - Electrical Energy
+      Statistics" و"Prices Statistics" و"National Accounts" وإحصاءات التعداد
+      2022. معطّل حتى يُعرف عنوانه الأساسي ومسارات الطلب، وهي ظاهرة فقط في
+      صفحة تفاصيل كل واجهة داخل البوابة بعد تسجيل الدخول.
+    # Credential LOCATIONS only. The values live in the environment and are
+    # never committed; see .env.example.
+    auth:
+      type: api_key
+      key_env: GASTAT_API_KEY
+      secret_env: GASTAT_API_SECRET
+    topics: [electricity, energy, population, prices, gdp, health, tourism,
+             education, housing, trade, finance]

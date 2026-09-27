@@ -13,21 +13,21 @@ topics:
     keywords_ar: [كهرباء, الكهرباء, كهربائية, الطاقة الكهربائية, استهلاك الكهرباء,
                   مشتركي الكهرباء, الأحمال الكهربائية, توليد الكهرباء, شبكة الكهرباء]
     keywords_en: [electricity, power consumption, electric load, power generation]
-    preferred_sources: [wera, saudi_open_data, moenergy, gastat]
+    preferred_sources: [wera, gastat_db, saudi_open_data, moenergy, gastat]
 
   - id: energy
     label_ar: الطاقة
     label_en: Energy
     keywords_ar: [الطاقة, النفط, الغاز, الطاقة المتجددة, البتروكيماويات, وقود]
     keywords_en: [energy, oil, gas, renewable energy, fuel]
-    preferred_sources: [moenergy, saudi_open_data, gastat]
+    preferred_sources: [gastat_db, moenergy, saudi_open_data, gastat]
 
   - id: population
     label_ar: السكان
     label_en: Population
     keywords_ar: [السكان, سكان, التعداد, تعداد, الديموغرافيا, المواليد, الوفيات]
     keywords_en: [population, census, demography, births, deaths]
-    preferred_sources: [saudi_census, gastat, saudi_open_data]
+    preferred_sources: [saudi_census, gastat_db, gastat, saudi_open_data]
 
   - id: labour
     label_ar: سوق العمل
@@ -35,98 +35,98 @@ topics:
     keywords_ar: [العمل, سوق العمل, البطالة, التوظيف, العاملين, الموظفين, الأجور,
                   القوى العاملة, التوطين]
     keywords_en: [labour, labor, unemployment, employment, wages, workforce]
-    preferred_sources: [gastat, saudi_open_data]
+    preferred_sources: [gastat_db, gastat, saudi_open_data]
 
   - id: education
     label_ar: التعليم
     label_en: Education
     keywords_ar: [التعليم, المدارس, الطلاب, الجامعات, المعلمين, التعليم العالي]
     keywords_en: [education, schools, students, universities, teachers]
-    preferred_sources: [saudi_open_data, gastat]
+    preferred_sources: [gastat_db, saudi_open_data, gastat]
 
   - id: health
     label_ar: الصحة
     label_en: Health
     keywords_ar: [الصحة, المستشفيات, الأسرة, الأطباء, المراكز الصحية, الأمراض]
     keywords_en: [health, hospitals, beds, physicians, clinics, diseases]
-    preferred_sources: [moh, saudi_open_data, gastat]
+    preferred_sources: [moh, gastat_db, saudi_open_data, gastat]
 
   - id: water
     label_ar: المياه
     label_en: Water
     keywords_ar: [المياه, مياه, التحلية, الصرف الصحي, استهلاك المياه, السدود]
     keywords_en: [water, desalination, wastewater, dams]
-    preferred_sources: [wera, mewa, saudi_open_data]
+    preferred_sources: [wera, mewa, gastat_db, saudi_open_data]
 
   - id: housing
     label_ar: الإسكان
     label_en: Housing
     keywords_ar: [الإسكان, المساكن, العقار, الوحدات السكنية, الملكية]
     keywords_en: [housing, dwellings, real estate, residential units]
-    preferred_sources: [gastat, saudi_open_data]
+    preferred_sources: [gastat_db, gastat, saudi_open_data]
 
   - id: trade
     label_ar: التجارة الخارجية
     label_en: Foreign trade
     keywords_ar: [التجارة, الصادرات, الواردات, التجارة الخارجية, الميزان التجاري]
     keywords_en: [trade, exports, imports, trade balance]
-    preferred_sources: [gastat, sama, saudi_open_data]
+    preferred_sources: [gastat_db, gastat, sama, saudi_open_data]
 
   - id: prices
     label_ar: الأسعار والتضخم
     label_en: Prices and inflation
     keywords_ar: [الأسعار, التضخم, الرقم القياسي, تكاليف المعيشة, أسعار المستهلك]
     keywords_en: [prices, inflation, cpi, consumer price index, cost of living]
-    preferred_sources: [gastat, sama]
+    preferred_sources: [gastat_db, gastat, sama]
 
   - id: gdp
     label_ar: الحسابات القومية
     label_en: National accounts
     keywords_ar: [الناتج المحلي, الحسابات القومية, النمو الاقتصادي, الناتج المحلي الإجمالي]
     keywords_en: [gdp, national accounts, economic growth]
-    preferred_sources: [gastat, sama]
+    preferred_sources: [gastat_db, gastat, sama]
 
   - id: tourism
     label_ar: السياحة
     label_en: Tourism
     keywords_ar: [السياحة, السياح, الزوار, الفنادق, الرحلات]
     keywords_en: [tourism, tourists, visitors, hotels]
-    preferred_sources: [gastat, saudi_open_data]
+    preferred_sources: [gastat_db, gastat, saudi_open_data]
 
   - id: transport
     label_ar: النقل
     label_en: Transport
     keywords_ar: [النقل, الطيران, المطارات, الطرق, المرور, الحوادث, الموانئ, السكك]
     keywords_en: [transport, aviation, airports, roads, traffic, accidents, ports]
-    preferred_sources: [saudi_open_data, gastat]
+    preferred_sources: [gastat_db, saudi_open_data, gastat]
 
   - id: environment
     label_ar: البيئة
     label_en: Environment
     keywords_ar: [البيئة, التلوث, الانبعاثات, النفايات, المناخ, الغطاء النباتي]
     keywords_en: [environment, pollution, emissions, waste, climate]
-    preferred_sources: [mewa, saudi_open_data, gastat]
+    preferred_sources: [mewa, gastat_db, saudi_open_data, gastat]
 
   - id: ict
     label_ar: تقنية المعلومات والاتصالات
     label_en: ICT
     keywords_ar: [الاتصالات, الإنترنت, تقنية المعلومات, الرقمية, النطاق العريض]
     keywords_en: [ict, internet, telecom, digital, broadband]
-    preferred_sources: [saudi_open_data, gastat]
+    preferred_sources: [gastat_db, saudi_open_data, gastat]
 
   - id: agriculture
     label_ar: الزراعة
     label_en: Agriculture
     keywords_ar: [الزراعة, المحاصيل, الثروة الحيوانية, الأسماك, النخيل]
     keywords_en: [agriculture, crops, livestock, fisheries]
-    preferred_sources: [mewa, gastat, saudi_open_data]
+    preferred_sources: [mewa, gastat_db, gastat, saudi_open_data]
 
   - id: finance
     label_ar: المالية والنقد
     label_en: Finance and money
     keywords_ar: [البنوك, النقد, الائتمان, الميزانية, الاحتياطي, التمويل]
     keywords_en: [banks, money supply, credit, budget, reserves, finance]
-    preferred_sources: [sama, gastat]
+    preferred_sources: [sama, gastat_db, gastat]
 
 # Words that signal a breakdown axis rather than a subject.
 dimensions:

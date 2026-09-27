@@ -17,6 +17,7 @@ from __future__ import annotations
 import csv
 import enum
 import io
+import json
 import re
 from dataclasses import dataclass, field
 
@@ -250,10 +251,74 @@ def read_xlsx(content: bytes) -> Table:
     return best or Table([], [])
 
 
+# OData bookkeeping keys carry no data.
+_ODATA = ("@odata", "odata.")
+
+# GASTAT's chart endpoint names its columns per indicator, e.g. POP_TIME and
+# POP_OBSV, so the period and value columns can only be found by suffix.
+_TIME_SUFFIX = re.compile(r"_TIME$", re.IGNORECASE)
+_VALUE_SUFFIX = re.compile(r"_OBSV$", re.IGNORECASE)
+
+
+def _json_rows(payload: object) -> list[dict]:
+    """Find the list of records in a JSON body.
+
+    Bodies seen in the wild: a bare array, an OData `{"value": [...]}`, and
+    assorted `{"data": [...]}` wrappers. All three are accepted rather than
+    assuming one.
+    """
+    if isinstance(payload, list):
+        return [r for r in payload if isinstance(r, dict)]
+    if isinstance(payload, dict):
+        for key in ("value", "data", "info", "results", "items", "records"):
+            candidate = payload.get(key)
+            if isinstance(candidate, list):
+                return [r for r in candidate if isinstance(r, dict)]
+    return []
+
+
+def read_json(content: bytes) -> Table:
+    """Read a JSON array of flat records into a table.
+
+    Column order follows first appearance so a time column stays leftmost,
+    which is also the order the year-axis detection expects.
+    """
+    try:
+        payload = json.loads(content.decode("utf-8", errors="replace"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid JSON: {exc}") from exc
+
+    records = _json_rows(payload)
+    if not records:
+        return Table([], [])
+
+    columns: list[str] = []
+    for record in records:
+        for key in record:
+            if any(key.lower().startswith(prefix) for prefix in _ODATA):
+                continue
+            if key not in columns:
+                columns.append(key)
+
+    # Put the period column first; everything downstream reads more naturally.
+    timed = [c for c in columns if _TIME_SUFFIX.search(c)]
+    if timed:
+        columns = timed + [c for c in columns if c not in timed]
+
+    rows = [[coerce_value(record.get(column)) for column in columns] for record in records]
+    return Table(columns, rows)
+
+
+def coerce_value(value: object) -> object:
+    return coerce(value) if isinstance(value, str) else value
+
+
 def read_table(content: bytes, fmt: str) -> Table:
     fmt = (fmt or "").upper()
     if fmt in ("CSV", "TSV", "TXT"):
         return read_csv(content)
     if fmt in ("XLSX", "XLSM", "XLS"):
         return read_xlsx(content)
+    if fmt == "JSON":
+        return read_json(content)
     raise ValueError(f"unsupported tabular format: {fmt or 'unknown'}")

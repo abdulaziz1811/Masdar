@@ -35,6 +35,8 @@ def load_descriptors(path: Path | None = None) -> tuple[SourceDescriptor, ...]:
             waf=bool(entry.get("waf", False)),
             access_checked=str(entry.get("access_checked", "") or ""),
             access_notes_ar=(entry.get("access_notes_ar") or "").strip(),
+            enabled=bool(entry.get("enabled", True)),
+            auth=entry.get("auth") or {},
         )
         for entry in raw.get("sources", [])
     )
@@ -49,11 +51,13 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
     """Instantiate the adapter class named by `descriptor.adapter`."""
     # Imported here so the adapter modules can import from this package.
     from masdar.sources.adapters.fixture import FixtureAdapter
+    from masdar.sources.adapters.gastat_api import GastatApiAdapter
     from masdar.sources.adapters.html_index import HtmlIndexAdapter
     from masdar.sources.adapters.saudi_open_data import SaudiOpenDataAdapter
 
     registry: dict[str, type[SourceAdapter]] = {
         "saudi_open_data": SaudiOpenDataAdapter,
+        "gastat_api": GastatApiAdapter,
         "html_index": HtmlIndexAdapter,
         "fixture": FixtureAdapter,
     }
@@ -88,7 +92,7 @@ class Registry:
 
     def for_topic(self, topic_id: str | None) -> tuple[SourceDescriptor, ...]:
         """Sources that claim the topic, most authoritative first."""
-        matches = [d for d in self.descriptors if d.covers_topic(topic_id)]
+        matches = [d for d in self.descriptors if d.enabled and d.covers_topic(topic_id)]
         return tuple(sorted(matches, key=lambda d: -d.authority))
 
     def plan(

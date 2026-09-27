@@ -66,6 +66,13 @@ class SourceDescriptor:
     waf: bool = False                  # edge rejects non-browser-looking requests
     access_checked: str = ""           # ISO date of the last verification
     access_notes_ar: str = ""
+    # False for a source that is documented but not yet usable -- a known API
+    # whose base URL or request shape is still missing. It stays in the
+    # registry so the knowledge is not lost, but is never queried.
+    enabled: bool = True
+    # Credential *locations*, never credentials. Secrets are read from the
+    # environment at call time and never written to this repository.
+    auth: dict = field(default_factory=dict)
     # True for fixture/demo sources. Anything derived from one is labelled
     # as sample data so it can never be mistaken for an official figure.
     synthetic: bool = False
