@@ -52,6 +52,8 @@ DIMENSION_NAMES: dict[Dimension, tuple[str, ...]] = {
     Dimension.MONTH: ("MONTH",),
     Dimension.QUARTER: ("QUARTER",),
     Dimension.ACTIVITY: ("ACTIVITY", "ECONOMIC_ACTIVITY"),
+    # GASTAT splits household energy by winter vs the rest of the year.
+    Dimension.SEASON: ("CONSUMP_OPERATION_PERIOD", "SEASON"),
 }
 
 TIME_DIMENSION = "YEAR"
@@ -100,13 +102,22 @@ class GastatCdataAdapter(SourceAdapter):
         # Brackets kept literal: this is the form verified against the API.
         return f"{self._path(dataset_id)}?{urlencode(params, safe='[]')}"
 
-    def _requested_dimensions(self, request: DataRequest, available: list[str]) -> list[str]:
-        """Dimension names to group by: the ones asked for that exist here."""
-        chosen: list[str] = []
+    def _requested_dimensions(
+        self, request: DataRequest, available: list[str]
+    ) -> list[tuple[Dimension, str]]:
+        """The asked-for breakdowns this dataset can actually group by.
+
+        Returns both our dimension and the API's name for it, so the
+        candidate can report what it provides without the rest of the system
+        having to recognise names like CONSUMP_OPERATION_PERIOD.
+        """
+        chosen: list[tuple[Dimension, str]] = []
+        taken: set[str] = set()
         for dimension in request.dimensions:
             for name in DIMENSION_NAMES.get(dimension, ()):
-                if name in available and name not in chosen:
-                    chosen.append(name)
+                if name in available and name not in taken:
+                    chosen.append((dimension, name))
+                    taken.add(name)
                     break
         return chosen
 
@@ -165,8 +176,9 @@ class GastatCdataAdapter(SourceAdapter):
             dataset_id = str(entry["id"])
             available = [str(d) for d in (entry.get("dimensions") or [])]
 
+            grouped = self._requested_dimensions(request, available)
             params: list[tuple[str, str]] = []
-            for name in self._requested_dimensions(request, available):
+            for _, name in grouped:
                 params.append(("dimensions[]", name))
             if TIME_DIMENSION in available:
                 params.append(("dimensions[]", TIME_DIMENSION))
@@ -200,6 +212,9 @@ class GastatCdataAdapter(SourceAdapter):
                     ),
                     claimed_coverage=coverage,
                     license_name=str(entry.get("license") or "") or None,
+                    # The server grouped by these, so they are present by
+                    # construction -- no need to guess from column names.
+                    provided_dimensions=tuple(d for d, _ in grouped),
                 )
             )
         return candidates

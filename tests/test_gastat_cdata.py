@@ -41,12 +41,14 @@ class RoutingTransport(Transport):
     def get(self, url, source_id, params=None):
         self.requests.append(url)
         decoded = unquote(url)
+        consumption = "HES0303" in decoded
         if "dimensions[]=REGION" in decoded:
-            body = (FIXTURES / "by_region.json").read_bytes()
+            name = "HES0303_by_region_season.json" if consumption else "by_region.json"
         elif "dimensions[]=YEAR" in decoded:
-            body = (FIXTURES / "coverage_years.json").read_bytes()
+            name = "HES0303_years.json" if consumption else "coverage_years.json"
         else:
             raise AssertionError(f"unexpected request: {url}")
+        body = (FIXTURES / name).read_bytes()
         return Response(
             url=url,
             final_url=url,
@@ -102,7 +104,26 @@ class TestRequestConstruction:
         from masdar.nlu.parser import parse
 
         candidate = registry.adapter("gastat_cdata").search(parse("الكهرباء 2022"))[0]
-        assert "/v1/stats/DPV_HES_EHE_IT_HES0301" in candidate.resources[0].url
+        assert "/v1/stats/DPV_HES_EHE_IT_HES" in candidate.resources[0].url
+
+    def test_consumption_query_prefers_the_consumption_dataset(self, registry):
+        from masdar.nlu.parser import parse
+
+        # HES0301 counts connected dwellings; HES0303 holds kWh consumed.
+        candidate = registry.adapter("gastat_cdata").search(
+            parse("ابي استهلاك الطاقه الكهربائيه لسنه 2022 حسب المناطق")
+        )[0]
+        assert candidate.dataset_id == "DPV_HES_EHE_IT_HES0303"
+
+    def test_season_request_groups_by_the_period_dimension(self, registry):
+        from masdar.nlu.parser import parse
+
+        candidate = registry.adapter("gastat_cdata").search(
+            parse("استهلاك الكهرباء 2022 حسب المناطق والفصل")
+        )[0]
+        url = unquote(candidate.resources[0].url)
+        assert "dimensions[]=CONSUMP_OPERATION_PERIOD" in url
+        assert "dimensions[]=REGION" in url
 
     def test_unrelated_query_matches_nothing(self, registry):
         from masdar.nlu.parser import parse
@@ -160,7 +181,7 @@ class TestExport:
         text = "\n".join(
             str(c) for row in sheet.iter_rows(values_only=True) for c in row if c
         )
-        assert "الرياض" in text and "مكة المكرمة" in text
+        assert "الرياض" in text and "جازان" in text
 
     def test_workbook_holds_only_the_requested_year(self, agent):
         answer = agent.answer("الكهرباء لسنه 2022 حسب المناطق")
@@ -171,12 +192,15 @@ class TestExport:
         assert years == {2022}
 
     def test_measures_are_numeric(self, agent):
+        # The API suffixes every measure with _OBSV; the name itself varies
+        # per dataset, so the convention is what to rely on.
         answer = agent.answer("الكهرباء لسنه 2022 حسب المناطق")
         sheet = load_workbook(answer.primary.export_path)["البيانات"]
-        header = [c.value for c in sheet[1]]
-        column = header.index("TOTAL_HH_OBSV")
+        header = [str(c.value) for c in sheet[1]]
+        measures = [i for i, name in enumerate(header) if name.endswith("_OBSV")]
+        assert measures, f"no measure column in {header}"
         first = next(sheet.iter_rows(min_row=2, max_row=2, values_only=True))
-        assert isinstance(first[column], (int, float))
+        assert all(isinstance(first[i], (int, float)) for i in measures)
 
     def test_source_sheet_cites_the_api_url(self, agent):
         answer = agent.answer("الكهرباء لسنه 2022 حسب المناطق")
@@ -223,3 +247,87 @@ class TestTruncatedDownloadsCannotNarrowCoverage:
             years=frozenset({2021, 2022}), origin=CoverageOrigin.OBSERVED_DATA
         )
         assert _merge_coverage(hinted, observed).years == frozenset({2021, 2022})
+
+
+class TestConsumptionDataset:
+    """The dataset the original question was really about: kWh by region."""
+
+    def test_coverage_matches_the_live_series(self, agent):
+        answer = agent.answer("ابي استهلاك الطاقه الكهربائيه لسنه 2022 حسب المناطق")
+        assert answer.primary.candidate.dataset_id == "DPV_HES_EHE_IT_HES0303"
+        assert answer.primary.coverage.years == frozenset(REAL_COVERAGE)
+
+    def test_exports_seasonal_regional_consumption(self, agent):
+        answer = agent.answer(
+            "ابي استهلاك الطاقه الكهربائيه لسنه 2022 حسب المناطق والفصل"
+        )
+        assert answer.verdict is Verdict.AVAILABLE
+        sheet = load_workbook(answer.primary.export_path)["البيانات"]
+        text = "\n".join(
+            str(c) for row in sheet.iter_rows(values_only=True) for c in row if c
+        )
+        assert "خلال فصل الشتاء" in text
+        assert "خلال باقي السنة" in text
+        assert "الرياض" in text
+
+    def test_measure_column_is_numeric(self, agent):
+        answer = agent.answer("استهلاك الكهرباء 2022 حسب المناطق")
+        sheet = load_workbook(answer.primary.export_path)["البيانات"]
+        header = [c.value for c in sheet[1]]
+        column = header.index("OBSVALUE_OBSV")
+        first = next(sheet.iter_rows(min_row=2, max_row=2, values_only=True))
+        assert isinstance(first[column], float)
+
+    def test_2020_is_still_refused_for_this_dataset(self, agent):
+        answer = agent.answer("استهلاك الكهرباء 2020 حسب المناطق")
+        assert answer.verdict is Verdict.NOT_AVAILABLE
+        assert "ناقصة: 2020" in answer.message_ar
+
+
+class TestKeyedRoutes:
+    """A route that needs a key must say so, not imply the data is missing."""
+
+    def test_missing_key_is_reported_as_a_key_problem(self):
+        from masdar.sources.transport import describe_refusal
+
+        class Refused:
+            status_code = 401
+            content = (FIXTURES / "missing_key.json").read_bytes()
+
+        reason = describe_refusal(Refused(), "https://api.stats.gov.sa/v1/stats/X")
+        assert "مفتاح API" in reason
+        assert "لا يعني عدم وجود البيانات" in reason
+
+    def test_a_block_is_not_described_as_a_key_problem(self):
+        from masdar.sources.transport import describe_refusal
+
+        class Blocked:
+            status_code = 403
+            content = b"<html><body>Access denied by policy</body></html>"
+
+        assert "مفتاح API" not in describe_refusal(Blocked(), "x")
+
+
+class TestProvidedDimensions:
+    """A breakdown the server grouped by must not be reported as missing."""
+
+    def test_no_false_warning_for_an_api_named_column(self, agent):
+        # The season column is CONSUMP_OPERATION_PERIOD_ARAB, which matches no
+        # word in the lexicon; the adapter declaring it is what prevents a
+        # warning that the file lacks data it plainly contains.
+        answer = agent.answer("استهلاك الكهرباء 2022 حسب المناطق والفصل")
+        assert not any("لا يحتوي عمود" in note for note in answer.primary.notes)
+
+    def test_candidate_declares_what_it_grouped_by(self, registry):
+        from masdar.domain.models import Dimension
+        from masdar.nlu.parser import parse
+
+        candidate = registry.adapter("gastat_cdata").search(
+            parse("استهلاك الكهرباء 2022 حسب المناطق والفصل")
+        )[0]
+        assert set(candidate.provided_dimensions) == {Dimension.REGION, Dimension.SEASON}
+
+    def test_a_genuinely_absent_breakdown_is_still_reported(self, agent):
+        # This dataset has no gender axis, so the warning must appear.
+        answer = agent.answer("استهلاك الكهرباء 2022 حسب الجنس")
+        assert any("لا يحتوي عمود" in note for note in answer.primary.notes)

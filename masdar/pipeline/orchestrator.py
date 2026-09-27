@@ -213,6 +213,9 @@ class Agent:
 
             if table is not None:
                 present = table.observed_dimensions(self.lexicon.dimension_words)
+                # A source that grouped by a dimension provides it, whatever
+                # its column happens to be called.
+                present |= set(candidate.provided_dimensions)
                 for dimension in resolve.missing_dimensions(request, present):
                     notes.append(
                         "تنبيه: الملف لا يحتوي عموداً للتفصيل المطلوب "

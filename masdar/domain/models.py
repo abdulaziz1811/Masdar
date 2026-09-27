@@ -72,6 +72,7 @@ class Dimension(enum.Enum):
     MONTH = "month"
     QUARTER = "quarter"
     ACTIVITY = "activity"
+    SEASON = "season"
 
     @property
     def label_ar(self) -> str:
@@ -88,6 +89,7 @@ _DIMENSION_LABELS_AR = {
     Dimension.MONTH: "الشهر",
     Dimension.QUARTER: "الربع",
     Dimension.ACTIVITY: "النشاط",
+    Dimension.SEASON: "الفصل",
 }
 
 
@@ -263,6 +265,11 @@ class DatasetCandidate:
     claimed_coverage: Coverage = field(default_factory=Coverage.unknown)
     last_updated: date | None = None
     license_name: str | None = None
+    # Breakdowns this result is known to provide, when the source can say so
+    # -- an API asked to group by a dimension provides it by construction.
+    # Sources that cannot declare leave this empty and are judged by their
+    # column names instead.
+    provided_dimensions: tuple[Dimension, ...] = ()
     # Filled in by the ranker.
     score: float = 0.0
     match_reasons: tuple[str, ...] = ()

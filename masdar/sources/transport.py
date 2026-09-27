@@ -21,6 +21,7 @@ Selected with `MASDAR_HTTP_BACKEND=direct|firecrawl`.
 from __future__ import annotations
 
 import abc
+import contextlib
 import os
 from dataclasses import dataclass
 from urllib.parse import urlparse
@@ -80,6 +81,36 @@ def looks_rejected(body: bytes, media_type: str) -> bool:
     return sum(marker in head for marker in _WAF_MARKERS) >= 2
 
 
+# GASTAT's gateway answers a keyless request to a protected route with
+# "Failed to resolve API Key variable request.header.apikey".
+_MISSING_KEY_MARKERS = ("api key", "apikey", "api_key", "unauthorized", "credentials")
+
+
+def describe_refusal(response, url: str) -> str:
+    """Say which kind of refusal this was, since the remedies differ.
+
+    A missing API key, a geo-block and a network policy all surface as 401 or
+    403, and telling them apart is the difference between "set this variable"
+    and "you cannot reach this host at all".
+    """
+    snippet = ""
+    with contextlib.suppress(Exception):
+        snippet = response.content[:512].decode("utf-8", errors="replace").lower()
+    status = response.status_code
+    if status == 401 or any(marker in snippet for marker in _MISSING_KEY_MARKERS):
+        return (
+            f"هذا المسار يتطلب مفتاح API (HTTP {status}). عيّن المفتاح في متغيّر "
+            "البيئة المذكور في إعداد المصدر (auth.key_env) وأعد المحاولة. "
+            "هذا لا يعني عدم وجود البيانات."
+        )
+    if status == 407:
+        return f"رُفض من البروكسي (HTTP {status})"
+    return (
+        f"رُفض الوصول (HTTP {status}) — قد يكون المضيف محجوباً جغرافياً أو "
+        "بسياسة الشبكة. هذا لا يعني عدم وجود البيانات."
+    )
+
+
 @dataclass
 class Response:
     """A transport's raw result, before provenance is attached."""
@@ -131,14 +162,13 @@ class DirectTransport(Transport):
 
             raise SourceUnreachable(source_id, concise_reason(exc, urlparse(url).netloc)) from exc
 
+        if response.status_code >= 400:
+            # Read a little of the body: it says which refusal this is.
+            response.content  # noqa: B018 - forces the stream to buffer
         if response.status_code == 404:
             raise SourceError(source_id, f"not found: {url}")
         if response.status_code in (401, 403, 407):
-            raise SourceRejected(
-                source_id,
-                f"رُفض الوصول (HTTP {response.status_code}) — قد يكون المضيف "
-                "محجوباً جغرافياً أو بسياسة الشبكة",
-            )
+            raise SourceRejected(source_id, describe_refusal(response, url))
         if response.status_code in (429, 500, 502, 503, 504):
             raise RetryableSourceError(source_id, f"HTTP {response.status_code} for {url}")
         if response.status_code >= 400:

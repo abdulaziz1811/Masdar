@@ -138,6 +138,8 @@ dimensions:
   age: [العمر, الفئات العمرية, حسب العمر, فئة عمرية, age, age group, age groups, by age]
   month: [شهري, الشهور, حسب الشهر, شهرياً, الأشهر, month, monthly, months, by month]
   quarter: [ربعي, الربع, ربع سنوي, الأرباع, حسب الربع, quarter, quarterly, quarters, by quarter]
+  season: [الفصل, فصل, الفصول, حسب الفصل, الشتاء, شتاء, الصيف, صيف,
+           موسمي, موسم, season, seasonal, winter, summer]
   activity: [النشاط, الأنشطة, حسب النشاط, activity, activities, by activity]
 
 # Words that carry no subject meaning: request verbs, time nouns, generic

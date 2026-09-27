@@ -1,0 +1,7 @@
+{
+    "errors": [
+        {
+            "message" : "Failed to resolve API Key variable request.header.apikey"
+        }
+    ]
+}

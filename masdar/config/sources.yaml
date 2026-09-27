@@ -254,6 +254,20 @@ sources:
           dimensions: [ELECTRICITY_NETWORK_TYPE, HOUSE_TYPE, POSSESSION_TYPE,
                        REGION, YEAR]
           topics: [electricity, energy, housing]
+        - id: DPV_HES_EHE_IT_HES0303
+          title_ar: استهلاك الطاقة الكهربائية في المساكن حسب فترة الاستهلاك والمناطق الإدارية
+          title_en: >-
+            Housing units electrical energy consumption by season and region
+          description: >-
+            الكميات المستهلكة من الطاقة الكهربائية بالكيلوواط في المساكن، خلال
+            فصل الشتاء (ديسمبر ويناير وفبراير) وباقي السنة. السنوات المتاحة عند
+            الفحص: 2017-2019 و2021-2022 (لا يوجد 2020). قيمة القياس في العمود
+            OBSVALUE_OBSV.
+          keywords: >-
+            استهلاك الكهرباء استهلاك الطاقة الكهربائية كيلوواط المساكن الأحمال
+            electricity consumption
+          dimensions: [CONSUMP_OPERATION_PERIOD, REGION, YEAR]
+          topics: [electricity, energy, housing]
     # Credential LOCATIONS only; values live in the environment. Optional
     # here, since the Public APIs are anonymous.
     auth:
