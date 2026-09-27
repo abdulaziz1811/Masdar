@@ -1,0 +1,140 @@
+# Registry of official Saudi data publishers.
+#
+# `authority` (0-100) is how close the publisher is to being the origin of
+# the statistic, not how nice its website is. The ranker uses it to break
+# ties between datasets that match a query equally well.
+#
+# `api_verified` records whether the endpoint shape below was confirmed
+# against the live service. Anything false is a documented expectation, not
+# a promise -- run `masdar doctor` from a network that can reach the host to
+# confirm, and correct this file from what comes back.
+
+version: 1
+
+sources:
+  - id: saudi_open_data
+    name_ar: البوابة الوطنية للبيانات المفتوحة
+    name_en: Saudi Open Data Portal
+    operator_ar: الهيئة السعودية للبيانات والذكاء الاصطناعي (سدايا)
+    operator_en: SDAIA
+    base_url: https://open.data.gov.sa
+    adapter: saudi_open_data
+    authority: 90
+    api_verified: false
+    api:
+      dataset_search: /data/api/v1/datasets
+      dataset_detail: /data/api/v1/datasets/{id}
+      # Portal UI language is switched by path segment, mirrored by the API.
+      languages: [ar, en]
+    notes_ar: >-
+      المنصة الوطنية الجامعة لبيانات الجهات الحكومية، وهي أول نقطة بحث لأنها
+      توفر ملفات جاهزة (CSV/XLSX) وبيانات وصفية عن تاريخ التحديث.
+    topics: [electricity, energy, population, labour, education, health, water,
+             housing, trade, prices, tourism, transport, environment, gdp, ict,
+             agriculture]
+
+  - id: gastat
+    name_ar: الهيئة العامة للإحصاء
+    name_en: General Authority for Statistics (GASTAT)
+    operator_ar: الهيئة العامة للإحصاء
+    operator_en: GASTAT
+    base_url: https://www.stats.gov.sa
+    adapter: html_index
+    authority: 100
+    api_verified: false
+    api:
+      # GASTAT exposes a statistical database UI; publications are listed as
+      # HTML with attached XLSX/PDF releases.
+      publications_index: /en/statistics-tabs
+      database_portal: https://database.stats.gov.sa
+    notes_ar: >-
+      الجهة الرسمية المسؤولة عن الإحصاءات الوطنية. تصدر نشرات سنوية وربعية،
+      وعادة ما تكون المرجع النهائي عند تعارض الأرقام.
+    topics: [population, labour, prices, gdp, trade, education, health, tourism,
+             transport, environment, housing, energy, ict, agriculture]
+
+  - id: wera
+    name_ar: هيئة تنظيم المياه والكهرباء
+    name_en: Water and Electricity Regulatory Authority
+    operator_ar: هيئة تنظيم المياه والكهرباء
+    operator_en: WERA
+    base_url: https://wera.gov.sa
+    adapter: html_index
+    authority: 95
+    api_verified: false
+    api:
+      publications_index: /
+    notes_ar: >-
+      المنظّم لقطاعي الكهرباء والمياه، ويصدر التقارير الإحصائية السنوية
+      للكهرباء (الأحمال، الاستهلاك، المشتركون) موزعة جغرافياً.
+    topics: [electricity, water, energy]
+
+  - id: moenergy
+    name_ar: وزارة الطاقة
+    name_en: Ministry of Energy
+    operator_ar: وزارة الطاقة
+    operator_en: Ministry of Energy
+    base_url: https://www.moenergy.gov.sa
+    adapter: html_index
+    authority: 85
+    api_verified: false
+    api:
+      publications_index: /
+    notes_ar: مصدر السياسات وبيانات قطاع الطاقة والكهرباء والطاقة المتجددة.
+    topics: [energy, electricity]
+
+  - id: sama
+    name_ar: البنك المركزي السعودي
+    name_en: Saudi Central Bank (SAMA)
+    operator_ar: البنك المركزي السعودي
+    operator_en: SAMA
+    base_url: https://www.sama.gov.sa
+    adapter: html_index
+    authority: 95
+    api_verified: false
+    api:
+      publications_index: /ar-sa/EconomicReports
+    notes_ar: النشرات الإحصائية النقدية والمصرفية وميزان المدفوعات.
+    topics: [prices, gdp, trade, finance]
+
+  - id: saudi_census
+    name_ar: تعداد السعودية
+    name_en: Saudi Census
+    operator_ar: الهيئة العامة للإحصاء
+    operator_en: GASTAT
+    base_url: https://portal.saudicensus.sa
+    adapter: html_index
+    authority: 100
+    api_verified: false
+    api:
+      publications_index: /
+    notes_ar: نتائج التعداد العام للسكان والمساكن بتفصيل جغرافي عميق.
+    topics: [population, housing]
+
+  - id: moh
+    name_ar: وزارة الصحة
+    name_en: Ministry of Health
+    operator_ar: وزارة الصحة
+    operator_en: Ministry of Health
+    base_url: https://www.moh.gov.sa
+    adapter: html_index
+    authority: 85
+    api_verified: false
+    api:
+      publications_index: /ar/Ministry/Statistics/book/Pages/default.aspx
+    notes_ar: الكتاب الإحصائي الصحي السنوي وبيانات المنشآت الصحية.
+    topics: [health]
+
+  - id: mewa
+    name_ar: وزارة البيئة والمياه والزراعة
+    name_en: Ministry of Environment, Water and Agriculture
+    operator_ar: وزارة البيئة والمياه والزراعة
+    operator_en: MEWA
+    base_url: https://www.mewa.gov.sa
+    adapter: html_index
+    authority: 85
+    api_verified: false
+    api:
+      publications_index: /ar/InformationCenter/Researchs/Reports/Pages/default.aspx
+    notes_ar: إحصاءات المياه والزراعة والبيئة.
+    topics: [water, agriculture, environment]
