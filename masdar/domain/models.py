@@ -278,6 +278,10 @@ class DatasetCandidate:
     # Sources that cannot declare leave this empty and are judged by their
     # column names instead.
     provided_dimensions: tuple[Dimension, ...] = ()
+    # What a reader must know about this kind of data, stated by the source
+    # adapter and carried into the answer's notes (e.g. "a live snapshot,
+    # not an annual statistic").
+    caveats: tuple[str, ...] = ()
     # Filled in by the ranker.
     score: float = 0.0
     match_reasons: tuple[str, ...] = ()

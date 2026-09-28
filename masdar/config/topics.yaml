@@ -34,9 +34,10 @@ topics:
     label_ar: سوق العمل
     label_en: Labour market
     keywords_ar: [العمل, سوق العمل, البطالة, التوظيف, العاملين, الموظفين, الأجور,
-                  القوى العاملة, التوطين, المناصب الإدارية, المشتغلين, تعويضات المشتغلين]
+                  القوى العاملة, التوطين, المناصب الإدارية, المشتغلين, تعويضات المشتغلين,
+                  العمالة]
     keywords_en: [labour, labor, unemployment, employment, wages, workforce, managerial positions]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, hrsd_live]
 
   - id: education
     label_ar: التعليم
@@ -125,9 +126,10 @@ topics:
   - id: agriculture
     label_ar: الزراعة
     label_en: Agriculture
-    keywords_ar: [الزراعة, المحاصيل, الثروة الحيوانية, الأسماك, النخيل]
-    keywords_en: [agriculture, crops, livestock, fisheries]
-    preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data]
+    keywords_ar: [الزراعة, المحاصيل, الثروة الحيوانية, الأسماك, النخيل, الإبل,
+                  النحل, خلايا النحل, الصيد, رخص الصيد, الصيادين, المواشي]
+    keywords_en: [agriculture, crops, livestock, fisheries, camels, bees, fishing]
+    preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, mewa_live]
 
   - id: finance
     label_ar: المالية والنقد

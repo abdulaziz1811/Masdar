@@ -54,6 +54,7 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
     from masdar.sources.adapters.gastat_api import GastatApiAdapter
     from masdar.sources.adapters.gastat_cdata import GastatCdataAdapter
     from masdar.sources.adapters.html_index import HtmlIndexAdapter
+    from masdar.sources.adapters.live_data import LiveDataAdapter
     from masdar.sources.adapters.opendatasoft import OpendatasoftAdapter
     from masdar.sources.adapters.saudi_open_data import SaudiOpenDataAdapter
 
@@ -63,6 +64,7 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
         "gastat_cdata": GastatCdataAdapter,
         "opendatasoft": OpendatasoftAdapter,
         "html_index": HtmlIndexAdapter,
+        "live_data": LiveDataAdapter,
         "fixture": FixtureAdapter,
     }
     try:

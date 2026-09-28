@@ -349,6 +349,111 @@ sources:
              transport, environment, housing, energy, electricity, water, ict,
              agriculture, finance, business, research, culture]
 
+  - id: hrsd_live
+    name_ar: البيانات اللحظية لوزارة الموارد البشرية والتنمية الاجتماعية
+    name_en: HRSD real-time open data
+    operator_ar: وزارة الموارد البشرية والتنمية الاجتماعية
+    operator_en: Ministry of Human Resources and Social Development
+    base_url: https://www.hrsd.gov.sa
+    adapter: live_data
+    authority: 90
+    # VERIFIED 2026-09-28 (Saudi exit): each file answers anonymously as a
+    # JSON array; the pages are listed on the national portal's real-time
+    # API page. The values are current snapshots with no history.
+    api_verified: true
+    access_checked: "2026-09-28"
+    access_notes_ar: >-
+      ثلاث صفحات «بيانات لحظية» لكل منها ملف JSON/CSV/XML. القيم لحظية بلا
+      تاريخ: تُختم بتاريخ الاستخراج، والتغطية سنة الاستخراج وحدها.
+    api:
+      indicators:
+        - id: labour-market-indicators
+          title_ar: مؤشرات قطاع العمل (بيانات لحظية)
+          title_en: Labour market indicators (real-time)
+          description: >-
+            إجمالي العمالة والسعوديين وغير السعوديين حسب الجنس، كما تعرضها
+            الوزارة لحظياً.
+          keywords: >-
+            إجمالي العمالة العمالة القوى العاملة السعوديين غير السعوديين
+            الموظفين المشتغلين سوق العمل workforce employment
+          url: https://www.hrsd.gov.sa/stelios-open-data/download/node/5557175/field_unlimited_data_source/0/json
+          landing: https://www.hrsd.gov.sa/knowledge-centre/data-and-statistics/open-data/real-time-data/mol-inquiry
+          shape: records
+          topics: [labour]
+          dimensions: [nationality, gender]
+        - id: social-development-indicators
+          title_ar: مؤشرات قطاع التنمية الاجتماعية (بيانات لحظية)
+          title_en: Social development indicators (real-time)
+          description: >-
+            «العدد الكلي» كما تعرضه الوزارة لقطاع التنمية الاجتماعية، دون
+            تعريف إضافي في المصدر.
+          keywords: التنمية الاجتماعية المستفيدين الضمان الاجتماعي social development
+          url: https://www.hrsd.gov.sa/stelios-open-data/download/node/5556738/field_unlimited_data_source/0/json
+          landing: https://www.hrsd.gov.sa/knowledge-centre/data-and-statistics/open-data/real-time-data/social-welfare
+          shape: records
+          topics: [labour, population]
+        - id: public-sector-workforce-distribution
+          title_ar: توزيع القوى العاملة في القطاع العام (بيانات لحظية)
+          title_en: Public sector workforce distribution (real-time)
+          description: >-
+            حسب المنطقة والجنس والحالة الاجتماعية والفئة العمرية، كما تعرضه
+            الوزارة لحظياً.
+          keywords: >-
+            القطاع العام القوى العاملة الموظفين الحكوميين المستفيدين حسب المنطقة
+            public sector workforce
+          url: https://www.hrsd.gov.sa/stelios-open-data/download/node/5556737/field_unlimited_data_source/0/json
+          landing: https://www.hrsd.gov.sa/knowledge-centre/data-and-statistics/open-data/real-time-data/distribution-workforce
+          shape: records
+          topics: [labour]
+          dimensions: [region, gender, age]
+    topics: [labour, population]
+
+  - id: mewa_live
+    name_ar: واجهة البيانات اللحظية لوزارة البيئة والمياه والزراعة
+    name_en: MEWA real-time data API
+    operator_ar: وزارة البيئة والمياه والزراعة
+    operator_en: Ministry of Environment, Water and Agriculture
+    base_url: https://www.mewa.gov.sa
+    adapter: live_data
+    authority: 90
+    # VERIFIED 2026-09-28 (Saudi exit), from the ministry's own API guide
+    # (Using_the_Mewa_API_to_consume_Real_Data.pdf). The live response
+    # carries the value in `Data`, not `Count` as the guide shows. The wells
+    # and farms counters answered IsSuccess=false and are left out.
+    api_verified: true
+    access_checked: "2026-09-28"
+    access_notes_ar: >-
+      عدّادات لحظية: عدد الإبل وخلايا النحل ورخص الصيد. عدّادا الآبار
+      والمزارع الموثقان في دليل الوزارة لا يُرجعان قيمة حالياً فلم يُضافا.
+    api:
+      indicators:
+        - id: camels
+          title_ar: عدد الإبل في المملكة (عدّاد لحظي)
+          title_en: Camels in the Kingdom (live counter)
+          keywords: الإبل عدد الإبل الثروة الحيوانية camels livestock
+          url: https://www.mewa.gov.sa/_layouts/MEWAHandler/MEWAHandler.ashx?type=getCamelsCount
+          shape: counter
+          value_label_ar: عدد الإبل
+          topics: [agriculture]
+        - id: bee-colonies
+          title_ar: عدد خلايا النحل في المملكة (عدّاد لحظي)
+          title_en: Bee colonies in the Kingdom (live counter)
+          keywords: النحل خلايا النحل المناحل العسل bees beehives
+          url: https://www.mewa.gov.sa/_layouts/MEWAHandler/MEWAHandler.ashx?type=getBeesCellsCount
+          shape: counter
+          value_label_ar: عدد خلايا النحل
+          topics: [agriculture]
+        - id: fishing-licences
+          title_ar: عدد رخص الصيد (عدّاد لحظي)
+          title_en: Fishing licences (live counter)
+          description: عدد رخص الصيد النظامية كما تعرضه الوزارة لحظياً.
+          keywords: الصيد رخص الصيد الصيادين الثروة السمكية الأسماك fishing licences
+          url: https://www.mewa.gov.sa/_layouts/MEWAHandler/MEWAHandler.ashx?type=getFishingLicensesCount
+          shape: counter
+          value_label_ar: عدد رخص الصيد
+          topics: [agriculture]
+    topics: [agriculture]
+
   - id: kapsarc
     name_ar: منصة بيانات مركز الملك عبدالله للدراسات والبحوث البترولية
     name_en: KAPSARC Data Portal

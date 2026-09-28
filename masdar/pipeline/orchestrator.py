@@ -35,7 +35,9 @@ from masdar.sources.registry import Registry
 
 @dataclass
 class AgentConfig:
-    max_sources: int = 4
+    # Enough for every verified source of a topic: several search a local
+    # catalogue (specs, configured indicators) and cost no request to ask.
+    max_sources: int = 6
     per_source_limit: int = 8
     # How many ranked candidates we are willing to open files for. Opening a
     # file is what upgrades a claim to OBSERVED_DATA, so this is the main
@@ -215,7 +217,7 @@ class Agent:
             coverage = candidate.claimed_coverage
             table: Table | None = None
             fetched = None
-            notes: list[str] = []
+            notes: list[str] = list(candidate.caveats)
 
             if candidate.source_id in down and (
                 coverage.is_empty or not coverage.origin.can_support_availability
