@@ -233,6 +233,13 @@
     .then(function (data) { renderOverview(data); pollStatus(); })
     .catch(function () { /* the page still works without the overview */ });
 
+  // Free hosts put a server to sleep after some idle minutes, and waking it
+  // takes about a minute. While this page is open it keeps the server awake,
+  // so the pause between opening the link and presenting costs nothing.
+  window.setInterval(function () {
+    fetch("/api/health", { credentials: "same-origin" }).catch(function () {});
+  }, 4 * 60 * 1000);
+
   // -- warm-up progress (hosted demos ask the examples at start-up) ------
   function markExamples(failed) {
     Array.prototype.forEach.call(document.querySelectorAll(".example"), function (b) {
@@ -485,11 +492,13 @@
   }
 
   // -- answers --------------------------------------------------------
-  function fact(dl, label, value, plain) {
+  function fact(dl, label, value, plain, sub) {
     var box = el("div", "fact");
     box.appendChild(el("dt", null, label));
     box.appendChild(el("dd", plain ? "plain" : null, value === null || value === undefined || value === "" ? "—" : value));
+    if (sub) box.appendChild(el("dd", "fact-sub", sub));
     dl.appendChild(box);
+    return box;
   }
   // 2014، 2015، 2016، 2019 -> "2014–2016، 2019"
   function yearsText(years) {
@@ -526,7 +535,11 @@
     sec.appendChild(head);
 
     var dl = el("dl", "facts");
-    fact(dl, "آخر تحديث معلن", f.last_updated || "غير معلن");
+    // Not every publisher dates its data (GASTAT's APIs do not); the date
+    // it was taken from the source is then the one date that can be given,
+    // and it is labelled as such.
+    fact(dl, "آخر تحديث معلن", f.last_updated || "لا تعلنه الجهة", false,
+      f.last_updated ? null : "استُخرج من المصدر: " + (f.retrieved_at || "").slice(0, 10));
     fact(dl, "أحدث سنة في البيانات", f.latest_year);
     fact(dl, "السنوات المطابقة لطلبك", f.matched_years.length ? yearsText(f.matched_years) : "لا شيء");
     fact(dl, "التحقق من السنوات", EVIDENCE[f.evidence] || f.evidence, true);
