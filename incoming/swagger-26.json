@@ -1,0 +1,672 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "إحصاءات أساليب الحياة / Life Styles Statistics",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.stats.gov.sa",
+            "description": "Prod Environment"
+        }
+    ],
+    "paths": {
+        "/v1/stats/DPV_HHCUL_HHCUL1": {
+            "get": {
+                "summary": "النسبة المئوية للأسر التي لديها مكتبة منزلية حسب المنطقة الإدارية / Households with private library by region",
+                "description": "النسبة المئوية للأسر التي تمتلك مكتبة منزلية / Percentage of households that own a home library",
+                "tags": [
+                    "إحصاءات الثقافة والترفية / Culture and Entertainment Statistics"
+                ],
+                "operationId": "getAllDPV_HHCUL_HHCUL1",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "REGION",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "REGION_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of REGION_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_HHCUL_HHCUL1 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_HHCUL_HHCUL1"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Social Statistics",
+                "x-parent-ar": "إحصاءات الخدمات الاجتماعية",
+                "x-main": "Life Styles Statistics",
+                "x-main-ar": "إحصاءات أساليب الحياة",
+                "x-sub": "Culture and Entertainment Statistics",
+                "x-sub-ar": "إحصاءات الثقافة والترفية"
+            }
+        },
+        "/v1/stats/DPV_HHCUL_HHCUL2": {
+            "get": {
+                "summary": "قراء الصحف والمجلات حسب المنطقة والجنس والجنسية ومستوى التعليمي / Newspaper and magazine readership by region, gender,  nationality and education level",
+                "description": "النسبة المئوية للأفراد الذين يقرؤون الصحف أو المجلات حسب (الجنسية والجنس، المناطق الإدارية، الحالة التعليمية) / Percentage of individuals who read newspapers or magazines by (gender, nationality, administrative region, educational status)",
+                "tags": [
+                    "إحصاءات الثقافة والترفية / Culture and Entertainment Statistics"
+                ],
+                "operationId": "getAllDPV_HHCUL_HHCUL2",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "EDUCATION_STATUS",
+                                    "NATIONALITY",
+                                    "REGION",
+                                    "SEX",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "EDUCATION_STATUS_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of EDUCATION_STATUS_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "NATIONALITY_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of NATIONALITY_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "REGION_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of REGION_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "SEX_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of SEX_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_HHCUL_HHCUL2 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_HHCUL_HHCUL2"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Social Statistics",
+                "x-parent-ar": "إحصاءات الخدمات الاجتماعية",
+                "x-main": "Life Styles Statistics",
+                "x-main-ar": "إحصاءات أساليب الحياة",
+                "x-sub": "Culture and Entertainment Statistics",
+                "x-sub-ar": "إحصاءات الثقافة والترفية"
+            }
+        },
+        "/v1/stats/DPV_HHCUL_HHCUL3": {
+            "get": {
+                "summary": "زيارات للأماكن الثقافية والترفيهية حسب المنطقة والجنس والجنسية والمستوى التعليمي / Visits to cultural and entertainment places by region, gender, nationality and education level",
+                "description": "النسبة المئوية للأفراد الذين يقومون بزيارة الأماكن الثقافية والترفيهية في مقر الإقامة حسب (الجنس والجنسية، المنطقة الإدارية، الحالة التعليمية) / Percentage of individuals who visit cultural and Entertainment places in the residence by (gender, nationality, administrative region, educational status)",
+                "tags": [
+                    "إحصاءات الثقافة والترفية / Culture and Entertainment Statistics"
+                ],
+                "operationId": "getAllDPV_HHCUL_HHCUL3",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "EDUCATION_STATUS",
+                                    "NATIONALITY",
+                                    "REGION",
+                                    "SEX",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "EDUCATION_STATUS_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of EDUCATION_STATUS_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "NATIONALITY_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of NATIONALITY_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "REGION_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of REGION_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "SEX_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of SEX_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_HHCUL_HHCUL3 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_HHCUL_HHCUL3"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Social Statistics",
+                "x-parent-ar": "إحصاءات الخدمات الاجتماعية",
+                "x-main": "Life Styles Statistics",
+                "x-main-ar": "إحصاءات أساليب الحياة",
+                "x-sub": "Culture and Entertainment Statistics",
+                "x-sub-ar": "إحصاءات الثقافة والترفية"
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DPV_HHCUL_HHCUL1": {
+                "type": "object",
+                "properties": {
+                    "ACADEMIC_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "AMBIGUITY_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "ART_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "BIOGRAPHY_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "FITNESS_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "HOUSEHOLDS_HAS_LIBRARY_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "LITERATURE_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "OTHER_BOOKS_ORDER_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "POLITICAL_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "REALISTIC_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "REGION_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "RELIGIOUS_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "ROMANTIC_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "SCIENCE_FICTION_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "TECHNOLOGY_BOOKS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "TOTAL_HOUSEHOLDS_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    }
+                },
+                "required": [
+                    "YEAR_TIME"
+                ]
+            },
+            "DPV_HHCUL_HHCUL2": {
+                "type": "object",
+                "properties": {
+                    "EDUCATION_STATUS_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "EDUCATION_STATUS_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "INDIVIDUALS_OLDER15_READING_BOOK_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "INDIVIDUALS_OLDER15_READING_NEWSPAPER_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "NATIONALITY_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "NATIONALITY_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "SEX_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "SEX_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "TOTAL_INDIVIDUALS_OLDER15_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    }
+                },
+                "required": [
+                    "YEAR_TIME"
+                ]
+            },
+            "DPV_HHCUL_HHCUL3": {
+                "type": "object",
+                "properties": {
+                    "EDUCATION_STATUS_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "EDUCATION_STATUS_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "NATIONALITY_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "NATIONALITY_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "SEX_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "SEX_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "TOTAL_MEMBERS_AGE_OLDER15_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "VISIT_CULTUER_PLACE_AGE_OLDER15_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    }
+                },
+                "required": [
+                    "YEAR_TIME"
+                ]
+            },
+            "CDataError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "$ref": "#/components/schemas/CDataInError"
+                    }
+                }
+            },
+            "CDataInError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

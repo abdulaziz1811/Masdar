@@ -1,0 +1,1057 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "إحصاءات الأسعار / Prices Statistics",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.stats.gov.sa",
+            "description": "Prod Environment"
+        }
+    ],
+    "paths": {
+        "/v1/stats/DPV_RS_CHANGE_QTR": {
+            "get": {
+                "summary": "التغير في أسعار العقارات على أساس ربعي (%) / Change of real estate price (Quarter-to-Quarter, %)",
+                "description": "مقدار التغير النسبي الذي طرأ على الرقم القياسي للعقارات / The relative change in the real estate price index",
+                "tags": [
+                    "إحصاءات أسعار العقارات / Real Estate Prices"
+                ],
+                "operationId": "getAllDPV_RS_CHANGE_QTR",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "BASKET_LEVELS",
+                                    "ITEM",
+                                    "QUARTER",
+                                    "YEAR_QUARTER",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "BASKET_LEVELS_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of BASKET_LEVELS_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "BASKET_LEVELS_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of BASKET_LEVELS_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ITEM_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of ITEM_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ITEM_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of ITEM_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "QUARTER_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of QUARTER_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_QUARTER_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_QUARTER_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_RS_CHANGE_QTR response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_RS_CHANGE_QTR"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Economic Statistics",
+                "x-parent-ar": "الإحصاءات الاقتصادية",
+                "x-main": "Prices Statistics",
+                "x-main-ar": "إحصاءات الأسعار",
+                "x-sub": "Real Estate Prices",
+                "x-sub-ar": "إحصاءات أسعار العقارات"
+            }
+        },
+        "/v1/stats/DPV_RS_CHANGE_YEAR": {
+            "get": {
+                "summary": "التغير في أسعار العقارات على أساس سنوي (%) / Change of real estate price (Year-to-Year, %)",
+                "description": "مقدار التغير النسبي الذي طرأ على الرقم القياسي للعقارات / The relative change in the real estate price index",
+                "tags": [
+                    "إحصاءات أسعار العقارات / Real Estate Prices"
+                ],
+                "operationId": "getAllDPV_RS_CHANGE_YEAR",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "BASKET_LEVELS",
+                                    "ITEM",
+                                    "QUARTER",
+                                    "YEAR_QUARTER",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "BASKET_LEVELS_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of BASKET_LEVELS_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "BASKET_LEVELS_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of BASKET_LEVELS_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ITEM_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of ITEM_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ITEM_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of ITEM_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "QUARTER_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of QUARTER_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_QUARTER_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_QUARTER_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_RS_CHANGE_YEAR response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_RS_CHANGE_YEAR"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Economic Statistics",
+                "x-parent-ar": "الإحصاءات الاقتصادية",
+                "x-main": "Prices Statistics",
+                "x-main-ar": "إحصاءات الأسعار",
+                "x-sub": "Real Estate Prices",
+                "x-sub-ar": "إحصاءات أسعار العقارات"
+            }
+        },
+        "/v1/stats/DPV_RS_EFPI0401": {
+            "get": {
+                "summary": "الرقم القياسي لأسعار العقارات حسب القطاع ونوع العقار حسب المنطقة الادارية (2023 = 100) / Real estate price index by real Estate type and region (2014 = 100)",
+                "description": "إداة إحصائية لقياس التغير في أسعار العقارات بين فترتين زمنيتين / A statistical tool to measure the change in real estate prices between two time periods",
+                "tags": [
+                    "إحصاءات أسعار العقارات / Real Estate Prices"
+                ],
+                "operationId": "getAllDPV_RS_EFPI0401",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "BASKET_LEVELS",
+                                    "INDICATOR_CD",
+                                    "INDICATOR_NAME",
+                                    "ITEM",
+                                    "QUARTER",
+                                    "REGION",
+                                    "UOM",
+                                    "YEAR_QUARTER",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "BASKET_LEVELS_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of BASKET_LEVELS_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "BASKET_LEVELS_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of BASKET_LEVELS_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "INDICATOR_CD_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of INDICATOR_CD_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "INDICATOR_NAME_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ITEM_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of ITEM_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ITEM_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of ITEM_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "QUARTER_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of QUARTER_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "REGION_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of REGION_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "UOM_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of UOM_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_QUARTER_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_QUARTER_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_RS_EFPI0401 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_RS_EFPI0401"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Economic Statistics",
+                "x-parent-ar": "الإحصاءات الاقتصادية",
+                "x-main": "Prices Statistics",
+                "x-main-ar": "إحصاءات الأسعار",
+                "x-sub": "Real Estate Prices",
+                "x-sub-ar": "إحصاءات أسعار العقارات"
+            }
+        },
+        "/v1/stats/DPV_RS_EFPI0405": {
+            "get": {
+                "summary": "التغير في أسعار العقارات على أساس سنوي (%) (المتوسط السنوي) / Change of real estate price (Yearly ; Year-to-Year, %)",
+                "description": "مقدار التغير النسبي الذي طرأ على الرقم القياسي للعقارات / The relative change in the real estate price index",
+                "tags": [
+                    "إحصاءات أسعار العقارات / Real Estate Prices"
+                ],
+                "operationId": "getAllDPV_RS_EFPI0405",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "ADMIN",
+                                    "BASKET_LEVELS",
+                                    "INDICATOR_CD",
+                                    "INDICATOR_NAME",
+                                    "ITEM",
+                                    "REGION",
+                                    "UOM",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "ADMIN_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of ADMIN_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ADMIN_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of ADMIN_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "BASKET_LEVELS_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of BASKET_LEVELS_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "BASKET_LEVELS_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of BASKET_LEVELS_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "INDICATOR_CD_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of INDICATOR_CD_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "INDICATOR_NAME_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ITEM_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of ITEM_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ITEM_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of ITEM_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "REGION_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of REGION_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "REGION_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of REGION_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "UOM_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of UOM_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_RS_EFPI0405 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_RS_EFPI0405"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Economic Statistics",
+                "x-parent-ar": "الإحصاءات الاقتصادية",
+                "x-main": "Prices Statistics",
+                "x-main-ar": "إحصاءات الأسعار",
+                "x-sub": "Real Estate Prices",
+                "x-sub-ar": "إحصاءات أسعار العقارات"
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DPV_RS_CHANGE_QTR": {
+                "type": "object",
+                "properties": {
+                    "BASKET_LEVELS_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 21
+                    },
+                    "BASKET_LEVELS_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1
+                    },
+                    "BASKET_LEVELS_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 15
+                    },
+                    "ITEM_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 2032
+                    },
+                    "ITEM_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "ITEM_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 2032
+                    },
+                    "OBSVALUE_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "QUARTER_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 10
+                    },
+                    "YEAR_QUARTER_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 10
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 40
+                    }
+                }
+            },
+            "DPV_RS_CHANGE_YEAR": {
+                "type": "object",
+                "properties": {
+                    "BASKET_LEVELS_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 21
+                    },
+                    "BASKET_LEVELS_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1
+                    },
+                    "BASKET_LEVELS_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 15
+                    },
+                    "ITEM_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 2038
+                    },
+                    "ITEM_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "ITEM_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 2038
+                    },
+                    "OBSVALUE_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "QUARTER_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 10
+                    },
+                    "YEAR_QUARTER_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 10
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 40
+                    }
+                }
+            },
+            "DPV_RS_EFPI0401": {
+                "type": "object",
+                "properties": {
+                    "BASKET_LEVELS_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 21
+                    },
+                    "BASKET_LEVELS_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1
+                    },
+                    "BASKET_LEVELS_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 15
+                    },
+                    "INDICATOR_CD_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "INDICATOR_NAME_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "INDICATOR_NAME_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "ITEM_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 2038
+                    },
+                    "ITEM_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "ITEM_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 2038
+                    },
+                    "OBSVALUE_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "QUARTER_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 10
+                    },
+                    "REGION_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "UOM_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "UOM_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "YEAR_QUARTER_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 10
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 40
+                    }
+                }
+            },
+            "DPV_RS_EFPI0405": {
+                "type": "object",
+                "properties": {
+                    "ADMIN_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "ADMIN_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "ADMIN_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "BASKET_LEVELS_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 21
+                    },
+                    "BASKET_LEVELS_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1
+                    },
+                    "BASKET_LEVELS_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 15
+                    },
+                    "INDICATOR_CD_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "INDICATOR_NAME_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "INDICATOR_NAME_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "ITEM_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 2038
+                    },
+                    "ITEM_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "ITEM_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 2038
+                    },
+                    "OBSVALUE_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "REGION_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "REGION_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "UOM_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "UOM_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 0
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 40
+                    }
+                }
+            },
+            "CDataError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "$ref": "#/components/schemas/CDataInError"
+                    }
+                }
+            },
+            "CDataInError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,164 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "إحصاءات الحسابات القومية / National Accounts Statistics",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.stats.gov.sa",
+            "description": "Prod Environment"
+        }
+    ],
+    "paths": {
+        "/v1/stats/DPV_NA_EFNA040801": {
+            "get": {
+                "summary": "الدخل القومي الإجمالي بالأسعار الجارية / Gross national income (GNI) at current price",
+                "description": "وهو عبارة عن الناتج المحلي الإجمالي مخصوماً منه الدخول الأولية التي تدفع للوحدات غير المقيمة مضافاً إلية الدخول الأولية المستلمة من الوحدات غير المقيمة وهو يعادل مجموع الدخول الأولية لجميع القطاعات في حسابات التوزيع الأولي للدخل. / It is the GDP minus the primary incomes payable to the non-resident units, plus the primary income receivable from the non-resident units and it is equal to the total primary income of all sectors in the primary distribution of income accounts.",
+                "tags": [
+                    "إحصاءات الحسابات القومية / National Accounts Statistics"
+                ],
+                "operationId": "getAllDPV_NA_EFNA040801",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_NA_EFNA040801 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_NA_EFNA040801"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Economic Statistics",
+                "x-parent-ar": "الإحصاءات الاقتصادية",
+                "x-main": "National Accounts Statistics",
+                "x-main-ar": "إحصاءات الحسابات القومية",
+                "x-sub": "National Accounts Statistics",
+                "x-sub-ar": "إحصاءات الحسابات القومية"
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DPV_NA_EFNA040801": {
+                "type": "object",
+                "properties": {
+                    "OBSVALUE_OBSV": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    }
+                },
+                "required": [
+                    "YEAR_TIME"
+                ]
+            },
+            "CDataError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "$ref": "#/components/schemas/CDataInError"
+                    }
+                }
+            },
+            "CDataInError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

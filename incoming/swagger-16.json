@@ -1,0 +1,269 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "SDG 11: Sustainable Cities and Communitiesl",
+        "description": "This specification contains the documentation for: SDG 11: Sustainable Cities and Communitiesl",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.stats.gov.sa",
+            "description": "Prod Environment"
+        }
+    ],
+    "paths": {
+        "/v1/stats/DPV_SDG11_6_2": {
+            "get": {
+                "summary": "Indicator 11.6.2: Annual mean levels of fine particulate matter (e.g., PM2.5 and PM10) in cities  / المؤشر 11.6.2: المتوســـط الســـنوي لمستويات الجسيمات (على سبيل المثال والجســـــــيمات من الفئة 10 و 2.5 في المدن (المرَّجح حسب السكان)",
+                "description": "Indicator 11.6.2: Annual mean levels of fine particulate matter (e.g., PM2.5 and PM10) in cities  / المؤشر 11.6.2: المتوســـط الســـنوي لمستويات الجسيمات (على سبيل المثال والجســـــــيمات من الفئة 10 و 2.5 في المدن (المرَّجح حسب السكان)",
+                "tags": [
+                    "SDG 11: Sustainable Cities and Communitiesl"
+                ],
+                "operationId": "getAllDPV_SDG11_6_2",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "INDICATORS",
+                                    "OBS_VALUE",
+                                    "PM",
+                                    "REGION",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "INDICATORS_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of INDICATORS_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "INDICATORS_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of INDICATORS_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OBS_VALUE",
+                        "in": "query",
+                        "description": "Filter data based on the value of OBS_VALUE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "PM_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of PM_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "PM_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of PM_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "REGION_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of REGION_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "REGION_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of REGION_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_SDG11_6_2 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_SDG11_6_2"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Sustainable Development Indicators",
+                "x-sub": "SDG 11: Sustainable Cities and Communitiesl"
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DPV_SDG11_6_2": {
+                "type": "object",
+                "properties": {
+                    "INDICATORS_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "INDICATORS_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "INDICATORS_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "OBS_VALUE": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "PM_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "PM_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "PM_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "REGION_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "REGION_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 1024
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    }
+                },
+                "required": [
+                    "INDICATORS_CODE",
+                    "PM_CODE",
+                    "REGION_CODE",
+                    "YEAR_TIME"
+                ]
+            },
+            "CDataError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "$ref": "#/components/schemas/CDataInError"
+                    }
+                }
+            },
+            "CDataInError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,203 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "SDG 10: Reduce Inequalities",
+        "description": "This specification contains the documentation for: SDG 10: Reduce Inequalities",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.stats.gov.sa",
+            "description": "Prod Environment"
+        }
+    ],
+    "paths": {
+        "/v1/stats/DPV_SDG10_C_1": {
+            "get": {
+                "summary": "Indicator 10.c.1 Remittance costs as a proportion of the amount remitted (in millions) / المؤشر 10.ج.1: تكاليف التحويلات المالية كنسبة من المبالغ المحولة (بالملايين)",
+                "description": "Indicator 10.c.1 Remittance costs as a proportion of the amount remitted (in millions) / المؤشر 10.ج.1: تكاليف التحويلات المالية كنسبة من المبالغ المحولة (بالملايين)",
+                "tags": [
+                    "SDG 10: Reduce Inequalities"
+                ],
+                "operationId": "getAllDPV_SDG10_C_1",
+                "parameters": [
+                    {
+                        "name": "dimensions[]",
+                        "in": "query",
+                        "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "INDICATORS",
+                                    "OBS_VALUE",
+                                    "YEAR"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "name": "INDICATORS_CODE",
+                        "in": "query",
+                        "description": "Filter data based on the value of INDICATORS_CODE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "INDICATORS_ENGL",
+                        "in": "query",
+                        "description": "Filter data based on the value of INDICATORS_ENGL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OBS_VALUE",
+                        "in": "query",
+                        "description": "Filter data based on the value of OBS_VALUE",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "YEAR_TIME",
+                        "in": "query",
+                        "description": "Filter data based on the value of YEAR_TIME",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "$orderby",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "The number of results to return."
+                    },
+                    {
+                        "name": "$skip",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "This is the offset of results to skip when returning results."
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JSON",
+                                "HTML",
+                                "CSV"
+                            ]
+                        },
+                        "description": "When set, the results will be returned in the requested format."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DPV_SDG10_C_1 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DPV_SDG10_C_1"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CDataError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-parent": "Sustainable Development Indicators",
+                "x-sub": "SDG 10: Reduce Inequalities"
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DPV_SDG10_C_1": {
+                "type": "object",
+                "properties": {
+                    "INDICATORS_ARAB": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 38
+                    },
+                    "INDICATORS_CODE": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "INDICATORS_ENGL": {
+                        "description": "",
+                        "type": "string",
+                        "maxLength": 44
+                    },
+                    "OBS_VALUE": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    },
+                    "YEAR_TIME": {
+                        "description": "",
+                        "type": "number",
+                        "maxLength": 22
+                    }
+                },
+                "required": [
+                    "INDICATORS_CODE",
+                    "YEAR_TIME"
+                ]
+            },
+            "CDataError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "$ref": "#/components/schemas/CDataInError"
+                    }
+                }
+            },
+            "CDataInError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
