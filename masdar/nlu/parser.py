@@ -147,6 +147,23 @@ def detect_topic(text: str, lexicon: Lexicon) -> tuple[Topic | None, tuple[str, 
     return best[1], best[2]
 
 
+def topics_in_text(text: str, lexicon: Lexicon | None = None) -> list[str]:
+    """Every topic a text supports, strongest first.
+
+    Unlike `detect_topic`, which picks one reading of a user's question, this
+    labels a dataset for recall: a dataset about household electricity is
+    both an electricity and a housing dataset, and should be found as either.
+    """
+    lexicon = lexicon or load_lexicon()
+    scored = []
+    for topic in lexicon.topics:
+        score, _ = _score_topic(text, topic)
+        if score > 0:
+            scored.append((score, topic.id))
+    scored.sort(key=lambda pair: (-pair[0], pair[1]))
+    return [topic_id for _, topic_id in scored]
+
+
 def detect_dimensions(text: str, lexicon: Lexicon) -> tuple[tuple[Dimension, ...], tuple[str, ...]]:
     found: list[Dimension] = []
     matched_words: list[str] = []

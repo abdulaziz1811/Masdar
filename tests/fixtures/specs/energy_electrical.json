@@ -1,0 +1,420 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "إحصاءات الطاقة / Energy Statistics",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_HES_EHE_IT_HES0301": {
+      "get": {
+        "tags": [
+          "إحصاءات الطاقة الكهربائية / Electrical Energy Statistics"
+        ],
+        "summary": "المساكن المتصلة بالكهرباء حسب مصدر الكهرباء ونوع الحيازة والمنطقة الإدارية / Housing units with electricity connection by electricity network, tenure type and region",
+        "description": "عدد المساكن المتصلة بالكهرباء معبرا عنه كنسبة مئوية من إجمالي المساكن / The percentage of households that connected to electricity, which can be expressed by percentage of the total number of households",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ELECTRICITY_NETWORK_TYPE",
+                  "HOUSE_TYPE",
+                  "POSSESSION_TYPE",
+                  "REGION",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ELECTRICITY_NETWORK_TYPE_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ELECTRICITY_NETWORK_TYPE_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ELECTRICITY_NETWORK_TYPE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ELECTRICITY_NETWORK_TYPE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "HOUSE_TYPE_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of HOUSE_TYPE_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "HOUSE_TYPE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of HOUSE_TYPE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "POSSESSION_TYPE_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of POSSESSION_TYPE_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "POSSESSION_TYPE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of POSSESSION_TYPE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "REGION_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of REGION_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "REGION_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of REGION_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ELECTRICITY_NETWORK_TYPE_ARAB": {
+                            "type": "string"
+                          },
+                          "ELECTRICITY_NETWORK_TYPE_CODE": {
+                            "type": "string"
+                          },
+                          "ELECTRICITY_NETWORK_TYPE_ENGL": {
+                            "type": "string"
+                          },
+                          "HH_CONNECTED_TO_ELECTRICITY_OBSV": {
+                            "type": "number"
+                          },
+                          "HOUSE_TYPE_ARAB": {
+                            "type": "string"
+                          },
+                          "HOUSE_TYPE_CODE": {
+                            "type": "string"
+                          },
+                          "HOUSE_TYPE_ENGL": {
+                            "type": "string"
+                          },
+                          "POSSESSION_TYPE_ARAB": {
+                            "type": "string"
+                          },
+                          "POSSESSION_TYPE_CODE": {
+                            "type": "string"
+                          },
+                          "POSSESSION_TYPE_ENGL": {
+                            "type": "string"
+                          },
+                          "REGION_ARAB": {
+                            "type": "string"
+                          },
+                          "REGION_CODE": {
+                            "type": "string"
+                          },
+                          "REGION_ENGL": {
+                            "type": "string"
+                          },
+                          "TOTAL_HH_OBSV": {
+                            "type": "number"
+                          },
+                          "YEAR_TIME": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stats/DPV_HES_EHE_IT_HES0303": {
+      "get": {
+        "tags": [
+          "إحصاءات الطاقة الكهربائية / Electrical Energy Statistics"
+        ],
+        "summary": "استهلاك الطاقة الكهربائية في المساكن حسب فترة الإستهلاك والمناطق الإدارية / Housing units electrical energy consumption by season and region",
+        "description": "وهي الكميات المستهلكة من الطاقة الكهربائية بالكيلو واط في المساكن خلال فصل الشتاء ( ديسمبر,يناير, فبراير)وباقي السنة / the Quantities consumed electrical energy in kilowatts in housings during the winter season (December, January, February) and the rest of the year.",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "CONSUMP_OPERATION_PERIOD",
+                  "REGION",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "CONSUMP_OPERATION_PERIOD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of CONSUMP_OPERATION_PERIOD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "CONSUMP_OPERATION_PERIOD_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of CONSUMP_OPERATION_PERIOD_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "REGION_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of REGION_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "REGION_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of REGION_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "CONSUMP_OPERATION_PERIOD_ARAB": {
+                            "type": "string"
+                          },
+                          "CONSUMP_OPERATION_PERIOD_CODE": {
+                            "type": "string"
+                          },
+                          "CONSUMP_OPERATION_PERIOD_ENGL": {
+                            "type": "string"
+                          },
+                          "REGION_ARAB": {
+                            "type": "string"
+                          },
+                          "REGION_CODE": {
+                            "type": "string"
+                          },
+                          "REGION_ENGL": {
+                            "type": "string"
+                          },
+                          "YEAR_TIME": {
+                            "type": "string"
+                          },
+                          "OBSVALUE_OBSV": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apikey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "apikey"
+      }
+    }
+  }
+}

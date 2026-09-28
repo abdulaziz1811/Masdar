@@ -1,0 +1,112 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "إحصاءات الأسعار / Prices Statistics",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://evil.example.com"
+    }
+  ],
+  "paths": {
+    "/v1/stats/TEST_PRICES_Q01": {
+      "get": {
+        "summary": "متوسط الأسعار حسب المنطقة / Price averages by region",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Dims"
+          },
+          {
+            "$ref": "#/components/parameters/QuarterTime"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Ok"
+          }
+        }
+      }
+    },
+    "/v1/stats/{datasetId}": {
+      "get": {
+        "summary": "generic / generic"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "Dims": {
+        "name": "dimensions[]",
+        "in": "query",
+        "schema": {
+          "$ref": "#/components/schemas/DimList"
+        }
+      },
+      "QuarterTime": {
+        "name": "QUARTER_TIME",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "DimList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DimNames"
+        }
+      },
+      "DimNames": {
+        "type": "string",
+        "enum": [
+          "REGION",
+          "QUARTER"
+        ]
+      },
+      "Row": {
+        "type": "object",
+        "properties": {
+          "REGION_ARAB": {
+            "type": "string"
+          },
+          "QUARTER_TIME": {
+            "type": "string"
+          },
+          "PRICE_OBSV": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "responses": {
+      "Ok": {
+        "description": "ok",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Row"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "k": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "apikey",
+        "x-example-apikey": "ENU4fakefakefakefakefake0000"
+      }
+    }
+  }
+}

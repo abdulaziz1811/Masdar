@@ -239,8 +239,11 @@ sources:
       في البيئة، لواجهة تطلبه.
     api:
       dataset_path: /v1/stats/{id}
-      # No catalogue endpoint exists, so datasets are declared here. Add one
-      # by copying its id and dimensions from the portal's API page.
+      # Every OpenAPI file in this directory contributes its datasets. This is
+      # the normal way to add them: `masdar import-spec <file>`.
+      spec_dir: specs/gastat
+      # Hand-declared datasets. These win over a spec entry with the same id,
+      # so curated titles and keywords survive a re-import.
       datasets:
         - id: DPV_HES_EHE_IT_HES0301
           title_ar: المساكن المتصلة بالكهرباء حسب مصدر الكهرباء ونوع الحيازة والمنطقة الإدارية

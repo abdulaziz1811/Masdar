@@ -232,6 +232,121 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 1 if (unreachable or rejected or failed) else 0
 
 
+
+def _slug(text: str) -> str:
+    import re
+
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", text).strip("-").lower()
+    return slug[:60] or "spec"
+
+
+def cmd_import_spec(args: argparse.Namespace) -> int:
+    """Validate downloaded OpenAPI files and add them to the spec directory.
+
+    Refuses a file that embeds a credential: some portals put the caller's
+    key into examples, and a spec is committed to the repository.
+    """
+    import json
+
+    from masdar.sources.openapi import SpecError, datasets_from_spec, find_secrets, load_spec
+
+    registry = load_registry()
+    descriptor = registry.get(args.source)
+    if descriptor is None:
+        print(f"❌ مصدر غير معروف: {args.source}")
+        return 2
+    adapter = registry.adapter(args.source)
+    destination = Path(args.dest) if args.dest else adapter._spec_dir()
+    if destination is None:
+        print(f"❌ المصدر {args.source} لا يحدد spec_dir في sources.yaml")
+        return 2
+    destination.mkdir(parents=True, exist_ok=True)
+
+    imported = failed = 0
+    for raw in args.files:
+        path = Path(raw)
+        try:
+            spec = load_spec(path)
+        except SpecError as exc:
+            failed += 1
+            print(f"❌ {exc}")
+            continue
+
+        secrets = find_secrets(spec)
+        if secrets:
+            failed += 1
+            print(f"🔐 {path.name}: رُفض — يحتوي ما يشبه مفتاحاً في:")
+            for location in secrets[:5]:
+                print(f"      {location}")
+            print("   أعد تنزيله، أو احذف هذه القيم، ثم أعد المحاولة. لا تُرفع المفاتيح للمستودع.")
+            continue
+
+        datasets = datasets_from_spec(spec, descriptor.base_url, path.stem)
+        if not datasets:
+            failed += 1
+            print(f"❌ {path.name}: لا يحتوي مسارات بيانات من نوع /v1/stats/<id>")
+            continue
+
+        info = spec.get("info") or {}
+        from masdar.sources.openapi import split_bilingual
+
+        _, title_en = split_bilingual(info.get("title"))
+        stem = _slug(path.stem if path.stem.lower() not in ("swagger", "openapi", "spec")
+                     else title_en or path.stem)
+        body = json.dumps(spec, ensure_ascii=False, indent=2) + "\n"
+
+        target = destination / f"{stem}.json"
+        counter = 2
+        while target.exists() and target.read_text(encoding="utf-8") != body:
+            target = destination / f"{stem}-{counter}.json"
+            counter += 1
+        if target.exists():
+            print(f"⚪ {path.name}: مستورد مسبقاً ({target.name})")
+            continue
+
+        target.write_text(body, encoding="utf-8")
+        imported += 1
+        ids = ", ".join(d["id"] for d in datasets[:4]) + ("…" if len(datasets) > 4 else "")
+        print(f"✅ {path.name} → {target.name}: {len(datasets)} مجموعة ({ids})")
+
+    print(f"\nالنتيجة: {imported} مستورد، {failed} مرفوض.")
+    return 1 if failed else 0
+
+
+def cmd_specs(args: argparse.Namespace) -> int:
+    """List the datasets a spec-driven source currently knows about."""
+    registry = load_registry()
+    if registry.get(args.source) is None:
+        print(f"❌ مصدر غير معروف: {args.source}")
+        return 2
+    adapter = registry.adapter(args.source)
+    datasets = adapter._datasets()
+
+    by_api: dict[str, list[dict]] = {}
+    for entry in datasets:
+        label = entry.get("api_ar") or entry.get("api_en") or "معلنة يدوياً في sources.yaml"
+        by_api.setdefault(label, []).append(entry)
+
+    for label, entries in by_api.items():
+        print(f"\n■ {label}  ({len(entries)})")
+        for entry in entries:
+            dimensions = entry.get("dimensions") or []
+            time = entry.get("time_dimension") or ("YEAR" if "YEAR" in dimensions else "—")
+            dims = [d for d in dimensions if d != time]
+            topics = ", ".join(entry.get("topics") or []) or "—"
+            print(f"  {entry['id']}")
+            print(f"      {str(entry.get('title_ar', ''))[:90]}")
+            print(f"      الزمن: {time} | الأبعاد: {', '.join(dims) or '—'} | المواضيع: {topics}")
+
+    problems = adapter.spec_problems()
+    print(f"\nالإجمالي: {len(datasets)} مجموعة بيانات.")
+    if problems:
+        print("\n⚠️ ملفات لم تُقرأ:")
+        for problem in problems:
+            print(f"   • {problem}")
+    return 1 if problems else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="masdar",
@@ -268,6 +383,16 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--no-cache", action="store_true")
     doctor.add_argument("--timeout", type=float, default=20.0)
     doctor.set_defaults(func=cmd_doctor)
+
+    importer = sub.add_parser("import-spec", help="استورد ملفات مواصفات OpenAPI")
+    importer.add_argument("files", nargs="+", help="ملفات JSON/YAML من بوابة المطوّرين")
+    importer.add_argument("--source", default="gastat_cdata")
+    importer.add_argument("--dest", help="مجلد الوجهة (الافتراضي: spec_dir للمصدر)")
+    importer.set_defaults(func=cmd_import_spec)
+
+    specs = sub.add_parser("specs", help="اعرض مجموعات البيانات المعروفة لمصدر")
+    specs.add_argument("--source", default="gastat_cdata")
+    specs.set_defaults(func=cmd_specs)
 
     return parser
 
