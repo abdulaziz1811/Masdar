@@ -1,0 +1,64 @@
+{
+ "transactionId": "19ebadc5-0580-443c-b70b-eb4d4dcac513",
+ "id": "134b9ff3-ef7c-4543-a245-72373fcf9531",
+ "titleEn": "Total electricity Consumption in KSA by operational areas",
+ "titleAr": " استهلاك مناطق المملكة من الكهرباء حسب المناطق التشغيلية",
+ "descriptionEn": "Total electricity Consumption in KSA (by operational areas)",
+ "descriptionAr": "استهلاك مناطق المملكة من الكهرباء حسب المناطق التشغيلية",
+ "providerNameEn": "ministry of energy",
+ "providerNameAr": "وزارة الطاقة",
+ "organizationId": "886f6d71-8034-47f7-914d-9613825d9153",
+ "updateFrequency": "YEARLY",
+ "language": "Arabic",
+ "timePeriod": "2022-01-01 - 2022-12-31",
+ "resourcesCount": 2,
+ "categories": [
+  {
+   "id": "e4944365-4c07-4365-9fbc-899f5d1d5253",
+   "titleEn": "Energy and Water",
+   "titleAr": "الطاقة والمياه",
+   "descriptionEn": "Energy and Water",
+   "descriptionAr": "الطاقة والمياه"
+  }
+ ],
+ "tags": [
+  {
+   "id": "8a01799f-d07e-4075-8217-068a9b3501f4",
+   "name": "Consumption"
+  },
+  {
+   "id": "b198cdc1-90f8-4e3c-a0b7-131cd9a83906",
+   "name": "Electricity"
+  },
+  {
+   "id": "0f4fb5fa-9350-46f7-a97c-db6a2b4a2620",
+   "name": "Saudi Arabia"
+  },
+  {
+   "id": "72755844-9e64-435b-ad56-3969c5178a8a",
+   "name": "استهلاك الكهرباء"
+  },
+  {
+   "id": "308f3c55-595e-4b85-8e28-2dbdb2326ca3",
+   "name": "السعودية"
+  },
+  {
+   "id": "f4b77c64-09fd-42a1-8b6a-3f220341f2ee",
+   "name": "حسب المناطق"
+  },
+  {
+   "id": "00af5876-c220-4838-9eb5-d41fce245b67",
+   "name": "Regional data"
+  },
+  {
+   "id": "fd960fb1-193b-487f-9f80-5d92744c9a74",
+   "name": "power"
+  },
+  {
+   "id": "1c4d7d64-79b8-488a-a796-73977798a031",
+   "name": "electricity"
+  }
+ ],
+ "createdAt": "2024-05-28 16:39:11",
+ "updatedAt": "2024-07-14 12:06:47"
+}

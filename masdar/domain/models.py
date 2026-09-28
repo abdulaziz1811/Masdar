@@ -282,12 +282,16 @@ class DatasetCandidate:
     score: float = 0.0
     match_reasons: tuple[str, ...] = ()
 
-    def best_tabular_resource(self) -> Resource | None:
+    def tabular_resources(self) -> list[Resource]:
+        """Every file that can become a table, most convenient first."""
         order = {"XLSX": 0, "XLS": 1, "CSV": 2, "TSV": 3, "JSON": 4}
-        ranked = sorted(
+        return sorted(
             (r for r in self.resources if r.is_tabular),
             key=lambda r: order.get(r.format, 99),
         )
+
+    def best_tabular_resource(self) -> Resource | None:
+        ranked = self.tabular_resources()
         return ranked[0] if ranked else None
 
 

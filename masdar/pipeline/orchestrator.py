@@ -273,44 +273,60 @@ class Agent:
     def _observe(
         self, candidate: DatasetCandidate
     ) -> tuple[Coverage | None, Table | None, object | None, str | None]:
-        """Open the actual file to see which years it holds."""
-        resource = candidate.best_tabular_resource()
-        if resource is None:
+        """Open the actual file to see which years it holds.
+
+        Every tabular file of the dataset is tried in order until one opens
+        with a readable year axis: publishers often attach the same table as
+        XLSX and CSV, and one damaged copy should not cost the answer.
+        """
+        resources = candidate.tabular_resources()
+        if not resources:
             return None, None, None, None
-        try:
-            fetched = self._fetch(candidate.source_id, resource.url)
-        except SourceUnreachable as exc:
-            return None, None, None, f"تعذّر تنزيل الملف للتحقق: {exc.reason}"
-        except SourceError as exc:
-            return None, None, None, f"تعذّر قراءة الملف: {exc.reason}"
 
-        try:
-            table = read_table(fetched.content, resource.format)
-        except Exception as exc:
-            return None, None, fetched, f"تعذّر تحليل الملف ({resource.format}): {exc}"
+        problems: list[str] = []
+        fallback: tuple[Table, object] | None = None
+        for resource in resources:
+            try:
+                fetched = self._fetch(candidate.source_id, resource.url)
+            except SourceUnreachable as exc:
+                problems.append(f"تعذّر تنزيل ملف {resource.format}: {exc.reason}")
+                continue
+            except SourceError as exc:
+                problems.append(f"تعذّر قراءة ملف {resource.format}: {exc.reason}")
+                continue
+            try:
+                table = read_table(fetched.content, resource.format)
+            except Exception as exc:
+                problems.append(f"تعذّر تحليل ملف {resource.format}: {exc}")
+                continue
 
-        years = table.observed_years()
-        if not years:
-            # The file opened but has no readable year axis, so it cannot
-            # upgrade the claim; the declared coverage stands.
+            years = table.observed_years()
+            if not years:
+                fallback = fallback or (table, fetched)
+                problems.append(f"ملف {resource.format} لا يحتوي عموداً يحدد السنة")
+                continue
+
+            note = "؛ ".join(problems) if problems else None
+            if note:
+                note = f"استُخدم ملف {resource.format} بعد تعذّر غيره: {note}"
             return (
-                None,
+                Coverage(
+                    years=years,
+                    origin=CoverageOrigin.OBSERVED_DATA,
+                    is_exhaustive=True,
+                    note="تم استخراج السنوات من محتوى الملف نفسه",
+                ),
                 table,
                 fetched,
-                "تم فتح الملف لكن لم يتم التعرف على عمود أو عنوان يحدد السنة.",
+                note,
             )
 
-        return (
-            Coverage(
-                years=years,
-                origin=CoverageOrigin.OBSERVED_DATA,
-                is_exhaustive=True,
-                note="تم استخراج السنوات من محتوى الملف نفسه",
-            ),
-            table,
-            fetched,
-            None,
-        )
+        # Nothing had a year axis. A file that opened can still be exported,
+        # but it cannot upgrade the claim; the declared coverage stands.
+        joined = "؛ ".join(problems)
+        if fallback is not None:
+            return None, fallback[0], fallback[1], joined
+        return None, None, None, joined
 
     def _fetch(self, source_id: str, url: str):
         """Let the owning adapter download its resource, credentials and all."""
@@ -327,6 +343,11 @@ class Agent:
         resource = candidate.best_tabular_resource() or (
             candidate.resources[0] if candidate.resources else None
         )
+        # Cite the file that was actually read -- the sha256 is of that file,
+        # which may not be the one ranked first if that one failed to open.
+        cited_url = fetched.url if fetched is not None else (
+            resource.url if resource else None
+        )
         last_updated = candidate.last_updated
         note = "" if last_updated else "لم يعلن المصدر تاريخ تحديث لهذه البيانات"
         if last_updated is None and fetched is not None:
@@ -341,7 +362,7 @@ class Agent:
             publisher_en=candidate.publisher_en or (descriptor.name_en if descriptor else ""),
             landing_url=candidate.landing_url,
             retrieved_at=fetched.retrieved_at if fetched else datetime.now(UTC),
-            resource_url=resource.url if resource else None,
+            resource_url=cited_url,
             last_updated=last_updated,
             last_updated_note=note,
             sha256=fetched.sha256 if fetched else None,

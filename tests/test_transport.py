@@ -195,7 +195,11 @@ class TestRecordedAccessFacts:
         assert portal.geo_restricted is True
         assert portal.waf is True
         assert portal.rendering == "spa"
-        assert portal.api_verified is False  # path still unconfirmed
+        # Confirmed from the platform's developer guide on 2026-09-28; the
+        # earlier guess (/data/api/v1/...) must not come back.
+        assert portal.api_verified is True
+        assert portal.api["dataset"].startswith("/data/api/datasets?")
+        assert "/v1/" not in " ".join(str(v) for v in portal.api.values())
 
     def test_unverified_geo_claims_are_not_asserted(self):
         from masdar.sources.registry import load_descriptors

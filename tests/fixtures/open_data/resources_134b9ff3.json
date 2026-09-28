@@ -1,0 +1,40 @@
+{
+ "transactionId": "544b0505-4b26-4494-8008-f7849821379d",
+ "datasetId": "134b9ff3-ef7c-4543-a245-72373fcf9531",
+ "resources": [
+  {
+   "id": "7c00e392-322e-4a74-a5c6-7548c87a49e8",
+   "name": "Total electricity cons in KSA cvs",
+   "descriptionEn": "Total electricity cons in KSA by operational areas",
+   "descriptionAr": " استهلاك مناطق المملكة من الكهرباء (حسب المناطق التشغيلية)",
+   "format": "CSV",
+   "columns": [
+    {
+     "name": "السنة",
+     "type": "date-time",
+     "description": null
+    }
+   ],
+   "downloadUrl": "https://open.data.gov.sa/odp-public/886f6d71-8034-47f7-914d-9613825d9153/134b9ff3-ef7c-4543-a245-72373fcf9531/v2/Total electricity cons in KSA cvs.csv",
+   "createdAt": "2024-07-14 12:06:48",
+   "updatedAt": "2024-07-14 12:06:48"
+  },
+  {
+   "id": "bcf1c2fe-e239-4d2c-b782-b72907bde8c8",
+   "name": "total electricity cons in KSA xlsx",
+   "descriptionEn": "total electricity cons in KSA by operational area",
+   "descriptionAr": " استهلاك مناطق المملكة من الكهرباء (حسب المناطق التشغيلية)",
+   "format": "XLSX",
+   "columns": [
+    {
+     "name": "السنة",
+     "type": "date-time",
+     "description": null
+    }
+   ],
+   "downloadUrl": "https://open.data.gov.sa/odp-public/886f6d71-8034-47f7-914d-9613825d9153/134b9ff3-ef7c-4543-a245-72373fcf9531/v2/total electricity cons in KSA xlsx.xlsx",
+   "createdAt": "2024-07-14 12:06:48",
+   "updatedAt": "2024-07-14 12:06:48"
+  }
+ ]
+}

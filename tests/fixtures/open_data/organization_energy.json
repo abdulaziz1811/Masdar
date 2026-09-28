@@ -1,0 +1,50 @@
+{
+ "transactionId": "9f486e14-8553-44ac-a2e1-507c2f5c389c",
+ "id": "886f6d71-8034-47f7-914d-9613825d9153",
+ "nameEn": "ministry of energy",
+ "nameAr": "وزارة الطاقة",
+ "typeEn": "Government",
+ "typeAr": "حكومي",
+ "datasets": [
+  {
+   "id": "134b9ff3-ef7c-4543-a245-72373fcf9531",
+   "titleEn": "Total electricity Consumption in KSA by operational areas",
+   "titleAr": " استهلاك مناطق المملكة من الكهرباء حسب المناطق التشغيلية"
+  },
+  {
+   "id": "0f9bccf6-ff3b-4be3-8e03-acbe6df551b6",
+   "titleEn": "Annual Electricity Consumption Share by SEC Administrative Region",
+   "titleAr": "نسبة استهلاك الكهرباء سنوياً حسب المناطق الإدارية للشركة السعودية للكهرباء"
+  },
+  {
+   "id": "2a75bbf3-f547-44d9-8096-92104a254517",
+   "titleEn": "Annual Electricity Consumption Share by Sector",
+   "titleAr": "نسبة استهلاك الكهرباء سنوياً حسب القطاعات"
+  },
+  {
+   "id": "0677740e-6348-4653-8069-5fde23f5bb28",
+   "titleEn": "Annual Electricity Consumption for Saudi Arabia",
+   "titleAr": "استهلاك الكهرباء السنوي للمملكة العربية السعودية"
+  },
+  {
+   "id": "2c0b9b99-fda4-4002-83b9-16e90dd33260",
+   "titleEn": "Electricity Connection Requests by Region",
+   "titleAr": "طلبات ايصال الخدمة الكهربائية حسب المناطق"
+  },
+  {
+   "id": "02d5f358-f6f7-499e-871a-83d861122bb2",
+   "titleEn": "Annual Crude Oil Production for Saudi Arabia",
+   "titleAr": "إنتاج النفط الخام السنوي للمملكة العربية السعودية"
+  },
+  {
+   "id": "12149e83-5f68-43bf-8a79-e737eba7780b",
+   "titleEn": "Number of Operating Fuel Stations in Riyadh Region",
+   "titleAr": "عدد محطات الوقود المشغلة في منطقة الرياض"
+  },
+  {
+   "id": "9b98eb5e-e230-43df-b28a-7a0a04fbf009",
+   "titleEn": "Yearly peak load",
+   "titleAr": "الحمل الذروي السنوي"
+  }
+ ]
+}

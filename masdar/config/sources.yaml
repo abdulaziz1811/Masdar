@@ -40,36 +40,46 @@ version: 1
 
 sources:
   - id: saudi_open_data
-    name_ar: البوابة الوطنية للبيانات المفتوحة
-    name_en: Saudi Open Data Portal
+    name_ar: منصة البيانات المفتوحة الوطنية
+    name_en: Saudi Open Data Platform
     operator_ar: الهيئة السعودية للبيانات والذكاء الاصطناعي (سدايا)
     operator_en: SDAIA
     base_url: https://open.data.gov.sa
     adapter: saudi_open_data
     authority: 90
-    api_verified: false
+    # VERIFIED on 2026-09-28 from the platform's developer guide
+    # (/ar/pages/developers-api) and live calls. The earlier guess,
+    # /data/api/v1/datasets, does not exist -- which is why the WAF rejected
+    # it. The web UI is an Angular SPA; the API below is plain JSON.
+    api_verified: true
     rendering: spa
     geo_restricted: true
     waf: true
-    access_checked: "2026-09-27"
+    access_checked: "2026-09-28"
     access_notes_ar: >-
-      وصلنا للصفحات عبر منفذ سعودي (HTTP 200)، لكن مسارات /data/api/... رُفضت
-      من جدار الحماية برسالة "Request Rejected". المسار أدناه غير مؤكَّد.
-      أسرع طريقة لتأكيده: افتح open.data.gov.sa/ar/datasets في المتصفح ثم
-      أدوات المطور ← Network ← فلتر XHR، وسيظهر المسار الحقيقي فوراً.
+      الواجهة موثّقة في دليل المطورين للمنصة. لا يوجد مسار يسرد كل الجهات ولا
+      مسار بحث في المجموعات، لذلك يُبنى الفهرس من قائمة الجهات أدناه: كل جهة
+      تُعيد كل مجموعاتها بعناوين عربية. تفاصيل المجموعة فيها تاريخ آخر تحديث
+      (updatedAt) والفترة المعلنة (timePeriod)، والملفات CSV وXLSX بروابط تنزيل
+      مباشرة. البحث باسم الجهة الإنجليزي فشل وبالعربي نجح، والمعرّف أثبت من
+      الاسم لذا يُستخدم هنا.
     api:
-      # UNCONFIRMED -- rejected by the WAF when called directly. Correct this
-      # from the browser's network tab, then set api_verified: true.
-      dataset_search: /data/api/v1/datasets
-      dataset_detail: /data/api/v1/datasets/{id}
-      # Portal UI language is switched by path segment, mirrored by the API.
-      languages: [ar, en]
-    notes_ar: >-
-      المنصة الوطنية الجامعة لبيانات الجهات الحكومية، وهي أول نقطة بحث لأنها
-      توفر ملفات جاهزة (CSV/XLSX) وبيانات وصفية عن تاريخ التحديث.
+      organization: /data/api/organizations?version=-1&organization={id}
+      dataset: /data/api/datasets?version=-1&dataset={id}
+      resources: /data/api/datasets/resources?version=-1&dataset={id}
+      # Publishers whose catalogues are searched. Each was verified live on
+      # 2026-09-28; the count is what it held then. Add more by id: a
+      # publisher's id is in its page URL, /ar/publishers/<id>.
+      organizations:
+        - {id: 886f6d71-8034-47f7-914d-9613825d9153, name_ar: وزارة الطاقة, datasets: 100}
+        - {id: bd9ff32e-4956-4dbf-bdde-1c1e4d786640, name_ar: الهيئة العامة للإحصاء, datasets: 84}
+        - {id: c43616c3-f3ac-41b9-bbad-040670bc396d, name_ar: وزارة الصحة, datasets: 100}
+        - {id: 3910a763-1829-445f-97b1-2bd988249b7e, name_ar: وزارة التعليم, datasets: 134}
+        - {id: 694ebd35-2ea6-4f1d-84b6-2ea875159b95, name_ar: وزارة البيئة والمياه والزراعة, datasets: 183}
+        - {id: 267814ec-1d12-40f6-9e6a-a2b3239aef7c, name_ar: وزارة الموارد البشرية والتنمية الاجتماعية, datasets: 122}
     topics: [electricity, energy, population, labour, education, health, water,
              housing, trade, prices, tourism, transport, environment, gdp, ict,
-             agriculture]
+             agriculture, finance]
 
   - id: gastat
     name_ar: الهيئة العامة للإحصاء

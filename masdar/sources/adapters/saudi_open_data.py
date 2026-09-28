@@ -1,215 +1,249 @@
-"""Adapter for the Saudi Open Data Portal (open.data.gov.sa).
+"""Adapter for the national open data platform, open.data.gov.sa.
 
-The portal's response shape could not be confirmed against the live service
-while this was written (the host is unreachable from the build environment),
-so the mapping below accepts the field names such portals commonly use and,
-when it recognises none of them, raises a `SourceError` naming the keys it
-actually received. That turns a wrong guess into a one-line fix in
-sources.yaml instead of a silent empty result.
+Verified live on 2026-09-28 against the platform's own developer guide
+(/ar/pages/developers-api). The earlier guess at `/data/api/v1/datasets` was
+wrong -- the WAF rejected it because it does not exist. The real endpoints:
+
+* `GET /data/api/organizations?version=-1&organization=<id or Arabic name>`
+  returns the publisher and *every* dataset it holds: `{id, titleEn,
+  titleAr}`. There is no endpoint listing all organisations and none that
+  searches datasets, so this is the way into the catalogue: the publishers
+  are configured, and their dataset lists form a local catalogue, searched
+  here. The titles are Arabic, which suits Arabic questions.
+* `GET /data/api/datasets?version=-1&dataset=<id>` returns the metadata:
+  provider, `updatedAt` (a real last-update date), `timePeriod` (declared
+  coverage, e.g. "2022-01-01 - 2022-12-31"), `updateFrequency`, categories
+  and Arabic tags such as "حسب المناطق".
+* `GET /data/api/datasets/resources?version=-1&dataset=<id>` lists the files,
+  CSV and XLSX, each with a `downloadUrl` and its columns.
+
+Declared coverage is a claim: it becomes METADATA_CLAIM and never exhaustive,
+because portal metadata goes stale (KAPSARC's descriptions do). The
+orchestrator opens the file and reads the years from it.
 """
 
 from __future__ import annotations
 
+import json
+import re
 from datetime import date, datetime
+from urllib.parse import quote, urlencode, urlsplit, urlunsplit
 
 from masdar.domain.models import (
     Coverage,
     CoverageOrigin,
     DataRequest,
     DatasetCandidate,
+    Dimension,
     Resource,
 )
-from masdar.nlu.parser import extract_years
-from masdar.sources.base import SourceAdapter, SourceError
+from masdar.nlu.lexicon import load_lexicon
+from masdar.nlu.normalize import contains_phrase
+from masdar.nlu.parser import typed_phrase_score
+from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 
-# Candidate field names, tried in order. Extend rather than replace when the
-# live shape is confirmed.
-_LIST_KEYS = ("data", "datasets", "results", "content", "items", "records")
-_ID_KEYS = ("id", "datasetId", "dataset_id", "identifier", "uuid", "slug")
-_TITLE_AR_KEYS = ("titleAr", "title_ar", "nameAr", "title", "name")
-_TITLE_EN_KEYS = ("titleEn", "title_en", "nameEn", "title", "name")
-_DESC_KEYS = ("description", "descriptionAr", "description_ar", "notes", "summary")
-_RESOURCE_KEYS = ("resources", "distributions", "files", "attachments", "dataFiles")
-_URL_KEYS = ("url", "downloadUrl", "download_url", "accessUrl", "access_url", "link", "path")
-_FORMAT_KEYS = ("format", "fileFormat", "file_format", "type", "extension", "mimeType")
-_UPDATED_KEYS = (
-    "lastModified", "last_modified", "updatedAt", "updated_at", "modified",
-    "lastUpdated", "last_updated", "publishedDate", "issued",
-)
-_PUBLISHER_KEYS = ("publisher", "organization", "organisation", "agency", "entity", "provider")
-_COVERAGE_KEYS = ("temporalCoverage", "temporal_coverage", "period", "coverage", "years")
-_LICENSE_KEYS = ("license", "licence", "licenseName", "rights")
+TABULAR = {"CSV", "XLSX", "XLS", "JSON", "TSV"}
+MAX_DETAIL_FETCHES = 5
+_DATE = re.compile(r"(\d{4})-\d{2}-\d{2}")
 
 
-def _first(payload: dict, keys: tuple[str, ...]) -> object | None:
-    for key in keys:
-        if key in payload and payload[key] not in (None, "", [], {}):
-            return payload[key]
-    return None
+def coverage_from_period(period: str | None) -> Coverage:
+    """Turn "2015-01-01 - 2023-12-31" into the years it declares.
 
-
-def _as_text(value: object) -> str:
-    """Flatten the localised-string objects portals like to return."""
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return value.strip()
-    if isinstance(value, dict):
-        for key in ("ar", "en", "value", "name", "label"):
-            if key in value:
-                return _as_text(value[key])
-        return ""
-    if isinstance(value, (list, tuple)):
-        return ", ".join(filter(None, (_as_text(v) for v in value)))
-    return str(value)
+    A declared range covers every year between its ends, not just the two
+    ends, so the years are expanded. It is a claim, never exhaustive.
+    """
+    years = [int(y) for y in _DATE.findall(str(period or ""))]
+    if not years:
+        return Coverage.unknown()
+    span = range(min(years), max(years) + 1)
+    return Coverage(
+        years=frozenset(span),
+        origin=CoverageOrigin.METADATA_CLAIM,
+        is_exhaustive=False,
+        note=f"الفترة المعلنة في المنصة: {period}",
+    )
 
 
 def _as_date(value: object) -> date | None:
-    text = _as_text(value)
+    text = str(value or "").strip()
     if not text:
         return None
-    text = text.replace("Z", "+00:00")
     for parse in (
-        lambda t: datetime.fromisoformat(t).date(),
+        lambda t: datetime.fromisoformat(t.replace("Z", "+00:00")).date(),
         lambda t: datetime.strptime(t[:10], "%Y-%m-%d").date(),
-        lambda t: datetime.strptime(t[:10], "%d/%m/%Y").date(),
     ):
         try:
             return parse(text)
-        except (ValueError, TypeError):
+        except ValueError:
             continue
     return None
 
 
-def _normalise_format(value: object, url: str) -> str:
-    text = _as_text(value).upper().strip(". ")
-    if "/" in text:  # a media type such as "application/vnd...sheet"
-        text = text.rsplit("/", 1)[-1]
-    if text in {"", "OCTET-STREAM", "BINARY"}:
-        tail = url.rsplit(".", 1)[-1].upper() if "." in url.rsplit("/", 1)[-1] else ""
-        text = tail
-    aliases = {
-        "VND.OPENXMLFORMATS-OFFICEDOCUMENT.SPREADSHEETML.SHEET": "XLSX",
-        "VND.MS-EXCEL": "XLS",
-        "EXCEL": "XLSX",
-        "SHEET": "XLSX",
-        "COMMA-SEPARATED-VALUES": "CSV",
-        "PLAIN": "CSV",
-    }
-    return aliases.get(text, text)
+def _encode_url(url: str) -> str:
+    """Download URLs carry raw spaces and Arabic in their file names."""
+    parts = urlsplit(url.strip())
+    return urlunsplit(parts._replace(path=quote(parts.path, safe="/%")))
 
 
 class SaudiOpenDataAdapter(SourceAdapter):
-    """Searches the national open-data portal's dataset API."""
+    """Catalogue from configured publishers; details and files on demand."""
 
-    def _search_url(self) -> str:
-        path = self.descriptor.api.get("dataset_search", "/data/api/v1/datasets")
-        return self.descriptor.url(path)
+    def _api(self, key: str, default: str, **values: str) -> str:
+        template = str(self.descriptor.api.get(key) or default)
+        path, _, query = template.partition("?")
+        params = [
+            (k, v.format(**values) if "{" in v else v)
+            for k, v in (pair.split("=", 1) for pair in query.split("&") if "=" in pair)
+        ]
+        url = self.descriptor.url(path)
+        return f"{url}?{urlencode(params)}" if params else url
 
+    def _get_json(self, url: str):
+        fetched = self.fetch(url)
+        try:
+            return json.loads(fetched.content.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise SourceError(self.id, f"استجابة غير صالحة: {exc}") from exc
+
+    def _organizations(self) -> list[dict]:
+        configured = self.descriptor.api.get("organizations") or []
+        return [o for o in configured if isinstance(o, dict) and o.get("id")]
+
+    # -- catalogue -----------------------------------------------------
+    def catalogue(self) -> tuple[list[dict], list[str]]:
+        """Every dataset of every configured publisher, with any failures.
+
+        One request per publisher, cached on disk by the HTTP layer. A
+        publisher that fails is reported, not fatal: the others still answer.
+        """
+        entries: list[dict] = []
+        problems: list[str] = []
+        for org in self._organizations():
+            url = self._api(
+                "organization",
+                "/data/api/organizations?version=-1&organization={id}",
+                id=str(org["id"]),
+            )
+            try:
+                payload = self._get_json(url)
+            except (SourceError, SourceUnreachable) as exc:
+                problems.append(f"{org.get('name_ar', org['id'])}: {exc.reason}")
+                continue
+            for item in payload.get("datasets") or [] if isinstance(payload, dict) else []:
+                if isinstance(item, dict) and item.get("id"):
+                    entries.append({
+                        "id": str(item["id"]),
+                        "title_ar": str(item.get("titleAr") or "").strip(),
+                        "title_en": str(item.get("titleEn") or "").strip(),
+                        "org_ar": str(payload.get("nameAr") or org.get("name_ar") or ""),
+                        "org_en": str(payload.get("nameEn") or ""),
+                    })
+        return entries, problems
+
+    def _score(self, request: DataRequest, entry: dict, lexicon) -> float:
+        text = f"{entry['title_ar']} {entry['title_en']}"
+        score, _ = typed_phrase_score(request, text)
+        if request.topic:
+            keywords = (*request.topic.keywords_ar, *request.topic.keywords_en,
+                        request.topic.label_ar, request.topic.label_en)
+            score += sum(1.0 for k in keywords if k and contains_phrase(text, k))
+        score += sum(2.0 for t in request.free_terms if contains_phrase(text, t))
+        if score <= 0:
+            return 0.0  # a breakdown word alone is not a match
+        for dimension in request.dimensions:
+            if any(contains_phrase(text, w) for w in lexicon.dimension_words.get(dimension, ())):
+                score += 2.0
+        return score
+
+    # -- search --------------------------------------------------------
     def search(self, request: DataRequest, limit: int = 10) -> list[DatasetCandidate]:
         if self.http is None:
             raise SourceError(self.id, "no HTTP client configured")
+        entries, problems = self.catalogue()
+        if not entries and problems:
+            raise SourceUnreachable(self.id, "؛ ".join(problems[:3]))
 
-        query = " ".join(request.search_terms()[:4]).strip()
-        params = {"q": query, "limit": limit} if query else {"limit": limit}
-        fetched = self.http.get(self._search_url(), source_id=self.id, params=params)
-        payload = fetched.json()
+        lexicon = load_lexicon()
+        scored = [(self._score(request, e, lexicon), e) for e in entries]
+        ranked = sorted((p for p in scored if p[0] > 0), key=lambda p: (-p[0], p[1]["title_ar"]))
 
-        rows = self._extract_rows(payload)
-        return [c for c in (self._to_candidate(row) for row in rows[:limit]) if c]
+        candidates: list[DatasetCandidate] = []
+        for _, entry in ranked[: min(limit, MAX_DETAIL_FETCHES)]:
+            try:
+                candidate = self._candidate(entry, lexicon)
+            except (SourceError, SourceUnreachable):
+                continue
+            if candidate is not None:
+                candidates.append(candidate)
+        return candidates
 
-    def _extract_rows(self, payload: object) -> list[dict]:
-        if isinstance(payload, list):
-            return [r for r in payload if isinstance(r, dict)]
-        if not isinstance(payload, dict):
-            raise SourceError(self.id, f"unexpected response type: {type(payload).__name__}")
-
-        for key in _LIST_KEYS:
-            value = payload.get(key)
-            if isinstance(value, list):
-                return [r for r in value if isinstance(r, dict)]
-            # Some portals nest one level deeper: {"data": {"datasets": [...]}}
-            if isinstance(value, dict):
-                for inner in _LIST_KEYS:
-                    nested = value.get(inner)
-                    if isinstance(nested, list):
-                        return [r for r in nested if isinstance(r, dict)]
-
-        raise SourceError(
-            self.id,
-            "could not find a dataset list in the response; top-level keys were "
-            f"{sorted(payload)[:12]}. Update _LIST_KEYS in this adapter or the "
-            "dataset_search path in sources.yaml.",
-        )
-
-    def _to_candidate(self, row: dict) -> DatasetCandidate | None:
-        dataset_id = _as_text(_first(row, _ID_KEYS))
-        title_ar = _as_text(_first(row, _TITLE_AR_KEYS))
-        title_en = _as_text(_first(row, _TITLE_EN_KEYS))
-        if not (dataset_id or title_ar or title_en):
+    def _candidate(self, entry: dict, lexicon) -> DatasetCandidate | None:
+        dataset_id = entry["id"]
+        details = self._get_json(self._api(
+            "dataset", "/data/api/datasets?version=-1&dataset={id}", id=dataset_id))
+        listing = self._get_json(self._api(
+            "resources", "/data/api/datasets/resources?version=-1&dataset={id}", id=dataset_id))
+        if not isinstance(details, dict):
             return None
 
+        files = listing.get("resources") if isinstance(listing, dict) else None
         resources: list[Resource] = []
-        raw_resources = _first(row, _RESOURCE_KEYS) or []
-        if isinstance(raw_resources, dict):
-            raw_resources = [raw_resources]
-        for entry in raw_resources:
-            if not isinstance(entry, dict):
+        columns: list[str] = []
+        for item in files or []:
+            if not isinstance(item, dict) or not item.get("downloadUrl"):
                 continue
-            url = _as_text(_first(entry, _URL_KEYS))
-            if not url:
-                continue
-            resources.append(
-                Resource(
-                    url=self.descriptor.url(url),
-                    format=_normalise_format(_first(entry, _FORMAT_KEYS), url),
-                    title=_as_text(_first(entry, _TITLE_AR_KEYS)),
-                    byte_size=entry.get("size") if isinstance(entry.get("size"), int) else None,
-                )
-            )
+            fmt = str(item.get("format") or "").upper().strip(".")
+            resources.append(Resource(
+                url=_encode_url(str(item["downloadUrl"])),
+                format=fmt,
+                title=str(item.get("name") or ""),
+            ))
+            columns.extend(str(c.get("name", "")) for c in item.get("columns") or []
+                           if isinstance(c, dict))
+        # Spreadsheets first: they are what the answer delivers.
+        order = {"XLSX": 0, "XLS": 1, "CSV": 2}
+        resources.sort(key=lambda r: order.get(r.format, 9 if r.format in TABULAR else 99))
 
-        # Declared coverage is a claim; a year read out of the title is only a
-        # hint. The two are kept apart because they carry different weight.
-        declared = _as_text(_first(row, _COVERAGE_KEYS))
-        if declared:
-            coverage = Coverage(
-                years=frozenset(extract_years(declared)),
-                origin=CoverageOrigin.METADATA_CLAIM,
-                note=f"التغطية المعلنة: {declared}",
-            )
-        else:
-            hinted = extract_years(f"{title_ar} {title_en}")
-            coverage = Coverage(
-                years=frozenset(hinted),
-                origin=CoverageOrigin.INFERRED_TITLE,
-                note="مستنتجة من العنوان" if hinted else "غير معلنة",
-            )
+        tags = [str(t.get("name") or "") for t in details.get("tags") or [] if isinstance(t, dict)]
+        categories = [
+            str(c.get("titleAr") or c.get("titleEn") or "")
+            for c in details.get("categories") or [] if isinstance(c, dict)
+        ]
+        title_ar = str(details.get("titleAr") or entry["title_ar"]).strip()
+        title_en = str(details.get("titleEn") or entry["title_en"]).strip()
+        frequency = str(details.get("updateFrequency") or "").strip()
+        description = str(details.get("descriptionAr") or details.get("descriptionEn") or "")
+        if frequency:
+            description = f"{description} — تكرار التحديث: {frequency}".strip(" —")
 
-        landing = _as_text(_first(row, ("landingPage", "landing_page", "url", "link")))
-        if not landing and dataset_id:
-            detail = self.descriptor.api.get("dataset_detail", "/data/api/v1/datasets/{id}")
-            landing = self.descriptor.url(detail.replace("{id}", dataset_id))
-
-        publisher = _as_text(_first(row, _PUBLISHER_KEYS)) or self.descriptor.operator_ar
+        # Breakdowns only from the files' declared columns -- their schema.
+        # A title or tag saying "حسب المناطق" describes the data; a column
+        # proves it is there. The orchestrator also checks the file itself.
+        present: list[Dimension] = []
+        column_text = " ".join(columns)
+        for dimension, words in lexicon.dimension_words.items():
+            if column_text and any(contains_phrase(column_text, w) for w in words):
+                present.append(dimension)
 
         return DatasetCandidate(
             source_id=self.id,
-            dataset_id=dataset_id or title_en or title_ar,
+            dataset_id=dataset_id,
             title_ar=title_ar or title_en,
             title_en=title_en,
-            description=_as_text(_first(row, _DESC_KEYS)),
-            landing_url=landing or self.descriptor.base_url,
-            publisher_ar=publisher,
-            publisher_en=_as_text(_first(row, _PUBLISHER_KEYS)) or self.descriptor.operator_en,
+            description=description,
+            keywords=" ".join([*tags, *categories]),
+            landing_url=self.descriptor.url(f"/ar/datasets/view/{dataset_id}"),
+            publisher_ar=str(details.get("providerNameAr") or entry["org_ar"]),
+            publisher_en=str(details.get("providerNameEn") or entry["org_en"]),
             resources=tuple(resources),
-            claimed_coverage=coverage,
-            last_updated=_as_date(_first(row, _UPDATED_KEYS)),
-            license_name=_as_text(_first(row, _LICENSE_KEYS)) or None,
-        )
+            claimed_coverage=coverage_from_period(details.get("timePeriod")),
+            last_updated=_as_date(details.get("updatedAt")),
+            provided_dimensions=tuple(present),
+        ) if resources or title_ar else None
 
     def probe(self) -> str:
-        fetched = self.http.get(self._search_url(), source_id=self.id, params={"limit": 1})
-        payload = fetched.json()
-        rows = self._extract_rows(payload)
-        sample = sorted(rows[0]) if rows else []
-        return f"HTTP {fetched.status}, {len(rows)} row(s); first-row keys: {sample[:15]}"
+        entries, problems = self.catalogue()
+        orgs = len(self._organizations())
+        failed = f"، {len(problems)} جهة لم تُجب" if problems else ""
+        return f"{len(entries)} مجموعة بيانات من {orgs} جهة{failed}"
