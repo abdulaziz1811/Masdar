@@ -1,0 +1,574 @@
+{
+"id": "59a61901-0624-4616-b7b0-688a82fca411",
+"nameEn": "ministry of commerce",
+"nameAr": "وزارة التجارة",
+"typeEn": "Government",
+"typeAr": "حكومي",
+"datasets": [
+{
+"id": "ec086e2a-353b-4929-b3d9-05a9db0051eb",
+"titleEn": "Association of Active Commercial Registrations with the National Classification of Economic Activities 2025",
+"titleAr": "ارتباط السجلات التجارية القائمة مع التصنيف الوطني للأنشطة الاقتصادية 2025"
+},
+{
+"id": "47bb366e-c90a-409e-a248-dafadd016da9",
+"titleEn": "The annual budget of the Ministry of Commerce 2016  ",
+"titleAr": "الميزانية السنوية لوزارة التجارة 2016 "
+},
+{
+"id": "a7f03d1c-ff13-4c40-a2b2-7377a6c74834",
+"titleEn": "Annual Budget of Ministry of Commerce for 2021",
+"titleAr": "الميزانية المخصصة لوزارة التجارة حسب العام 2021"
+},
+{
+"id": "e2eac77d-c4ff-4da1-9b0f-b80e9ae54ca0",
+"titleEn": "Reserved trade names 2024 Q4",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2024 الربع الرابع"
+},
+{
+"id": "4f12344b-0d81-4cdc-814d-4e1ddec61007",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2023",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2023"
+},
+{
+"id": "d426104d-9a24-4e86-8365-8e4bd9f18933",
+"titleEn": "Reserved trade names 2022 Q3",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2022 الربع الثالث"
+},
+{
+"id": "966c3d73-1956-4a82-b9cc-13dcb1c1ad89",
+"titleEn": "Reserved trade names 2025 Q3",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2025 الربع الثالث"
+},
+{
+"id": "8a15ab7c-978d-4efa-b84a-8bf0bd254017",
+"titleEn": "Association of Active Commercial Registrations with the National Classification of Economic Activities",
+"titleAr": "ارتباط السجلات التجارية القائمة مع التصنيف الوطني للأنشطة الاقتصادية"
+},
+{
+"id": "c9999ef0-1773-448f-8cc7-90e38e2a9e13",
+"titleEn": "Active Establishment Count by Economic Activity 2025 Q2",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الثاني 2025"
+},
+{
+"id": "f23b431d-f0fa-43bf-b308-07ecd68f2a50",
+"titleEn": "Active Commercial Registrations Count Based on the National Classification of Economic Activities",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية"
+},
+{
+"id": "d577fd08-b262-4156-8793-154f5b2403d9",
+"titleEn": "The number of active commercial records according to the national classification of economic activities for the year 2024 for the fourth quarter",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2024 الربع الرابع"
+},
+{
+"id": "57fe4e11-73da-4f79-ac73-961d5d609caf",
+"titleEn": "Statistics of Platform",
+"titleAr": "إحصائيات منصة وزارة التجارة"
+},
+{
+"id": "8d405699-9064-46af-9dda-50b687680e81",
+"titleEn": "Reserved trade names 2020 Q3",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2020 الربع الثالث"
+},
+{
+"id": "ac96dd5f-181a-45ae-b445-09d5e3bb7815",
+"titleEn": "Active Commercial Registers  the Interest in Practicing E commerce 2019",
+"titleAr": "السجلات التجارية القائمة  المفصحة بممارسة التجارة الإلكترونية لعام 2019"
+},
+{
+"id": "32091779-b906-43fb-bf5d-67da59dbf882",
+"titleEn": "Ministry of Commerce Budget",
+"titleAr": "الميزانية السنوية لوزارة التجارة"
+},
+{
+"id": "3298a7fa-dbfe-4c32-ae25-32a51c3af30b",
+"titleEn": "Reserved trade names 2020 Q4",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2020 الربع الرابع"
+},
+{
+"id": "694a6c2c-0028-44bc-94d5-d752f9759f6b",
+"titleEn": "Active Establishment Count by Economic Activity 2023 Q3",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الثالث 2023"
+},
+{
+"id": "12aba003-e194-4793-b496-33acc4d511d3",
+"titleEn": "Annual Budget of Ministry of Commerce for 2025",
+"titleAr": "الميزانية المخصصة لوزارة التجارة حسب العام 2025"
+},
+{
+"id": "81cf95ff-32d7-49df-9cff-59ae3c94636d",
+"titleEn": "Active Commercial Registrations Count Based on the National Classification of Economic Activities for the first quarter of 2024",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2024 للربع الاول"
+},
+{
+"id": "b2ebb57e-e52b-441e-b663-e33bafbc80f7",
+"titleEn": "Active Commercial Registration For 2023 By Q2",
+"titleAr": "السجلات التجارية القائمة لسنة 2023  حسب الربع السنوي الثانية"
+},
+{
+"id": "e5cc99db-492f-4293-a439-864ede8c3c6e",
+"titleEn": "Active Establishment Count by Economic Activity 2024 Q2",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الثاني 2024"
+},
+{
+"id": "47666d51-1d42-4710-b5c2-27677688a492",
+"titleEn": "Reserved trade names for the first quarter of 2020",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2020 الربع الاول"
+},
+{
+"id": "11f308ba-21c1-4951-a467-7d05ceece89a",
+"titleEn": "Reserved trade names 2022 Q2",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2022 الربع الثاني"
+},
+{
+"id": "eeda9efb-a74c-4fa3-ae0e-3389e50947ec",
+"titleEn": "Reserved trade names 2025 Q4",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2025 الربع الرابع"
+},
+{
+"id": "d43f924c-2c47-4fba-82d6-358330af5ff6",
+"titleEn": "Reserved trade names 2023 Q1",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2023 الربع الاول"
+},
+{
+"id": "46663ef0-5ac2-4ac9-90ea-8b707e3fac7a",
+"titleEn": "Active Commercial Registration For 2025 By Q1",
+"titleAr": "السجلات التجارية القائمة لسنة 2025 حسب الربع السنوي الاول"
+},
+{
+"id": "6401d467-f911-4d06-95a0-1e10abf45261",
+"titleEn": "The number of active commercial records according to the national classification of economic activities 2025 for the second quarter ",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2025 للربع الثاني"
+},
+{
+"id": "fe3fe86c-c1d1-4f97-8494-858bdd2841f6",
+"titleEn": "Reserved trade names 2020 Q2",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2020 الربع الثاني"
+},
+{
+"id": "20e940f6-e3eb-4ef9-b967-2225102677ad",
+"titleEn": "Statistics of services",
+"titleAr": "احصائيات خدمات وزارة التجارة"
+},
+{
+"id": "bb212875-c974-492f-a196-ecf64a91f26f",
+"titleEn": " Reserved trade names  2020 Q2",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2021 الربع الثاني"
+},
+{
+"id": "5672960a-d7f4-4ca9-8878-5242eb2690e0",
+"titleEn": "Certificate of Origin",
+"titleAr": "شهادة المنشأ"
+},
+{
+"id": "d764f97e-1a2d-4e65-a844-9e29eef1a7b6",
+"titleEn": "The number of active commercial records according to the national classification of economic activities for the year 2023 for the fourth quarter",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2023 الربع الرابع"
+},
+{
+"id": "adcfed5f-9370-4ec8-9dca-6325b5060ed4",
+"titleEn": "The number of active commercial records according to the national classification of economic activities 2024  for the second quarter ",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام  2024 للربع الثاني"
+},
+{
+"id": "0d0c8e72-98f7-4303-8e82-b67540011748",
+"titleEn": "Reserved trade names 2023 Q3",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2023 الربع الثالث"
+},
+{
+"id": "3ae34b0a-6a48-4b29-a27a-e9ed7e883030",
+"titleEn": "Active Establishment Count by Economic Activity 2025 Q1",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الأول 2025"
+},
+{
+"id": "56d2cd15-918f-4a0a-8a2d-2a9bb9ad1dee",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2022",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2022"
+},
+{
+"id": "a2d12ae9-a921-43ca-a06c-ccf9cac80195",
+"titleEn": "Active Commercial Registration For 2024 By Q4",
+"titleAr": "السجلات التجارية القائمة لسنة 2024 حسب الربع السنوي الرابع"
+},
+{
+"id": "ad5f1f10-d9ac-4ba4-ba83-5b40b130444e",
+"titleEn": "Active Establishment Count by Economic Activity 2023 Q2",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الثاني 2023"
+},
+{
+"id": "e73139eb-59e2-4524-a4ce-87f2f9dc1139",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2020",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2020"
+},
+{
+"id": "63a4ef04-8daa-469d-b7b7-933d7ddaa7ad",
+"titleEn": "Active Commercial Registers  the Interest in Practicing E commerce 2021",
+"titleAr": "السجلات التجارية القائمة  المفصحة بممارسة التجارة الإلكترونية لعام 2021"
+},
+{
+"id": "0e2cec61-c306-49c7-8f7b-b57bf00a9075",
+"titleEn": "Reserved trade names 2021 Q3",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2021 الربع الثالث"
+},
+{
+"id": "aef772cd-354c-48bb-9819-c60706dc8b56",
+"titleEn": "Active Commercial Registration For 2026 By Q1",
+"titleAr": "السجلات التجارية القائمة لسنة 2026حسب الربع السنوي الاول"
+},
+{
+"id": "f8f5779e-693c-49bc-8f0a-d179f673ca4c",
+"titleEn": " Active Commercial Registrations Count Based on the National Classification of Economic Activities  for the first quarter of 2023",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2023 الربع الاول"
+},
+{
+"id": "290e0057-f7e8-4e8c-9ca7-0056108e185e",
+"titleEn": "Reserved trade names 2022 Q1",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2022 الربع الاول"
+},
+{
+"id": "b24ffaf6-6df3-4199-9142-47bf358e5f63",
+"titleEn": "The number of active commercial records according to the national classification of economic activities 2025 for the third quarter",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2025 للربع الثالث"
+},
+{
+"id": "310d639f-c16b-4c3c-9875-a92a84ca758b",
+"titleEn": "The annual budget of the Ministry of Commerce in 2018",
+"titleAr": "الميزانية السنوية لوزارة التجارة 2018"
+},
+{
+"id": "f7115361-0e9a-44bb-9b84-da9305817f5c",
+"titleEn": "Annual Budget of Ministry of Commerce for 2019",
+"titleAr": "الميزانية المخصصة لوزارة التجارة حسب العام 2019"
+},
+{
+"id": "88690b48-c1d2-44c3-a431-f5cac141b302",
+"titleEn": "Active Establishment Count by Economic Activity 2024 Q3",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الثالث 2024"
+},
+{
+"id": "71e05496-74e4-4434-b681-ee44c273aa9d",
+"titleEn": "Reserved trade names 2023 Q4",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2023 الربع الرابع"
+},
+{
+"id": "fff0f59d-0cda-4435-8381-01df63a93659",
+"titleEn": "Active Establishment Count by Economic Activity 2024 Q1",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الأول 2024"
+},
+{
+"id": "82c144e8-27b5-4ab7-800c-6c36fb963bb2",
+"titleEn": "A list of economic activities according to the national classification for 2026 for the second quarter of existing issued records",
+"titleAr": "تعداد للأنشطة الاقتصادية حسب التصنيف الوطني  لعام 2026 للربع الثاني للسجلات القائمة المصدرة "
+},
+{
+"id": "d0b30b86-b534-4ee1-ba3c-381482b9d449",
+"titleEn": "Reserved trade names 2026 Q1",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2026 الربع الاول"
+},
+{
+"id": "7a6c3a8a-72c7-4c23-b234-9bb60f6f2b37",
+"titleEn": "License of Consulting Professions",
+"titleAr": "تراخيص المهن الاستشارية"
+},
+{
+"id": "bf50a526-62e8-468f-bf75-ab828e1dd1bd",
+"titleEn": "Active Commercial Registers the Interest in Practicing E commerce 2024",
+"titleAr": "السجلات التجارية القائمة  المفصحة بممارسة التجارة الإلكترونية لعام 2024"
+},
+{
+"id": "e2e5d89c-d47d-4978-a61e-0a870e7bf5aa",
+"titleEn": "Active Commercial Registration For 2025 By Q4",
+"titleAr": "السجلات التجارية القائمة لسنة 2025 حسب الربع السنوي الرابع"
+},
+{
+"id": "ab16a0c8-ae0c-421e-8793-d2b4472eb87a",
+"titleEn": "Reserved trade names 2025 Q2",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2025 الربع الثاني"
+},
+{
+"id": "207925a3-1f78-42b2-8772-b7743d85107c",
+"titleEn": "Reserved trade names 2021 Q4",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2021 الربع الرابع"
+},
+{
+"id": "ed041830-933d-4b93-aab2-c3b78822b22f",
+"titleEn": "Active Commercial Registration For 2026 By Q2",
+"titleAr": "السجلات التجارية القائمة لسنة 2026حسب الربع السنوي الثاني"
+},
+{
+"id": "bf35e995-26b8-4587-bb88-3e12ef463dca",
+"titleEn": "Procurements Contracts",
+"titleAr": "عقود المشتريات"
+},
+{
+"id": "3c17bece-2d4e-40c6-9404-e5e5943a2ddd",
+"titleEn": "Annual statistics from the Ministry of Commerce platform",
+"titleAr": "إحصائيات منصة وزارة التجارة بشكل سنوي"
+},
+{
+"id": "8f42eadc-933b-49c9-9405-a6817dfa26be",
+"titleEn": "Reserved trade names 2023 Q2",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2023 الربع الثاني"
+},
+{
+"id": "a285d519-74db-43ca-8f0c-3b66a1d14d70",
+"titleEn": "Active Commercial Registers  the Interest in Practicing E commerce 2018",
+"titleAr": "السجلات التجارية القائمة  المفصحة بممارسة التجارة الإلكترونية لعام 2018"
+},
+{
+"id": "25d1fdef-fabd-4325-8c23-1163cbdc7322",
+"titleEn": "The number of active commercial records according to the national classification of economic activities 2024 for the third quarter",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2024 الربع الثالث"
+},
+{
+"id": "22c89fa5-8fb5-425a-923a-f3e8d9f19515",
+"titleEn": "Active Commercial Registration For 2023 By Q4",
+"titleAr": "السجلات التجارية القائمة لسنة 2023  حسب الربع السنوي الرابع"
+},
+{
+"id": "4d6788a0-bf03-49b2-9853-1374e062b0af",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2017",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2017"
+},
+{
+"id": "d4125a90-ec79-4c48-9e9a-10038adb6708",
+"titleEn": "Active Commercial Registers  the Interest in Practicing E commerce 2020",
+"titleAr": "السجلات التجارية القائمة  المفصحة بممارسة التجارة الإلكترونية لعام 2020"
+},
+{
+"id": "4bb93a9a-e165-4ec9-84e9-eda4fcb343d0",
+"titleEn": "Active Establishment Count by Economic Activity 2023 Q4",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الرابع 2023"
+},
+{
+"id": "40ab7bdc-f6d3-4a9a-baeb-cfdf05b3f584",
+"titleEn": "MetaData MC",
+"titleAr": "البيانات الوصفية لوزارة التجارة"
+},
+{
+"id": "f030d9f4-c4e3-414e-8f00-4c7e8430964e",
+"titleEn": "Annual Budget of Ministry of Commerce for 2020",
+"titleAr": "الميزانية المخصصة لوزارة التجارة حسب العام 2020"
+},
+{
+"id": "95cd8ca2-e448-45c3-b35b-cccc2bd09a31",
+"titleEn": "The annual budget of the Ministry of Commerce in 2017",
+"titleAr": "الميزانية السنوية لوزارة التجارة 2017"
+},
+{
+"id": "598c90eb-6370-4935-ae12-a5cf9d98fc9a",
+"titleEn": "Association of Active Commercial Registrations with E-Commerce Declaration",
+"titleAr": "السجلات التجارية القائمة و المفصحة بممارسة التجارة الإلكترونية"
+},
+{
+"id": "267c0ffd-32b3-4431-9605-ec5d6b81d91c",
+"titleEn": "Active Commercial Registration For 2025 By Q3",
+"titleAr": "السجلات التجارية القائمة لسنة 2025 حسب الربع السنوي الثالث"
+},
+{
+"id": "0b6b63a6-66ac-432d-a3d4-d398ef024c96",
+"titleEn": "Active Commercial Registration For 2024 By Q1",
+"titleAr": "السجلات التجارية القائمة لسنة 2024 حسب الربع السنوي الاول"
+},
+{
+"id": "b41231d4-e5af-406b-8910-1015ba522029",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2018",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2018"
+},
+{
+"id": "01a70901-06e8-4d50-a750-d99125c294c7",
+"titleEn": "Reserved trade names 2025 Q1",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2025 الربع الاول"
+},
+{
+"id": "776a7f8b-3932-4f97-95d8-2ae52da89977",
+"titleEn": " Association of Active Commercial Registrations with the National Classification of Economic Activities 2024",
+"titleAr": "ارتباط السجلات التجارية القائمة مع التصنيف الوطني للأنشطة الاقتصادية 2024"
+},
+{
+"id": "f23bbe74-880a-45e7-871b-b950fca4a87f",
+"titleEn": "Reserved trade names 2024 Q3",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2024 الربع الثالث"
+},
+{
+"id": "14a14254-378f-441a-9a10-e089fafbce7c",
+"titleEn": "The number of active commercial records according to the national classification of economic activities 2025 for the first quarter ",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2025 للربع الاول"
+},
+{
+"id": "46a1111d-d7e0-4227-9244-825ae833af2e",
+"titleEn": " Active Commercial Registrations Count Based on the National Classification of Economic Activities  for the second quarter of 2023",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2023 الربع الثاني"
+},
+{
+"id": "49867733-acee-490b-8056-d69f4a48c9f4",
+"titleEn": "Reserved trade names 2026 Q2",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2026 الربع الثاني"
+},
+{
+"id": "babade75-8b26-463a-8459-d7ed91f7ae50",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2021",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2021"
+},
+{
+"id": "5a7f4264-6c5c-4e49-b7ca-8aa89443d768",
+"titleEn": "Active Establishment Count by Economic Activity 2024 Q4",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الرابع 2024"
+},
+{
+"id": "39909b65-962b-433b-ae1b-3044dddcdd05",
+"titleEn": " Association of Active Commercial Registrations with the National Classification of Economic Activities 2022",
+"titleAr": "ارتباط السجلات التجارية القائمة مع التصنيف الوطني للأنشطة الاقتصادية 2022"
+},
+{
+"id": "34278f64-18fa-45a0-8efb-8bdfab45c4a0",
+"titleEn": " Association of Active Commercial Registrations with the National Classification of Economic Activities 2023",
+"titleAr": "ارتباط السجلات التجارية القائمة مع التصنيف الوطني للأنشطة الاقتصادية 2023"
+},
+{
+"id": "12c20285-252f-4109-a88b-9f35f75ef3fa",
+"titleEn": "Reserved trade names 2024 Q2",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2024 الربع الثاني"
+},
+{
+"id": "b2695388-b1f9-496a-b8db-c8f2c0c6747c",
+"titleEn": "Trade Names",
+"titleAr": "الأسماء التجارية"
+},
+{
+"id": "62a8b92b-b761-41d5-97fe-e6eec52db6aa",
+"titleEn": "The annual budget of the Ministry of Commerce for 2026",
+"titleAr": "الميزانية السنوية لوزارة التجارة عام 2026"
+},
+{
+"id": "3be85285-6108-4481-be4f-1d2b091d31b3",
+"titleEn": "Reserved trade names 2022 Q4",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2022 الربع الرابع"
+},
+{
+"id": "e82014fa-2a5f-429c-ba85-5a8ac9a47552",
+"titleEn": "Active Commercial Registration For 2023 By Q3",
+"titleAr": "السجلات التجارية القائمة لسنة 2023  حسب الربع السنوي الثالث"
+},
+{
+"id": "91a30a68-261f-41a3-81b1-094c177cf101",
+"titleEn": "Annual Budget of Ministry of Commerce for 2024",
+"titleAr": "الميزانية المخصصة لوزارة التجارة حسب العام 2024"
+},
+{
+"id": "e3ef8d57-cbf2-4063-8410-f8d1314410f7",
+"titleEn": "The number of active commercial records according to the national classification of economic activities 2025 for the fourth quarter",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2025 الربع الرابع"
+},
+{
+"id": "0465c3bb-472a-40e5-8240-da31f62d7ec4",
+"titleEn": "Active Commercial Registration For 2024 By Q3",
+"titleAr": "السجلات التجارية القائمة لسنة 2024 حسب الربع السنوي الثالث"
+},
+{
+"id": "3e74ca15-e9b2-4970-b731-cc78838cdb1c",
+"titleEn": "MetaData_MC",
+"titleAr": "البيانات الوصفية "
+},
+{
+"id": "e629a996-1a54-40c9-ad14-9c9d22fab8e2",
+"titleEn": "The number of active commercial records according to the national classification of economic activities 2026 for the first quarter ",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2026 للربع الاول"
+},
+{
+"id": "b6d1c90b-37cd-4440-bb73-9c825126c4ee",
+"titleEn": "Active Commercial Registration For 2025 By Q2",
+"titleAr": "السجلات التجارية القائمة لسنة 2025 حسب الربع السنوي الثاني"
+},
+{
+"id": "e3c49428-702d-4641-891d-3c8dce144fa1",
+"titleEn": "Active Commercial Registration For 2023 By Q1",
+"titleAr": "السجلات التجارية القائمة لسنة 2023  حسب الربع السنوي الاول"
+},
+{
+"id": "1de43aa6-9d09-48e5-bf5e-c3213f925420",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2019",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2019"
+},
+{
+"id": "16537c96-fac4-4c7a-9702-d5d92d3ead25",
+"titleEn": "Active Establishment Count by Economic Activity 2023 Q1",
+"titleAr": "عدد السجلات التجارية حسب الأنشطة الاقتصادية للربع الأول 2023"
+},
+{
+"id": "ae36b578-d7b1-45ef-a1b1-e16b8e8ea1e6",
+"titleEn": "Commercial Registration",
+"titleAr": "السجلات التجارية"
+},
+{
+"id": "69d96ef9-cc31-4dcb-bc0a-ee48b2e7bd74",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2016",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2016"
+},
+{
+"id": "5c0d8bf4-8b3b-4434-a681-505fd726c95a",
+"titleEn": "Active Commercial Registration For 2024 By Q2",
+"titleAr": "السجلات التجارية القائمة لسنة 2024 حسب الربع السنوي الثانية"
+},
+{
+"id": "ce11768a-1395-4a61-86bf-3b49855da9aa",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2024",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2024"
+},
+{
+"id": "f1bfb843-f525-4bca-95b7-a0628521e834",
+"titleEn": "Annual Budget of Ministry of Commerce for 2022",
+"titleAr": "الميزانية المخصصة لوزارة التجارة حسب العام 2022"
+},
+{
+"id": "36c0e131-3fad-473b-95f1-9edee9695e0e",
+"titleEn": "The number of active commercial records according to the national classification of economic activities for the third quarter of 2023",
+"titleAr": "تعداد السجلات التجارية القائمة حسب التصنيف الوطني للأنشطة الاقتصادية لعام 2023 للربع الثالث"
+},
+{
+"id": "9e8a4038-39b8-48c5-a162-a842d24fea80",
+"titleEn": "The annual budget of the Ministry of Commerce from 2016 to 2025",
+"titleAr": "الميزانية السنوية لوزارة التجارة  من 2016 الى 2025"
+},
+{
+"id": "f65d8c51-4df0-4eb7-ba63-de8917561dd3",
+"titleEn": "Active Commercial Registers the Interest in Practicing E commerce 2022",
+"titleAr": "السجلات التجارية القائمة المفصحة بممارسة التجارة الإلكترونية لعام 2022"
+},
+{
+"id": "f29a0834-a75f-4339-88ab-bfe76bdc369c",
+"titleEn": "Active Commercial Registers the Interest in Practicing E commerce 2023",
+"titleAr": "السجلات التجارية القائمة المفصحة بممارسة التجارة الإلكترونية لعام 2023"
+},
+{
+"id": "a19e9920-7017-4fd6-8acf-7fe11df468d8",
+"titleEn": "The actual final expenditure and budget allocations for the Ministry of Commerce for the year 2025",
+"titleAr": "المنصرف الفعلي النهائي واعتمادات الميزانية لوزارة التجارة حسب العام 2025"
+},
+{
+"id": "6c939a1a-a70d-494f-8dd5-8ef4d1587cfe",
+"titleEn": "Ministry of Commerce Expenditure",
+"titleAr": "المنصرف الفعلي واعتمادات الميزانية لوزارة التجارة"
+},
+{
+"id": "d9ae2644-9fb8-414b-ab76-67a0c2cd2669",
+"titleEn": "Reserved trade names 2021 Q1",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2021الربع الاول"
+},
+{
+"id": "e33a3baa-bf60-4d54-94a8-2ed38a0bdc0d",
+"titleEn": "Annual Budget of Ministry of Commerce for 2023",
+"titleAr": "الميزانية المخصصة لوزارة التجارة حسب العام 2023"
+},
+{
+"id": "2b84b84e-0ce9-4d50-a7db-469e72de9530",
+"titleEn": "Active Commercial Registers  the Interest in Practicing E commerce 2025",
+"titleAr": "السجلات التجارية القائمة  المفصحة بممارسة التجارة الإلكترونية لعام 2025"
+},
+{
+"id": "74a2a28c-a63c-4c68-8d08-518b98e71567",
+"titleEn": "Reserved trade names 2024 Q1",
+"titleAr": "الأسماء التجارية المحجوزة لعام 2024 الربع الاول"
+}
+]
+}

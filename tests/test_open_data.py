@@ -226,3 +226,69 @@ class TestUnreachable:
         transport = PortalTransport(missing_orgs={ENERGY})
         with pytest.raises(SourceUnreachable):
             registry(transport).adapter("saudi_open_data").search(parse("الكهرباء 2022"))
+
+
+class TestYearsInTitles:
+    """Publishers split a series into one dataset per year or quarter.
+
+    Recorded live on 2026-09-28: the Ministry of Commerce publishes
+    «الأسماء التجارية المحجوزة لعام 2022 الربع الثالث» and its siblings as
+    separate datasets. Only the top few results are opened, so the year in
+    the title must steer the ranking, or a question about 2022 opens the 2020
+    files and reports 2022 as missing.
+    """
+
+    @staticmethod
+    def ranked(question):
+        import json
+
+        from masdar.nlu.lexicon import load_lexicon
+        from masdar.nlu.parser import parse
+        from masdar.sources.adapters.saudi_open_data import SaudiOpenDataAdapter
+
+        payload = json.loads(
+            (FIXTURES / "organization_commerce.json").read_text(encoding="utf-8")
+        )
+        entries = [
+            {"id": d["id"], "title_ar": d["titleAr"].strip(), "title_en": d["titleEn"].strip()}
+            for d in payload["datasets"]
+        ]
+        lexicon = load_lexicon()
+        request = parse(question, lexicon)
+        adapter = SaudiOpenDataAdapter.__new__(SaudiOpenDataAdapter)
+        scored = [(adapter._score(request, e, lexicon), e["title_ar"]) for e in entries]
+        return [t for s, t in sorted(scored, key=lambda p: (-p[0], p[1])) if s > 0]
+
+    def test_the_requested_year_is_opened_first(self):
+        top = self.ranked("الأسماء التجارية المحجوزة 2022")[:4]
+        assert all("2022" in title for title in top)
+
+    def test_other_years_stay_available_below(self):
+        titles = self.ranked("الأسماء التجارية المحجوزة 2022")
+        assert any("2021" in t for t in titles)
+
+    def test_latest_means_the_newest_year_then_quarter(self):
+        top = self.ranked("اخر بيانات السجلات التجارية القائمة")[0]
+        assert "2026" in top and "الثاني" in top
+
+    def test_a_later_quarter_never_outranks_a_later_year(self):
+        from masdar.nlu.parser import parse
+        from masdar.sources.adapters.saudi_open_data import _period_fit
+
+        latest = parse("اخر البيانات")
+        assert _period_fit(latest, "2026 Q1") > _period_fit(latest, "2025 Q4")
+
+    def test_quarters_are_read_however_they_are_written(self):
+        from masdar.sources.adapters.saudi_open_data import _title_quarter
+
+        assert _title_quarter("لسنة 2026حسب الربع السنوي الاول") == 1
+        assert _title_quarter("تعداد 2025 للربع الثاني") == 2
+        assert _title_quarter("المحجوزة لعام 2022 الربع الأول") == 1
+        assert _title_quarter("Active registrations 2024 By Q4") == 4
+        assert _title_quarter("نسب الإشغال 2024") == 0
+
+    def test_titles_without_a_year_are_left_alone(self):
+        from masdar.nlu.parser import parse
+        from masdar.sources.adapters.saudi_open_data import _period_fit
+
+        assert _period_fit(parse("السجلات التجارية 2024"), "السجلات التجارية") == 0.0

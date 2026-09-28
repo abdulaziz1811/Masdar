@@ -39,7 +39,7 @@ from masdar.domain.models import (
     Resource,
 )
 from masdar.nlu.lexicon import load_lexicon
-from masdar.nlu.normalize import contains_phrase
+from masdar.nlu.normalize import contains_phrase, fold_digits, normalize
 from masdar.nlu.parser import typed_phrase_score
 from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 
@@ -48,6 +48,56 @@ MAX_DETAIL_FETCHES = 5
 # Publishers fetched at once when the catalogue is not cached.
 CATALOGUE_WORKERS = 6
 _DATE = re.compile(r"(\d{4})-\d{2}-\d{2}")
+
+
+# Publishers often split one series into a dataset per year or quarter
+# («الأسماء التجارية المحجوزة لعام 2022 الربع الثالث»). Only a few results are
+# opened, so the year in the title has to steer which ones: without it, a
+# question about 2022 opened the 2020 files and reported 2022 as missing.
+_TITLE_YEAR = re.compile(r"(?<!\d)(19[5-9]\d|20\d\d)(?!\d)")
+# «الربع الرابع»، «للربع الثاني»، «الربع السنوي الاول»، «Q3» -- after normalize().
+_QUARTER = re.compile(r"ربع\s+(?:السنوي\s+)?(الاول|الثاني|الثانيه|الثالث|الرابع)|\bq([1-4])\b")
+_QUARTER_NUMBERS = {"الاول": 1, "الثاني": 2, "الثانيه": 2, "الثالث": 3, "الرابع": 4}
+W_TITLE_YEAR_MATCH = 4.0
+W_TITLE_YEAR_OTHER = -3.0
+W_PER_YEAR = 0.05
+# Strictly less than a year's step at its largest (4 x 0.01 < 0.05), so a
+# later quarter never outranks a later year.
+W_PER_QUARTER = 0.01
+
+
+def title_years(text: str) -> set[int]:
+    return {int(y) for y in _TITLE_YEAR.findall(fold_digits(text))}
+
+
+def _title_quarter(text: str) -> int:
+    found = [
+        _QUARTER_NUMBERS[word] if word else int(digit)
+        for word, digit in _QUARTER.findall(normalize(text).lower())
+    ]
+    return max(found, default=0)
+
+
+def _period_fit(request: DataRequest, text: str) -> float:
+    """How well the years a title names fit the years asked for.
+
+    A title naming a requested year moves up; one naming only other years
+    moves down but stays -- it may be the latest year there is, which the
+    answer should be able to offer. A title naming no year is a series of
+    unknown span and is left alone. For "the latest", newer titles win, and
+    within a year a later quarter wins, since it runs closer to the present.
+    """
+    years = title_years(text)
+    if not years:
+        return 0.0
+    quarter = _title_quarter(text) * W_PER_QUARTER
+    requested = set(request.period.years)
+    if requested:
+        if years & requested:
+            return W_TITLE_YEAR_MATCH + quarter
+        return W_TITLE_YEAR_OTHER
+    newest = max(years)
+    return max(0, min(newest - 2000, 60)) * W_PER_YEAR + quarter
 
 
 def coverage_from_period(period: str | None) -> Coverage:
@@ -177,7 +227,7 @@ class SaudiOpenDataAdapter(SourceAdapter):
         for dimension in request.dimensions:
             if any(contains_phrase(text, w) for w in lexicon.dimension_words.get(dimension, ())):
                 score += 2.0
-        return score
+        return score + _period_fit(request, text)
 
     # -- search --------------------------------------------------------
     def search(self, request: DataRequest, limit: int = 10) -> list[DatasetCandidate]:

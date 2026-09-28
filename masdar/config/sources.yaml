@@ -119,6 +119,18 @@ sources:
            topics: [culture, ict]}
         - {id: 529da479-2e94-4d79-8e71-55aa9e81baee, name_ar: وزارة الرياضة, datasets: 45,
            topics: [culture]}
+        - {id: fb522d21-fd36-4842-ac14-d838502a292b, name_ar: الهيئة العامة للعقار, datasets: 200,
+           topics: [housing, prices]}
+        - {id: afd0f613-3fae-42fa-a383-b87647e8d32f, name_ar: هيئة السوق المالية, datasets: 214,
+           topics: [finance, business]}
+        - {id: d69f01cd-ef1b-47e4-ad23-8e58a8d5a468, name_ar: الهيئة العامة للموانئ, datasets: 154,
+           topics: [transport, trade]}
+        - {id: f9049ff8-5aa0-458f-ad18-e3fff04cec6b, name_ar: هيئة الاتصالات والفضاء والتقنية,
+           datasets: 77, topics: [ict]}
+        - {id: 91e2baab-2d29-4f47-8791-bb7ddceea273, name_ar: المركز الوطني للأرصاد, datasets: 20,
+           topics: [environment, water]}
+        # Few and varied datasets: searched for every question.
+        - {id: 195499dd-56d1-4003-b436-551ff3c5838e, name_ar: وزارة الداخلية, datasets: 19}
     topics: [electricity, energy, population, labour, education, health, water,
              housing, trade, prices, tourism, transport, environment, gdp, ict,
              agriculture, finance, business, research, culture, justice]

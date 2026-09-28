@@ -64,8 +64,9 @@ topics:
   - id: housing
     label_ar: الإسكان
     label_en: Housing
-    keywords_ar: [الإسكان, المساكن, العقار, الوحدات السكنية, الملكية]
-    keywords_en: [housing, dwellings, real estate, residential units]
+    keywords_ar: [الإسكان, المساكن, العقار, الوحدات السكنية, الملكية,
+                  الصفقات العقارية, المؤشر العقاري, إيجارات]
+    keywords_en: [housing, dwellings, real estate, residential units, real estate transactions]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data]
 
   - id: trade
@@ -108,8 +109,10 @@ topics:
   - id: environment
     label_ar: البيئة
     label_en: Environment
-    keywords_ar: [البيئة, التلوث, الانبعاثات, النفايات, المناخ, الغطاء النباتي]
-    keywords_en: [environment, pollution, emissions, waste, climate]
+    keywords_ar: [البيئة, التلوث, الانبعاثات, النفايات, المناخ, الغطاء النباتي,
+                  الطقس, درجات الحرارة, درجة الحرارة, الأمطار, هطول الأمطار, الرطوبة]
+    keywords_en: [environment, pollution, emissions, waste, climate, weather,
+                  temperature, rainfall]
     preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat]
 
   - id: ict
@@ -138,7 +141,8 @@ topics:
     label_en: Business statistics
     keywords_ar: [المنشآت, المنشآت الاقتصادية, إحصاءات الأعمال, المنشآت الصغيرة والمتوسطة,
                   الإيرادات التشغيلية, النفقات التشغيلية, فائض التشغيل, الشركات,
-                  القطاع الخاص, النشاط الاقتصادي, الرقم القياسي للإنتاج الصناعي]
+                  القطاع الخاص, النشاط الاقتصادي, الرقم القياسي للإنتاج الصناعي,
+                  السجلات التجارية, السجل التجاري, الأسماء التجارية]
     keywords_en: [business, enterprises, establishments, smes, operating revenue,
                   industrial production index]
     preferred_sources: [gastat_cdata, gastat_db, saudi_open_data, gastat]
