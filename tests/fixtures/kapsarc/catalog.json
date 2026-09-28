@@ -1,0 +1,104 @@
+{
+ "total_count": 75,
+ "results": [
+  {
+   "dataset_id": "input-output-table-at-current-prices",
+   "title": "Input-Output Table at Current Prices by Divisions",
+   "title_ar": "Input-Output Table at Current Prices by Divisions",
+   "modified": "2026-05-05T12:54:32.745000+00:00",
+   "publisher": "General Authority for Statistics",
+   "records_count": 55757
+  },
+  {
+   "dataset_id": "number-of-subscribers-by-branches-of-the-saudi-electricity-company-and-type-of-c",
+   "title": "Number of Subscribers by Branches of The Saudi Electricity Company and Type of Consumption",
+   "title_ar": "Number of Subscribers by Branches of The Saudi Electricity Company and Type of Consumption",
+   "modified": "2026-09-15T01:37:15.662000+00:00",
+   "publisher": "Saudi Central Bank (SAMA)",
+   "records_count": 735,
+   "description": "This dataset contains Number of Subscribers by Branches of The Saudi Electricity Company and Type of Consumption from 2005-2022. Data from Saudi Central Bank (SAMA). Follow datasource.kapsarc.org and it’s APIs to stay in sync and advance energy economics research.Notes:- Blank Record = Not Available- Data for year 2020 is Provisional, and were reclassified by the source in 2020, and Includes Saudi Electricity Company and Marafiq.- Among others, including: health, education and water desalination.",
+   "license": "Public Domain",
+   "keyword": [
+    "Consumption",
+    "Subscribers"
+   ],
+   "theme": [
+    "Electricity"
+   ],
+   "theme_ar": [
+    "الكهرباء"
+   ],
+   "fields": [
+    {
+     "name": "year",
+     "description": null,
+     "annotations": {
+      "facet": true,
+      "facetsort": "-alphanum",
+      "timeserie_precision": "year",
+      "timerangeFilter": true
+     },
+     "label": "Year",
+     "type": "date"
+    },
+    {
+     "name": "region",
+     "description": null,
+     "annotations": {
+      "facet": true
+     },
+     "label": "Region",
+     "type": "text"
+    },
+    {
+     "name": "type_of_consumption",
+     "description": null,
+     "annotations": {
+      "facet": true
+     },
+     "label": "Type of Consumption",
+     "type": "text"
+    },
+    {
+     "name": "number_of_subscribers",
+     "description": null,
+     "annotations": {
+      "facetsort": "-count",
+      "decimals": 0
+     },
+     "label": "Number of Subscribers",
+     "type": "int"
+    },
+    {
+     "name": "name",
+     "description": null,
+     "annotations": {},
+     "label": "Name",
+     "type": "text"
+    },
+    {
+     "name": "date_object",
+     "description": null,
+     "annotations": {},
+     "label": "Date_Object",
+     "type": "date"
+    },
+    {
+     "name": "periodicity",
+     "description": null,
+     "annotations": {},
+     "label": "Periodicity",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "dataset_id": "electrical-energy-sold-by-consumption-type-gwh-",
+   "title": "Electrical Energy Sold by Consumption Type",
+   "title_ar": "Electrical Energy Sold by Consumption Type",
+   "modified": "2015-10-20T11:46:15+00:00",
+   "publisher": "Ministry of Environment, Water and Agriculture",
+   "records_count": 144
+  }
+ ]
+}

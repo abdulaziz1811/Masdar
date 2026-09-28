@@ -157,6 +157,9 @@ def topics_in_text(text: str, lexicon: Lexicon | None = None) -> list[str]:
     both an electricity and a housing dataset, and should be found as either.
     """
     lexicon = lexicon or load_lexicon()
+    # Qualifiers such as "بالأسعار الجارية" hold a topic word without being
+    # about that topic; take them out before labelling.
+    text = _without_phrases(text, lexicon.qualifiers)
     scored = []
     for topic in lexicon.topics:
         score, _ = _score_topic(text, topic)

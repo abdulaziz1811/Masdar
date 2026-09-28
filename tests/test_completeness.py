@@ -18,9 +18,9 @@ from masdar.domain.models import Verdict
 from masdar.pipeline.orchestrator import Agent, AgentConfig
 from masdar.sources.base import SourceError
 from masdar.sources.http import HttpClient
-from masdar.sources.registry import Registry, load_descriptors
+from masdar.sources.registry import Registry
 from masdar.sources.transport import Response
-from tests.fakes import aggregate, paged
+from tests.fakes import aggregate, cdata_descriptor, paged
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "gastat_cdata"
 SUMMED_2022 = "234.09"
@@ -56,7 +56,7 @@ class HealthTransport:
 
 
 def build(tmp_path, transport):
-    descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+    descriptors = (cdata_descriptor(),)
     http = HttpClient(use_cache=False, retries=1, transport=transport)
     return Agent(
         registry=Registry(descriptors, http),
@@ -126,7 +126,7 @@ class TestNoServerSideAggregation:
 
         transport = RoutingTransport()
         http = HttpClient(use_cache=False, retries=1, transport=transport)
-        descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+        descriptors = (cdata_descriptor(),)
         found = Registry(descriptors, http).adapter("gastat_cdata").search(
             parse("المساكن المتصلة بالكهرباء 2022 حسب المناطق")
         )
@@ -168,7 +168,7 @@ class TestPaging:
 
         # A server that ignores $skip returns the same page forever.
         transport = HealthTransport(ignore_skip=True)
-        descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+        descriptors = (cdata_descriptor(),)
         http = HttpClient(use_cache=False, retries=1, transport=transport)
         adapter = Registry(descriptors, http).adapter("gastat_cdata")
         candidate = next(
@@ -183,7 +183,7 @@ class TestPaging:
         from masdar.nlu.parser import parse
 
         monkeypatch.setattr(cdata, "MAX_PAGES", 2)
-        descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+        descriptors = (cdata_descriptor(),)
         http = HttpClient(use_cache=False, retries=1, transport=HealthTransport())
         adapter = Registry(descriptors, http).adapter("gastat_cdata")
         candidate = next(
@@ -208,7 +208,7 @@ class TestHealthSpecFromThePortal:
     def test_the_five_health_datasets_are_known(self):
         from masdar.sources.http import HttpClient
 
-        descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+        descriptors = (cdata_descriptor(),)
         adapter = Registry(descriptors, HttpClient(offline=True, retries=1)).adapter("gastat_cdata")
         ids = {d["id"] for d in adapter._datasets()}
         assert {
@@ -219,7 +219,7 @@ class TestHealthSpecFromThePortal:
     def test_obs_value_measures_are_recognised(self):
         from masdar.sources.http import HttpClient
 
-        descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+        descriptors = (cdata_descriptor(),)
         adapter = Registry(descriptors, HttpClient(offline=True, retries=1)).adapter("gastat_cdata")
         life = next(d for d in adapter._datasets() if d["id"] == "DPV_HLTH13_DPHLTH1304")
         assert life["measures"] == ["TOTAL_OBS_VALUE"]

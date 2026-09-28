@@ -96,12 +96,15 @@ class GastatCdataAdapter(SourceAdapter):
         path = Path(str(configured))
         return path if path.is_absolute() else CONFIG_DIR / path
 
+    def _template(self) -> str:
+        return str(self.descriptor.api.get("dataset_path") or "/v1/stats/{id}")
+
     def spec_problems(self) -> list[str]:
         """Spec files that could not be read, for `masdar specs`/doctor."""
         directory = self._spec_dir()
         if directory is None:
             return []
-        return datasets_from_dir(directory, self.descriptor.base_url)[1]
+        return datasets_from_dir(directory, self.descriptor.base_url, self._template())[1]
 
     def _datasets(self) -> list[dict]:
         """Hand-declared datasets, then every dataset in the spec directory.
@@ -118,7 +121,9 @@ class GastatCdataAdapter(SourceAdapter):
 
         directory = self._spec_dir()
         if directory is not None:
-            from_specs, _ = datasets_from_dir(directory, self.descriptor.base_url)
+            from_specs, _ = datasets_from_dir(
+                directory, self.descriptor.base_url, self._template()
+            )
             for entry in from_specs:
                 if str(entry["id"]) not in seen:
                     seen.add(str(entry["id"]))

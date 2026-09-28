@@ -272,3 +272,45 @@ class TestImportCommand:
         self._run(str(SPECS / "energy_electrical.json"), "--dest", str(tmp_path))
         self._run(str(SPECS / "energy_electrical.json"), "--dest", str(tmp_path))
         assert len(list(tmp_path.glob("*.json"))) == 1
+
+
+class TestTopicQualifiers:
+    def test_at_current_prices_is_not_a_prices_topic(self):
+        from masdar.nlu.parser import topics_in_text
+
+        # The real National Accounts spec titles GNI "بالأسعار الجارية".
+        topics = topics_in_text("الدخل القومي الإجمالي بالأسعار الجارية")
+        assert "prices" not in topics
+        assert "gdp" in topics
+
+    def test_a_genuine_prices_title_keeps_its_topic(self):
+        from masdar.nlu.parser import topics_in_text
+
+        assert "prices" in topics_in_text("الرقم القياسي لأسعار المستهلك")
+
+
+class TestRealDownloadsSupersedeReconstructions:
+    def test_reconstructed_spec_is_retired_when_the_download_arrives(self, tmp_path, capsys):
+        from masdar.cli import main
+
+        reconstructed = json.loads((SPECS / "energy_electrical.json").read_text(encoding="utf-8"))
+        reconstructed["info"]["x-masdar-provenance"] = "typed out from a pasted page"
+        (tmp_path / "energy-reconstructed.json").write_text(
+            json.dumps(reconstructed, ensure_ascii=False), encoding="utf-8"
+        )
+        assert main(["import-spec", str(SPECS / "energy_electrical.json"),
+                     "--dest", str(tmp_path)]) == 0
+        remaining = sorted(p.name for p in tmp_path.glob("*.json"))
+        assert remaining == ["energy-electrical.json"]
+
+    def test_a_downloaded_spec_is_never_retired(self, tmp_path):
+        from masdar.cli import main
+
+        (tmp_path / "earlier-download.json").write_text(
+            (SPECS / "energy_electrical.json").read_text(encoding="utf-8").replace(
+                "Energy Statistics", "Energy Statistics (earlier)"
+            ),
+            encoding="utf-8",
+        )
+        main(["import-spec", str(SPECS / "energy_electrical.json"), "--dest", str(tmp_path)])
+        assert (tmp_path / "earlier-download.json").exists()

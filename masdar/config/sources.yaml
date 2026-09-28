@@ -284,3 +284,28 @@ sources:
     topics: [population, labour, prices, gdp, trade, education, health, tourism,
              transport, environment, housing, energy, electricity, water, ict,
              agriculture, finance]
+
+  - id: kapsarc
+    name_ar: منصة بيانات مركز الملك عبدالله للدراسات والبحوث البترولية
+    name_en: KAPSARC Data Portal
+    operator_ar: مركز الملك عبدالله للدراسات والبحوث البترولية (كابسارك)
+    operator_en: KAPSARC
+    base_url: https://datasource.kapsarc.org
+    adapter: opendatasoft
+    # An aggregator: it republishes GASTAT, SAMA and ministry data. Each
+    # dataset names its originating publisher, and answers credit both.
+    authority: 80
+    # VERIFIED by direct calls on 2026-09-28: catalogue search, dataset
+    # metadata, group_by coverage and JSON export all answer anonymously.
+    api_verified: true
+    access_checked: "2026-09-28"
+    access_notes_ar: >-
+      منصة Opendatasoft فيها فهرس بحث حقيقي (بحث "electricity consumption"
+      أعاد 75 مجموعة)، ولكل مجموعة تاريخ آخر تحديث (modified) والجهة الناشرة
+      الأصلية والترخيص. التغطية تُستخرج بتجميع حقل السنة (group_by)، والبيانات
+      تُصدَّر كاملة بصيغة JSON بلا حد للصفوف، ويُتحقق من اكتمالها بمقارنة عدد
+      الصفوف بـ total_count. العناوين إنجليزية حتى في حقول _ar، فيُبحث بالكلمات
+      الإنجليزية للموضوع مع كلمات السؤال. وصف المجموعة قد يكون قديماً (مجموعة
+      المشتركين تقول 2005-2022 وبياناتها حتى 2025)، لذا لا تُقرأ التغطية منه.
+    topics: [energy, electricity, water, gdp, trade, prices, population, labour,
+             environment, transport, finance, agriculture, housing, tourism, ict]

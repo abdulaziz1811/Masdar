@@ -8,6 +8,7 @@ server semantics rather than against a fixture that ignores them.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from urllib.parse import parse_qsl, urlsplit
 
 
@@ -60,3 +61,22 @@ def aggregate(rows: list[dict], dimensions: list[str]) -> list[dict]:
             if column.upper().endswith(_MEASURE_SUFFIXES) and isinstance(value, (int, float)):
                 group[column] = group.get(column, 0) + value
     return list(groups.values())
+
+
+FIXTURE_SPECS = Path(__file__).resolve().parent / "fixtures" / "cdata_specs"
+
+
+def cdata_descriptor(spec_dir: Path | None = None):
+    """The configured gastat_cdata source, reading specs from `spec_dir`.
+
+    Tests must not read the real specs directory: every imported file would
+    change what they find. By default they see the hand-declared datasets and
+    the health spec kept under tests/fixtures/cdata_specs.
+    """
+    from dataclasses import replace
+
+    from masdar.sources.registry import load_descriptors
+
+    base = next(d for d in load_descriptors() if d.id == "gastat_cdata")
+    directory = spec_dir if spec_dir is not None else FIXTURE_SPECS
+    return replace(base, api={**base.api, "spec_dir": str(directory)})

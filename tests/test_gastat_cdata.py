@@ -24,9 +24,9 @@ from openpyxl import load_workbook
 from masdar.domain.models import Verdict
 from masdar.pipeline.orchestrator import Agent, AgentConfig
 from masdar.sources.http import HttpClient
-from masdar.sources.registry import Registry, load_descriptors
+from masdar.sources.registry import Registry
 from masdar.sources.transport import Response, Transport
-from tests.fakes import paged
+from tests.fakes import cdata_descriptor, paged
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "gastat_cdata"
 TODAY = date(2026, 9, 27)
@@ -78,7 +78,7 @@ def transport():
 @pytest.fixture
 def registry(transport):
     http = HttpClient(use_cache=False, retries=1, transport=transport)
-    descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+    descriptors = (cdata_descriptor(),)
     assert descriptors, "gastat_cdata must be registered in sources.yaml"
     return Registry(descriptors, http)
 

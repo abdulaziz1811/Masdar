@@ -54,12 +54,14 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
     from masdar.sources.adapters.gastat_api import GastatApiAdapter
     from masdar.sources.adapters.gastat_cdata import GastatCdataAdapter
     from masdar.sources.adapters.html_index import HtmlIndexAdapter
+    from masdar.sources.adapters.opendatasoft import OpendatasoftAdapter
     from masdar.sources.adapters.saudi_open_data import SaudiOpenDataAdapter
 
     registry: dict[str, type[SourceAdapter]] = {
         "saudi_open_data": SaudiOpenDataAdapter,
         "gastat_api": GastatApiAdapter,
         "gastat_cdata": GastatCdataAdapter,
+        "opendatasoft": OpendatasoftAdapter,
         "html_index": HtmlIndexAdapter,
         "fixture": FixtureAdapter,
     }
@@ -100,7 +102,7 @@ class Registry:
     def plan(
         self, topic_id: str | None, preferred: tuple[str, ...] = ()
     ) -> tuple[SourceDescriptor, ...]:
-        """Search order: the topic's preferred sources, then the rest.
+        """Search order: verified before unverified, then by preference.
 
         Preference comes from the topic lexicon (who originates this kind of
         statistic), authority only breaks the remaining ties.
@@ -113,6 +115,11 @@ class Registry:
             if descriptor is not None:
                 ordered.append(descriptor)
         ordered.extend(d for d in candidates if d.id in by_id)
+        # Verified sources first, preference order kept within each group.
+        # The run consults only a few sources, and a slot spent on one whose
+        # endpoint was never confirmed is a slot a working source did not get.
+        # A source moves up by being verified, not by edits to this ordering.
+        ordered.sort(key=lambda d: not d.api_verified)
         return tuple(ordered)
 
 

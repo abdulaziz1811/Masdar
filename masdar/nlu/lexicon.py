@@ -22,10 +22,12 @@ class Lexicon:
         topics: tuple[Topic, ...],
         dimension_words: dict[Dimension, tuple[str, ...]],
         stopwords: frozenset[str] = frozenset(),
+        qualifiers: tuple[str, ...] = (),
     ):
         self.topics = topics
         self.dimension_words = dimension_words
         self.stopwords = stopwords
+        self.qualifiers = qualifiers
         self._by_id = {t.id: t for t in topics}
 
     def get(self, topic_id: str) -> Topic | None:
@@ -63,7 +65,14 @@ def _load(path: Path) -> Lexicon:
         word for word in normalize(raw.get("stopwords") or "").split() if word
     )
 
-    return Lexicon(topics=topics, dimension_words=dimension_words, stopwords=stopwords)
+    qualifiers = tuple(str(q) for q in (raw.get("qualifiers") or []) if q)
+
+    return Lexicon(
+        topics=topics,
+        dimension_words=dimension_words,
+        stopwords=stopwords,
+        qualifiers=qualifiers,
+    )
 
 
 @functools.lru_cache(maxsize=1)

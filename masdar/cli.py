@@ -240,6 +240,30 @@ def _slug(text: str) -> str:
     return slug[:60] or "spec"
 
 
+def _retire_reconstructions(directory: Path, keep: Path, ids: set[str]) -> None:
+    """Remove hand-reconstructed specs that a downloaded one now covers.
+
+    A spec typed out from a pasted portal page carries x-masdar-provenance.
+    Once the real download for the same datasets arrives it is the better
+    record, and keeping both would leave two sources for the same ids.
+    """
+    import json
+
+    for other in sorted(directory.glob("*.json")):
+        if other == keep:
+            continue
+        try:
+            spec = json.loads(other.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not (spec.get("info") or {}).get("x-masdar-provenance"):
+            continue
+        theirs = {path.rstrip("/").rsplit("/", 1)[-1] for path in spec.get("paths") or {}}
+        if theirs and theirs <= ids:
+            other.unlink()
+            print(f"   ↳ حُذفت النسخة المُعاد بناؤها يدوياً {other.name}: حلّ محلها الملف الأصلي")
+
+
 def cmd_import_spec(args: argparse.Namespace) -> int:
     """Validate downloaded OpenAPI files and add them to the spec directory.
 
@@ -281,18 +305,26 @@ def cmd_import_spec(args: argparse.Namespace) -> int:
             print("   أعد تنزيله، أو احذف هذه القيم، ثم أعد المحاولة. لا تُرفع المفاتيح للمستودع.")
             continue
 
-        datasets = datasets_from_spec(spec, descriptor.base_url, path.stem)
+        template = str(descriptor.api.get("dataset_path") or "/v1/stats/{id}")
+        datasets = datasets_from_spec(spec, descriptor.base_url, path.stem, template)
         if not datasets:
             failed += 1
-            print(f"❌ {path.name}: لا يحتوي مسارات بيانات من نوع /v1/stats/<id>")
+            print(
+                f"❌ {path.name}: لا يحتوي مسارات بيانات بالشكل {template} — "
+                "ليست مواصفة لهذا المصدر"
+            )
             continue
 
-        info = spec.get("info") or {}
         from masdar.sources.openapi import split_bilingual
 
-        _, title_en = split_bilingual(info.get("title"))
-        stem = _slug(path.stem if path.stem.lower() not in ("swagger", "openapi", "spec")
-                     else title_en or path.stem)
+        # Portal downloads are all called swagger(-N).json; name the file
+        # after what it holds. The operation tag is more specific than the
+        # API title ("Electrical Energy Statistics" vs "Energy Statistics").
+        first = next(iter(spec.get("paths", {}).values()), {}).get("get", {})
+        tag_en = split_bilingual(" ".join(first.get("tags") or []))[1]
+        title_en = split_bilingual((spec.get("info") or {}).get("title"))[1]
+        generic = path.stem.lower().split("-")[0] in ("swagger", "openapi", "spec")
+        stem = _slug(tag_en or title_en or path.stem) if generic else _slug(path.stem)
         body = json.dumps(spec, ensure_ascii=False, indent=2) + "\n"
 
         target = destination / f"{stem}.json"
@@ -306,6 +338,7 @@ def cmd_import_spec(args: argparse.Namespace) -> int:
 
         target.write_text(body, encoding="utf-8")
         imported += 1
+        _retire_reconstructions(destination, target, {d["id"] for d in datasets})
         ids = ", ".join(d["id"] for d in datasets[:4]) + ("…" if len(datasets) > 4 else "")
         print(f"✅ {path.name} → {target.name}: {len(datasets)} مجموعة ({ids})")
 
