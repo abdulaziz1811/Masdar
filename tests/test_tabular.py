@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from masdar.export.tabular import YearAxis, coerce, read_csv
+from masdar.export.tabular import Table, YearAxis, coerce, read_csv
 from masdar.nlu.lexicon import load_lexicon
 
 FIXTURES = Path(__file__).resolve().parent.parent / "masdar" / "fixtures"
@@ -82,3 +82,35 @@ class TestWideLayout:
     def test_bom_is_stripped(self):
         t = read_csv("﻿السنة,القيمة\n2024,5\n".encode())
         assert t.columns[0] == "السنة"
+
+
+class TestInapplicableColumns:
+    """SDG tables pad every row with columns that only say "not applicable"."""
+
+    table = Table(
+        ["YEAR_TIME", "AGE_ARAB", "UNIT_ENGL", "SEX_ARAB", "OBS_VALUE"],
+        [
+            ["2021", "لاينطبق", "Not-Applicable", "ذكر", 10.0],
+            ["2022", "لا ينطبق", "not applicable", "لاينطبق", 12.5],
+        ],
+    )
+
+    def test_columns_that_only_say_not_applicable_are_dropped(self):
+        cleaned, dropped = self.table.without_inapplicable_columns()
+        assert dropped == ["AGE_ARAB", "UNIT_ENGL"]
+        assert cleaned.columns == ["YEAR_TIME", "SEX_ARAB", "OBS_VALUE"]
+        assert cleaned.rows[1] == ["2022", "لاينطبق", 12.5]
+
+    def test_a_column_with_one_real_value_is_kept(self):
+        cleaned, _ = self.table.without_inapplicable_columns()
+        assert "SEX_ARAB" in cleaned.columns
+
+    def test_a_blank_cell_does_not_make_a_column_inapplicable(self):
+        table = Table(["YEAR_TIME", "NOTE"], [["2021", "لاينطبق"], ["2022", None]])
+        cleaned, dropped = table.without_inapplicable_columns()
+        assert dropped == [] and cleaned is table
+
+    def test_nothing_to_drop_returns_the_same_table(self):
+        table = Table(["YEAR_TIME", "OBS_VALUE"], [["2021", 1.0]])
+        cleaned, dropped = table.without_inapplicable_columns()
+        assert cleaned is table and dropped == []

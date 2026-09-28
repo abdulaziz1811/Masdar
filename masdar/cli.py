@@ -338,9 +338,10 @@ def cmd_import_spec(args: argparse.Namespace) -> int:
 
         target.write_text(body, encoding="utf-8")
         imported += 1
-        _retire_reconstructions(destination, target, {d["id"] for d in datasets})
         ids = ", ".join(d["id"] for d in datasets[:4]) + ("…" if len(datasets) > 4 else "")
         print(f"✅ {path.name} → {target.name}: {len(datasets)} مجموعة ({ids})")
+        # After the line above, so a retirement reads as this file's doing.
+        _retire_reconstructions(destination, target, {d["id"] for d in datasets})
 
     print(f"\nالنتيجة: {imported} مستورد، {failed} مرفوض.")
     return 1 if failed else 0

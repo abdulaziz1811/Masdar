@@ -395,3 +395,73 @@ class TestKeyReachesTheWire:
         for sheet in workbook.worksheets:
             for row in sheet.iter_rows(values_only=True):
                 assert all(self.KEY not in str(c) for c in row if c is not None)
+
+
+class TestDeclaredEntriesRefineSpecEntries:
+    """A hand-declared dataset and its spec entry become one, not two."""
+
+    @pytest.fixture
+    def adapter(self, tmp_path):
+        import shutil
+
+        from masdar.sources.registry import build_adapter
+
+        specs = Path(__file__).resolve().parent / "fixtures"
+        shutil.copy(specs / "specs" / "energy_electrical.json", tmp_path)
+        shutil.copy(specs / "cdata_specs" / "health-statistics.json", tmp_path)
+        return build_adapter(cdata_descriptor(tmp_path), HttpClient(use_cache=False))
+
+    def test_each_dataset_appears_once(self, adapter):
+        ids = [entry["id"] for entry in adapter._datasets()]
+        assert len(ids) == len(set(ids))
+        assert "DPV_HES_EHE_IT_HES0303" in ids
+
+    def test_curated_fields_win(self, adapter):
+        entry = next(e for e in adapter._datasets() if e["id"] == "DPV_HES_EHE_IT_HES0303")
+        # The spec spells it "الإستهلاك"; the declaration corrected it.
+        assert "حسب فترة الاستهلاك" in entry["title_ar"]
+        assert "electricity consumption" in entry["keywords"]
+
+    def test_the_spec_fills_what_the_declaration_leaves_out(self, adapter):
+        entry = next(e for e in adapter._datasets() if e["id"] == "DPV_HES_EHE_IT_HES0303")
+        assert entry["measures"] == ["OBSVALUE_OBSV"]
+        assert entry["origin"] == "spec:energy_electrical"
+
+    def test_spec_only_datasets_are_still_offered(self, adapter):
+        origins = {entry.get("origin") for entry in adapter._datasets()}
+        assert "spec:health-statistics" in origins
+
+
+class TestInapplicableColumnsLeaveTheExport:
+    class PaddedTransport(RoutingTransport):
+        """Adds the kind of column SDG tables carry on every row."""
+
+        def get(self, url, source_id, params=None, headers=None):
+            import json
+
+            response = super().get(url, source_id, params, headers)
+            payload = json.loads(response.content)
+            for row in payload["value"]:
+                row["AGE_ARAB"] = "لاينطبق"
+            return Response(
+                url=response.url,
+                final_url=response.final_url,
+                status=200,
+                content=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                media_type="application/json",
+                headers={},
+            )
+
+    def test_the_column_is_dropped_and_the_drop_is_disclosed(self, tmp_path):
+        http = HttpClient(use_cache=False, retries=1, transport=self.PaddedTransport())
+        registry = Registry((cdata_descriptor(),), http)
+        agent = Agent(
+            registry=registry,
+            http=http,
+            config=AgentConfig(out_dir=tmp_path / "out", today=TODAY),
+        )
+        answer = agent.answer("استهلاك الكهرباء 2022 حسب المناطق")
+        header = [c.value for c in load_workbook(answer.primary.export_path)["البيانات"][1]]
+        assert "AGE_ARAB" not in header
+        assert "OBSVALUE_OBSV" in header
+        assert any("لا ينطبق" in note and "AGE_ARAB" in note for note in answer.primary.notes)

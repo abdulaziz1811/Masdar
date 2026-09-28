@@ -1,0 +1,510 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "إحصاءات الأسعار / Prices Statistics",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa",
+      "description": "Prod Environment"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_CLI_CHANGE_MONTH": {
+      "get": {
+        "summary": "التغير في أسعار المستهلك (التضخم) على أساس شهري (%) / Change of Consumer Price Index CPI (inflation) (Month-to-Month, %)",
+        "description": "نسبة التغير التي طرأت على الرقم القياسي لأسعار المستهلك لفترة مختارة / the percentage of change in the consumer price index for a specific period",
+        "tags": [
+          "إحصاءات متوسطات الأسعار / Price Averages Statistics"
+        ],
+        "operationId": "getAllDPV_CLI_CHANGE_MONTH",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "BASE_YEAR",
+                  "BASKET_LEVELS",
+                  "D_MONTH",
+                  "ITEM",
+                  "MONTH",
+                  "YEAR_MONTH",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "BASE_YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of BASE_YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "BASKET_LEVELS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of BASKET_LEVELS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "BASKET_LEVELS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of BASKET_LEVELS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "D_MONTH",
+            "in": "query",
+            "description": "Filter data based on the value of D_MONTH",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ITEM_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ITEM_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ITEM_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ITEM_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MONTH",
+            "in": "query",
+            "description": "Filter data based on the value of MONTH",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_MONTH_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_MONTH_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_CLI_CHANGE_MONTH response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_CLI_CHANGE_MONTH"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Prices Statistics",
+        "x-main-ar": "إحصاءات الأسعار",
+        "x-sub": "Price Averages Statistics",
+        "x-sub-ar": "إحصاءات متوسطات الأسعار"
+      }
+    },
+    "/v1/stats/DPV_CLI_CHANGE_YEAR": {
+      "get": {
+        "summary": "التغير في أسعار المستهلك (التضخم) على أساس سنوي (%) / Change of Consumer Price Index CPI (inflation) (Year-to-Year, %)",
+        "description": "نسبة التغير التي طرأت على الرقم القياسي لأسعار المستهلك لفترة مختارة / the percentage of change in the consumer price index for a specific period",
+        "tags": [
+          "إحصاءات متوسطات الأسعار / Price Averages Statistics"
+        ],
+        "operationId": "getAllDPV_CLI_CHANGE_YEAR",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "BASE_YEAR",
+                  "BASKET_LEVELS",
+                  "ITEM",
+                  "MONTH",
+                  "YEAR_MONTH",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "BASE_YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of BASE_YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "BASKET_LEVELS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of BASKET_LEVELS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "BASKET_LEVELS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of BASKET_LEVELS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ITEM_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ITEM_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ITEM_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ITEM_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MONTH",
+            "in": "query",
+            "description": "Filter data based on the value of MONTH",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_MONTH_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_MONTH_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_CLI_CHANGE_YEAR response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_CLI_CHANGE_YEAR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Prices Statistics",
+        "x-main-ar": "إحصاءات الأسعار",
+        "x-sub": "Price Averages Statistics",
+        "x-sub-ar": "إحصاءات متوسطات الأسعار"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DPV_CLI_CHANGE_MONTH": {
+        "type": "object",
+        "properties": {
+          "BASE_YEAR_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 512
+          },
+          "BASKET_LEVELS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 21
+          },
+          "BASKET_LEVELS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1
+          },
+          "BASKET_LEVELS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 15
+          },
+          "D_MONTH": {
+            "description": "",
+            "type": "string",
+            "maxLength": 2
+          },
+          "ITEM_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1100
+          },
+          "ITEM_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "ITEM_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1100
+          },
+          "MONTH": {
+            "description": "",
+            "type": "string",
+            "maxLength": 2
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_MONTH_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 40
+          }
+        }
+      },
+      "DPV_CLI_CHANGE_YEAR": {
+        "type": "object",
+        "properties": {
+          "BASE_YEAR_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 512
+          },
+          "BASKET_LEVELS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 21
+          },
+          "BASKET_LEVELS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1
+          },
+          "BASKET_LEVELS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 15
+          },
+          "ITEM_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1100
+          },
+          "ITEM_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "ITEM_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1100
+          },
+          "MONTH": {
+            "description": "",
+            "type": "string",
+            "maxLength": 2
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_MONTH_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 40
+          }
+        }
+      },
+      "CDataError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CDataInError"
+          }
+        }
+      },
+      "CDataInError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

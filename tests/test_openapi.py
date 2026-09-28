@@ -314,3 +314,19 @@ class TestRealDownloadsSupersedeReconstructions:
         )
         main(["import-spec", str(SPECS / "energy_electrical.json"), "--dest", str(tmp_path)])
         assert (tmp_path / "earlier-download.json").exists()
+
+
+class TestImportOutputOrder:
+    def test_a_retirement_is_reported_under_the_file_that_caused_it(self, tmp_path, capsys):
+        from masdar.cli import main
+
+        reconstructed = json.loads((SPECS / "energy_electrical.json").read_text(encoding="utf-8"))
+        reconstructed["info"]["x-masdar-provenance"] = "typed out"
+        (tmp_path / "energy-reconstructed.json").write_text(
+            json.dumps(reconstructed, ensure_ascii=False), encoding="utf-8"
+        )
+        main(["import-spec", str(SPECS / "energy_electrical.json"), "--dest", str(tmp_path)])
+        lines = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+        imported = next(i for i, line in enumerate(lines) if "energy_electrical.json →" in line)
+        retired = next(i for i, line in enumerate(lines) if "حُذفت" in line)
+        assert retired == imported + 1

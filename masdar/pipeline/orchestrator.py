@@ -230,6 +230,12 @@ class Agent:
                 and verification.verdict.is_positive
             ):
                 sliced = table.filter_years(frozenset(verification.matched_years))
+                sliced, dropped = sliced.without_inapplicable_columns()
+                if dropped:
+                    notes.append(
+                        f"أُزيلت من الملف أعمدة كل قيمها «لا ينطبق» ({len(dropped)}): "
+                        + "، ".join(dropped[:6]) + ("…" if len(dropped) > 6 else "")
+                    )
                 if sliced.rows:
                     path = excel.default_path(
                         self.config.out_dir,

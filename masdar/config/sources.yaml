@@ -79,7 +79,7 @@ sources:
         - {id: 267814ec-1d12-40f6-9e6a-a2b3239aef7c, name_ar: وزارة الموارد البشرية والتنمية الاجتماعية, datasets: 122}
     topics: [electricity, energy, population, labour, education, health, water,
              housing, trade, prices, tourism, transport, environment, gdp, ict,
-             agriculture, finance]
+             agriculture, finance, business, research, culture]
 
   - id: gastat
     name_ar: الهيئة العامة للإحصاء
@@ -110,7 +110,7 @@ sources:
       وعادة ما تكون المرجع النهائي عند تعارض الأرقام.
     topics: [population, labour, prices, gdp, trade, education, health, tourism,
              transport, environment, housing, energy, electricity, water, ict,
-             agriculture, finance]
+             agriculture, finance, business, research, culture]
 
   - id: wera
     name_ar: هيئة تنظيم المياه والكهرباء
@@ -223,7 +223,7 @@ sources:
       observations: /gastatapi/portal/api/v1/indicators/getDataForChart
     topics: [population, labour, prices, gdp, trade, education, health, tourism,
              transport, environment, housing, energy, electricity, water, ict,
-             agriculture, finance]
+             agriculture, finance, business, research, culture]
 
   - id: gastat_cdata
     name_ar: واجهة إحصاءات الهيئة العامة للإحصاء (cdata)
@@ -293,7 +293,7 @@ sources:
     # returns nothing, so listing a topic here costs no request.
     topics: [population, labour, prices, gdp, trade, education, health, tourism,
              transport, environment, housing, energy, electricity, water, ict,
-             agriculture, finance]
+             agriculture, finance, business, research, culture]
 
   - id: kapsarc
     name_ar: منصة بيانات مركز الملك عبدالله للدراسات والبحوث البترولية

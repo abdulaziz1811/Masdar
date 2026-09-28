@@ -1,0 +1,549 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "إحصاءات السياحة والحج والعمرة / Tourism ,Hajj and Umrah Statistics",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa",
+      "description": "Prod Environment"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_HAJ_PLMHAJ0101_5": {
+      "get": {
+        "summary": "عدد الحجاج من الخارج / Foreign pilgrims from abroad",
+        "description": "عدد الحجاج الذين أدوا مناسك الحج وقدموا من خارج المملكة العربية السعودية / The number of pilgrims who performed Hajj and came from outside the Kingdom of Saudi Arabia",
+        "tags": [
+          "إحصاءات الحج / Hajj Statistics"
+        ],
+        "operationId": "getAllDPV_HAJ_PLMHAJ0101_5",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INDICATOR_NAME",
+                  "NATIONALITY",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NATIONALITY_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of NATIONALITY_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_HAJ_PLMHAJ0101_5 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_HAJ_PLMHAJ0101_5"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Spatial and Resources Statistics",
+        "x-parent-ar": "الإحصاءات المكانية والموارد",
+        "x-main": "Tourism ,Hajj and Umrah Statistics",
+        "x-main-ar": "إحصاءات السياحة والحج والعمرة",
+        "x-sub": "Hajj Statistics",
+        "x-sub-ar": "إحصاءات الحج"
+      }
+    },
+    "/v1/stats/DPV_HAJ_PLMHAJ0201": {
+      "get": {
+        "summary": "عدد الحجاج من داخل الممكلة العربية السعودية حسب الجنس والجنسية / Pilgrims from inside Saudi Arabia by nationality and gender",
+        "description": "عدد الأفراد الذين أدوا مناسك الحج وقدموا إلى مكة المكرمة من داخل المملكة العربية السعودية / The number of individuals who performed al-hajj and came to Makkah from the inside of the Kingdom of Saudi Arabia",
+        "tags": [
+          "إحصاءات الحج / Hajj Statistics"
+        ],
+        "operationId": "getAllDPV_HAJ_PLMHAJ0201",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INDICATOR_NAME",
+                  "NATIONALITY",
+                  "SEX",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NATIONALITY_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of NATIONALITY_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SEX_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SEX_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_HAJ_PLMHAJ0201 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_HAJ_PLMHAJ0201"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Spatial and Resources Statistics",
+        "x-parent-ar": "الإحصاءات المكانية والموارد",
+        "x-main": "Tourism ,Hajj and Umrah Statistics",
+        "x-main-ar": "إحصاءات السياحة والحج والعمرة",
+        "x-sub": "Hajj Statistics",
+        "x-sub-ar": "إحصاءات الحج"
+      }
+    },
+    "/v1/stats/DPV_HAJ_PLMHAJ0401": {
+      "get": {
+        "summary": "القوى العاملة في خدمة الحجاج حسب القطاع / Workforce serving pilgrims by sector",
+        "description": "عدد الأفراد الذين قدموا الخدمات اللازمة للحجاج / The number of individuals who provided the necessary services to pilgrims",
+        "tags": [
+          "إحصاءات الحج / Hajj Statistics"
+        ],
+        "operationId": "getAllDPV_HAJ_PLMHAJ0401",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INDICATOR_NAME",
+                  "SECTOR",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SECTOR_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SECTOR_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_HAJ_PLMHAJ0401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_HAJ_PLMHAJ0401"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Spatial and Resources Statistics",
+        "x-parent-ar": "الإحصاءات المكانية والموارد",
+        "x-main": "Tourism ,Hajj and Umrah Statistics",
+        "x-main-ar": "إحصاءات السياحة والحج والعمرة",
+        "x-sub": "Hajj Statistics",
+        "x-sub-ar": "إحصاءات الحج"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DPV_HAJ_PLMHAJ0101_5": {
+        "type": "object",
+        "properties": {
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "NATIONALITY_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "NATIONALITY_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_HAJ_PLMHAJ0201": {
+        "type": "object",
+        "properties": {
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "NATIONALITY_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "NATIONALITY_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "SEX_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SEX_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_HAJ_PLMHAJ0401": {
+        "type": "object",
+        "properties": {
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "SECTOR_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SECTOR_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "YEAR_TIME"
+        ]
+      },
+      "CDataError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CDataInError"
+          }
+        }
+      },
+      "CDataInError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

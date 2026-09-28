@@ -1,0 +1,754 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "إحصاءات الأعمال / Business Statistics",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa",
+      "description": "Prod Environment"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_IB45_EFIB040201": {
+      "get": {
+        "summary": "الإيرادات التشغيلية حسب النشاط الاقتصادي والحجم / Operating revenues by economic activity and size",
+        "description": "",
+        "tags": [
+          "إحصاءات المنشآت الصغيرة والمتوسطة / Small and Medium Enterprises Statistics"
+        ],
+        "operationId": "getAllDPV_IB45_EFIB040201",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ECONOMIC_ACTIVITIES",
+                  "EMPLOYEES_CLASS_SIZE",
+                  "INDICATORS",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EMPLOYEES_CLASS_SIZE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of EMPLOYEES_CLASS_SIZE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB45_EFIB040201 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB45_EFIB040201"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال",
+        "x-sub": "Small and Medium Enterprises Statistics",
+        "x-sub-ar": "إحصاءات المنشآت الصغيرة والمتوسطة"
+      }
+    },
+    "/v1/stats/DPV_IB45_EFIB040203": {
+      "get": {
+        "summary": "النفقات التشغيلية حسب النشاط الاقتصادي والحجم / Operating expenditures by economic activity and size",
+        "description": "",
+        "tags": [
+          "إحصاءات المنشآت الصغيرة والمتوسطة / Small and Medium Enterprises Statistics"
+        ],
+        "operationId": "getAllDPV_IB45_EFIB040203",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ECONOMIC_ACTIVITIES",
+                  "EMPLOYEES_CLASS_SIZE",
+                  "INDICATORS",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EMPLOYEES_CLASS_SIZE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of EMPLOYEES_CLASS_SIZE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB45_EFIB040203 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB45_EFIB040203"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال",
+        "x-sub": "Small and Medium Enterprises Statistics",
+        "x-sub-ar": "إحصاءات المنشآت الصغيرة والمتوسطة"
+      }
+    },
+    "/v1/stats/DPV_IB45_EFIB040204": {
+      "get": {
+        "summary": "فائض التشغيل حسب النشاط الاقتصادي والحجم / Operating surplus by economic activity and size",
+        "description": "",
+        "tags": [
+          "إحصاءات المنشآت الصغيرة والمتوسطة / Small and Medium Enterprises Statistics"
+        ],
+        "operationId": "getAllDPV_IB45_EFIB040204",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ECONOMIC_ACTIVITIES",
+                  "EMPLOYEES_CLASS_SIZE",
+                  "INDICATORS",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EMPLOYEES_CLASS_SIZE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of EMPLOYEES_CLASS_SIZE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB45_EFIB040204 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB45_EFIB040204"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال",
+        "x-sub": "Small and Medium Enterprises Statistics",
+        "x-sub-ar": "إحصاءات المنشآت الصغيرة والمتوسطة"
+      }
+    },
+    "/v1/stats/DPV_IB45_EFIB0405": {
+      "get": {
+        "summary": "تعويضات المشتغلين حسب النشاط الاقتصادي والحجم / Employees compensation by economic activity and size",
+        "description": "",
+        "tags": [
+          "إحصاءات المنشآت الصغيرة والمتوسطة / Small and Medium Enterprises Statistics"
+        ],
+        "operationId": "getAllDPV_IB45_EFIB0405",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ECONOMIC_ACTIVITIES",
+                  "EMPLOYEES_CLASS_SIZE",
+                  "INDICATORS",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EMPLOYEES_CLASS_SIZE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of EMPLOYEES_CLASS_SIZE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB45_EFIB0405 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB45_EFIB0405"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال",
+        "x-sub": "Small and Medium Enterprises Statistics",
+        "x-sub-ar": "إحصاءات المنشآت الصغيرة والمتوسطة"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DPV_IB45_EFIB040201": {
+        "type": "object",
+        "properties": {
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_CLASS_SIZE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_CLASS_SIZE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "OPERATING_REVENUES_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "INDICATORS_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_IB45_EFIB040203": {
+        "type": "object",
+        "properties": {
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_CLASS_SIZE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_CLASS_SIZE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "OPERATING_EXPENDITURES_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "INDICATORS_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_IB45_EFIB040204": {
+        "type": "object",
+        "properties": {
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_CLASS_SIZE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_CLASS_SIZE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "OPERATING_SURPLUS_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "INDICATORS_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_IB45_EFIB0405": {
+        "type": "object",
+        "properties": {
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_CLASS_SIZE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_CLASS_SIZE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "EMPLOYEES_COMPENSATION_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "INDICATORS_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "CDataError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CDataInError"
+          }
+        }
+      },
+      "CDataInError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

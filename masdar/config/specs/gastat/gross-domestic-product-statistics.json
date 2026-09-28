@@ -1,0 +1,1495 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "إحصاءات الحسابات القومية / National Accounts Statistics",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa",
+      "description": "Prod Environment"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_NA20_EFNA0401": {
+      "get": {
+        "summary": "الناتج المحلي الإجمالي بالأسعار الجارية حسب طريقة الدخل / Gross domestic product (GDP) at current price by income approach",
+        "description": "الناتج المحلي الإجمالي (طريقة الدخل): هو عبارة عن إجمالي تعويضات المشتغلين وصافي الضرائب على الإنتاج وإهلاك رأس المال الثابت، وفائض التشغيل الصافي. / GDP (Income Approach): It is the total compensation of employees, net taxes, operating surplus and depreciation of fixed capital",
+        "tags": [
+          "إحصاءات الناتج المحلي الإجمالي / Gross Domestic Product Statistics"
+        ],
+        "operationId": "getAllDPV_NA20_EFNA0401",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "FACTOR_INCOME",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "FACTOR_INCOME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of FACTOR_INCOME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_NA20_EFNA0401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_NA20_EFNA0401"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "National Accounts Statistics",
+        "x-main-ar": "إحصاءات الحسابات القومية",
+        "x-sub": "Gross Domestic Product Statistics",
+        "x-sub-ar": "إحصاءات الناتج المحلي الإجمالي"
+      }
+    },
+    "/v1/stats/DPV_NA_EXP_EFNA0101": {
+      "get": {
+        "summary": "الإنفاق على الناتج المحلي الإجمالي بالأسعار الجارية حسب بنود الإنفاق / Gross domestic product (GDP) at current price by expenditure approach",
+        "description": "يعبر عن إجمالي ما تم انتاجه من سلع وخدمات نهائية خلال فترة زمنية معينة ( عادة سنة ) داخل الحدود الجغرافية للدولة سواء تم ذلك بواسطة مواطني الدولة أو الاجانب المقيمين بها. / It expresses the total of final goods and services produced during a certain period of time (usually a year) within the geographical borders of the country, whether that was done by the citizens of the country or foreigners residing in it.",
+        "tags": [
+          "إحصاءات الناتج المحلي الإجمالي / Gross Domestic Product Statistics"
+        ],
+        "operationId": "getAllDPV_NA_EXP_EFNA0101",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "EXPENDITURE_ITEMS",
+                  "INDICATOR_NAME",
+                  "YEAR_QUARTER",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "EXPENDITURE_ITEMS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of EXPENDITURE_ITEMS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_QUARTER_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_QUARTER_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_NA_EXP_EFNA0101 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_NA_EXP_EFNA0101"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "National Accounts Statistics",
+        "x-main-ar": "إحصاءات الحسابات القومية",
+        "x-sub": "Gross Domestic Product Statistics",
+        "x-sub-ar": "إحصاءات الناتج المحلي الإجمالي"
+      }
+    },
+    "/v1/stats/DPV_NA_EXP_Q_EFNA0101": {
+      "get": {
+        "summary": "الإنفاق على الناتج المحلي الإجمالي بالأسعار الجارية حسب بنود الإنفاق / Gross domestic product (GDP) at current price by expenditure approach",
+        "description": "يعبر عن إجمالي ما تم انتاجه من سلع وخدمات نهائية خلال فترة زمنية معينة ( عادة سنة ) داخل الحدود الجغرافية للدولة سواء تم ذلك بواسطة مواطني الدولة أو الاجانب المقيمين بها. / It expresses the total of final goods and services produced during a certain period of time (usually a year) within the geographical borders of the country, whether that was done by the citizens of the country or foreigners residing in it.",
+        "tags": [
+          "إحصاءات الناتج المحلي الإجمالي / Gross Domestic Product Statistics"
+        ],
+        "operationId": "getAllDPV_NA_EXP_Q_EFNA0101",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "EXPENDITURE_ITEMS",
+                  "FREQUENCY_TYPE",
+                  "INDICATOR_CD",
+                  "INDICATOR_NAME",
+                  "ORDER",
+                  "QUARTER",
+                  "YEAR_QUARTER",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "EXPENDITURE_ITEMS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of EXPENDITURE_ITEMS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EXPENDITURE_ITEMS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of EXPENDITURE_ITEMS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "FREQUENCY_TYPE_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of FREQUENCY_TYPE_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ORDER_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ORDER_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "QUARTER_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of QUARTER_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_QUARTER_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_QUARTER_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_NA_EXP_Q_EFNA0101 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_NA_EXP_Q_EFNA0101"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "National Accounts Statistics",
+        "x-main-ar": "إحصاءات الحسابات القومية",
+        "x-sub": "Gross Domestic Product Statistics",
+        "x-sub-ar": "إحصاءات الناتج المحلي الإجمالي"
+      }
+    },
+    "/v1/stats/DPV_NA_ISIC_EFNA0101": {
+      "get": {
+        "summary": "الناتج المحلي الإجمالي بالأسعار الجارية حسب النشاط الإقتصادي / Gross domestic product (GDP) at current price by economic activities",
+        "description": "يعبر عن إجمالي ما تم انتاجه من سلع وخدمات نهائية خلال فترة زمنية معينة ( عادة سنة ) داخل الحدود الجغرافية للدولة سواء تم ذلك بواسطة مواطني الدولة أو الاجانب المقيمين بها. / It expresses the total of final goods and services produced during a certain period of time (usually a year) within the geographical borders of the country, whether that was done by the citizens of the country or foreigners residing in it.",
+        "tags": [
+          "إحصاءات الناتج المحلي الإجمالي / Gross Domestic Product Statistics"
+        ],
+        "operationId": "getAllDPV_NA_ISIC_EFNA0101",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ECONOMIC_ACTIVITY",
+                  "FREQUENCY_TYPE",
+                  "INDICATOR_NAME",
+                  "QUARTER",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITY_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITY_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "FREQUENCY_TYPE_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of FREQUENCY_TYPE_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "QUARTER_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of QUARTER_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_NA_ISIC_EFNA0101 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_NA_ISIC_EFNA0101"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "National Accounts Statistics",
+        "x-main-ar": "إحصاءات الحسابات القومية",
+        "x-sub": "Gross Domestic Product Statistics",
+        "x-sub-ar": "إحصاءات الناتج المحلي الإجمالي"
+      }
+    },
+    "/v1/stats/DPV_NA_MAIN_EFNA0101": {
+      "get": {
+        "summary": "الناتج المحلي الإجمالي بالأسعار الجارية حسب الأنشطة الرئيسة / Gross domestic product (GDP) at current price by Main ISIC",
+        "description": "يعبر عن إجمالي ما تم انتاجه من سلع وخدمات نهائية خلال فترة زمنية معينة ( عادة سنة ) داخل الحدود الجغرافية للدولة سواء تم ذلك بواسطة مواطني الدولة أو الاجانب المقيمين بها. / It expresses the total of final goods and services produced during a certain period of time (usually a year) within the geographical borders of the country, whether that was done by the citizens of the country or foreigners residing in it.",
+        "tags": [
+          "إحصاءات الناتج المحلي الإجمالي / Gross Domestic Product Statistics"
+        ],
+        "operationId": "getAllDPV_NA_MAIN_EFNA0101",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "FREQUENCY_TYPE",
+                  "INDICATOR_CD",
+                  "INDICATOR_NAME",
+                  "ORDER",
+                  "MAIN_ISIC",
+                  "YEAR",
+                  "QUARTER",
+                  "YEAR_QUARTER"
+                ]
+              }
+            }
+          },
+          {
+            "name": "FREQUENCY_TYPE_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of FREQUENCY_TYPE_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ORDER_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ORDER_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MAIN_ISIC_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of MAIN_ISIC_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MAIN_ISIC_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of MAIN_ISIC_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "QUARTER_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of QUARTER_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_QUARTER_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_QUARTER_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_NA_MAIN_EFNA0101 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_NA_MAIN_EFNA0101"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "National Accounts Statistics",
+        "x-main-ar": "إحصاءات الحسابات القومية",
+        "x-sub": "Gross Domestic Product Statistics",
+        "x-sub-ar": "إحصاءات الناتج المحلي الإجمالي"
+      }
+    },
+    "/v1/stats/DPV_NA_MAIN_Y_EFNA0101": {
+      "get": {
+        "summary": "الناتج المحلي الإجمالي بالأسعار الجارية حسب الأنشطة الرئيسة / Gross domestic product (GDP) at current price by Main ISIC",
+        "description": "يعبر عن إجمالي ما تم انتاجه من سلع وخدمات نهائية خلال فترة زمنية معينة ( عادة سنة ) داخل الحدود الجغرافية للدولة سواء تم ذلك بواسطة مواطني الدولة أو الاجانب المقيمين بها. / It expresses the total of final goods and services produced during a certain period of time (usually a year) within the geographical borders of the country, whether that was done by the citizens of the country or foreigners residing in it.",
+        "tags": [
+          "إحصاءات الناتج المحلي الإجمالي / Gross Domestic Product Statistics"
+        ],
+        "operationId": "getAllDPV_NA_MAIN_Y_EFNA0101",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "FREQUENCY_TYPE",
+                  "INDICATOR_CD",
+                  "INDICATOR_NAME",
+                  "ORDER",
+                  "MAIN_ISIC",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "FREQUENCY_TYPE_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of FREQUENCY_TYPE_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ORDER_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ORDER_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MAIN_ISIC_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of MAIN_ISIC_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MAIN_ISIC_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of MAIN_ISIC_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_NA_MAIN_Y_EFNA0101 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_NA_MAIN_Y_EFNA0101"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "National Accounts Statistics",
+        "x-main-ar": "إحصاءات الحسابات القومية",
+        "x-sub": "Gross Domestic Product Statistics",
+        "x-sub-ar": "إحصاءات الناتج المحلي الإجمالي"
+      }
+    },
+    "/v1/stats/DPV_NA_SECTOR_EFNA0101": {
+      "get": {
+        "summary": "الناتج المحلي الإجمالي بالأسعار الجارية حسب القطاعات التنظيمية / Gross domestic product (GDP) at current price by institutional sectors",
+        "description": "يعبر عن إجمالي ما تم انتاجه من سلع وخدمات نهائية خلال فترة زمنية معينة ( عادة سنة ) داخل الحدود الجغرافية للدولة سواء تم ذلك بواسطة مواطني الدولة أو الاجانب المقيمين بها. / It expresses the total of final goods and services produced during a certain period of time (usually a year) within the geographical borders of the country, whether that was done by the citizens of the country or foreigners residing in it.",
+        "tags": [
+          "إحصاءات الناتج المحلي الإجمالي / Gross Domestic Product Statistics"
+        ],
+        "operationId": "getAllDPV_NA_SECTOR_EFNA0101",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "FREQUENCY_TYPE",
+                  "INDICATOR_CD",
+                  "INDICATOR_NAME",
+                  "ORDER",
+                  "INSTITUTIONAL_SECTORS",
+                  "YEAR",
+                  "QUARTER",
+                  "YEAR_QUARTER"
+                ]
+              }
+            }
+          },
+          {
+            "name": "FREQUENCY_TYPE_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of FREQUENCY_TYPE_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ORDER_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ORDER_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INSTITUTIONAL_SECTORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INSTITUTIONAL_SECTORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INSTITUTIONAL_SECTORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INSTITUTIONAL_SECTORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "QUARTER_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of QUARTER_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_QUARTER_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_QUARTER_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_NA_SECTOR_EFNA0101 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_NA_SECTOR_EFNA0101"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "National Accounts Statistics",
+        "x-main-ar": "إحصاءات الحسابات القومية",
+        "x-sub": "Gross Domestic Product Statistics",
+        "x-sub-ar": "إحصاءات الناتج المحلي الإجمالي"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DPV_NA20_EFNA0401": {
+        "type": "object",
+        "properties": {
+          "FACTOR_INCOME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "FACTOR_INCOME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBS_VALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_NA_EXP_EFNA0101": {
+        "type": "object",
+        "properties": {
+          "EXPENDITURE_ITEMS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4000
+          },
+          "EXPENDITURE_ITEMS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4000
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_QUARTER_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 51
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        }
+      },
+      "DPV_NA_EXP_Q_EFNA0101": {
+        "type": "object",
+        "properties": {
+          "EXPENDITURE_ITEMS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1062
+          },
+          "EXPENDITURE_ITEMS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "EXPENDITURE_ITEMS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1062
+          },
+          "FREQUENCY_TYPE_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "ORDER_CODE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "QUARTER_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_QUARTER_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 51
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 40
+          }
+        }
+      },
+      "DPV_NA_ISIC_EFNA0101": {
+        "type": "object",
+        "properties": {
+          "ECONOMIC_ACTIVITY_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4000
+          },
+          "ECONOMIC_ACTIVITY_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4000
+          },
+          "FREQUENCY_TYPE_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "QUARTER_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        }
+      },
+      "DPV_NA_MAIN_EFNA0101": {
+        "type": "object",
+        "properties": {
+          "FREQUENCY_TYPE_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ORDER_CODE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "MAIN_ISIC_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1062
+          },
+          "MAIN_ISIC_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1062
+          },
+          "MAIN_ISIC_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 40
+          },
+          "QUARTER_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_QUARTER_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 51
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        }
+      },
+      "DPV_NA_MAIN_Y_EFNA0101": {
+        "type": "object",
+        "properties": {
+          "FREQUENCY_TYPE_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ORDER_CODE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "MAIN_ISIC_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1062
+          },
+          "MAIN_ISIC_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1062
+          },
+          "MAIN_ISIC_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 40
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        }
+      },
+      "DPV_NA_SECTOR_EFNA0101": {
+        "type": "object",
+        "properties": {
+          "FREQUENCY_TYPE_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ORDER_CODE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "INSTITUTIONAL_SECTORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4000
+          },
+          "INSTITUTIONAL_SECTORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 4000
+          },
+          "INSTITUTIONAL_SECTORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 200
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "QUARTER_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_QUARTER_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 51
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        }
+      },
+      "CDataError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CDataInError"
+          }
+        }
+      },
+      "CDataInError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

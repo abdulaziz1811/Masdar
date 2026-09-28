@@ -1,0 +1,667 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "SDG Endpoints",
+    "description": "This specification contains the documentation for the SDG endpoints",
+    "version": "1.0.0",
+    "contact": {
+      "name": "General Stats Authority",
+      "email": "msingh@stats.gov.sa"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa",
+      "description": "Prod Environment"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_SDG8_5_2": {
+      "get": {
+        "summary": "Return DPV_SDG8_5_2",
+        "description": "Returns records from the DPV_SDG8_5_2 entity that match the specified query parameters.  All records will be returned when no parameters are specified.",
+        "tags": [
+          "SDG"
+        ],
+        "operationId": "getAllDPV_SDG8_5_2",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "AGE_GROUPS",
+                  "ECO_SYSTEM_TYPE",
+                  "GRADES",
+                  "GRADES_END",
+                  "HEALTH_PRACTITIONER",
+                  "INDICATORS",
+                  "ITEM",
+                  "NATIONALITY",
+                  "OBS_VALUE",
+                  "PM",
+                  "REGION",
+                  "SANITATION_SERVICES",
+                  "SECTOR",
+                  "SECTOR_WOMEN",
+                  "SEX",
+                  "TECHNOLOGY",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "AGE_GROUPS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of AGE_GROUPS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AGE_GROUPS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of AGE_GROUPS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECO_SYSTEM_TYPE_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ECO_SYSTEM_TYPE_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECO_SYSTEM_TYPE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECO_SYSTEM_TYPE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "GRADES_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of GRADES_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "GRADES_END_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of GRADES_END_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "GRADES_END_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of GRADES_END_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "GRADES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of GRADES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "HEALTH_PRACTITIONER_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of HEALTH_PRACTITIONER_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "HEALTH_PRACTITIONER_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of HEALTH_PRACTITIONER_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ITEM_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ITEM_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ITEM_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ITEM_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NATIONALITY_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of NATIONALITY_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NATIONALITY_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of NATIONALITY_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OBS_VALUE",
+            "in": "query",
+            "description": "Filter data based on the value of OBS_VALUE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PM_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of PM_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PM_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of PM_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "REGION_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of REGION_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "REGION_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of REGION_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SANITATION_SERVICES_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of SANITATION_SERVICES_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SANITATION_SERVICES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SANITATION_SERVICES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SECTOR_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of SECTOR_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SECTOR_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SECTOR_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SECTOR_WOMEN_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of SECTOR_WOMEN_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SECTOR_WOMEN_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SECTOR_WOMEN_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SEX_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of SEX_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SEX_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SEX_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TECHNOLOGY_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of TECHNOLOGY_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TECHNOLOGY_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of TECHNOLOGY_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_SDG8_5_2 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_SDG8_5_2"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DPV_SDG8_5_2": {
+        "type": "object",
+        "properties": {
+          "AGE_GROUPS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "AGE_GROUPS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "AGE_GROUPS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECO_SYSTEM_TYPE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECO_SYSTEM_TYPE_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "ECO_SYSTEM_TYPE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "GRADES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "GRADES_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "GRADES_END_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "GRADES_END_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "GRADES_END_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "GRADES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "HEALTH_PRACTITIONER_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "HEALTH_PRACTITIONER_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "HEALTH_PRACTITIONER_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ITEM_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ITEM_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "ITEM_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "NATIONALITY_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "NATIONALITY_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "NATIONALITY_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBS_VALUE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "PM_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "PM_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "PM_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "REGION_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "REGION_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "REGION_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SANITATION_SERVICES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SANITATION_SERVICES_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "SANITATION_SERVICES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SECTOR_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SECTOR_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "SECTOR_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SECTOR_WOMEN_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SECTOR_WOMEN_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "SECTOR_WOMEN_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SEX_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SEX_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "SEX_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "TECHNOLOGY_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "TECHNOLOGY_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "TECHNOLOGY_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "AGE_GROUPS_CODE",
+          "ECO_SYSTEM_TYPE_CODE",
+          "GRADES_CODE",
+          "GRADES_END_CODE",
+          "HEALTH_PRACTITIONER_CODE",
+          "INDICATORS_CODE",
+          "ITEM_CODE",
+          "NATIONALITY_CODE",
+          "PM_CODE",
+          "REGION_CODE",
+          "SANITATION_SERVICES_CODE",
+          "SECTOR_CODE",
+          "SECTOR_WOMEN_CODE",
+          "SEX_CODE",
+          "TECHNOLOGY_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "CDataError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CDataInError"
+          }
+        }
+      },
+      "CDataInError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

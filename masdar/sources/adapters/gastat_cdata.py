@@ -107,27 +107,38 @@ class GastatCdataAdapter(SourceAdapter):
         return datasets_from_dir(directory, self.descriptor.base_url, self._template())[1]
 
     def _datasets(self) -> list[dict]:
-        """Hand-declared datasets, then every dataset in the spec directory.
+        """Hand-declared datasets merged with every dataset in the specs.
 
-        A declared entry wins over a spec entry with the same id: it was
-        written by someone who looked at the data, and may carry a better
-        title or keywords than the portal's.
+        Where both describe the same id, the declared fields win -- they were
+        written by someone who looked at the data -- and the spec supplies
+        everything the declaration leaves out.
         """
         declared = self.descriptor.api.get("datasets") or []
         if not isinstance(declared, list):
             raise SourceError(self.id, "`datasets` في الإعدادات يجب أن تكون قائمة")
-        entries = [dict(d) for d in declared if isinstance(d, dict) and d.get("id")]
-        seen = {str(e["id"]) for e in entries}
 
+        from_specs: list[dict] = []
         directory = self._spec_dir()
         if directory is not None:
             from_specs, _ = datasets_from_dir(
                 directory, self.descriptor.base_url, self._template()
             )
-            for entry in from_specs:
-                if str(entry["id"]) not in seen:
-                    seen.add(str(entry["id"]))
-                    entries.append(entry)
+
+        # First spec to define an id wins among specs (the individual SDG
+        # files sort before the catch-all one that repeats them).
+        by_id: dict[str, dict] = {}
+        for entry in from_specs:
+            by_id.setdefault(str(entry["id"]), entry)
+
+        entries: list[dict] = []
+        for item in declared:
+            if not isinstance(item, dict) or not item.get("id"):
+                continue
+            # A declared entry refines the spec's: its curated fields win, and
+            # what it leaves out (measures, categories) comes from the spec.
+            spec_entry = by_id.pop(str(item["id"]), {})
+            entries.append({**spec_entry, **item})
+        entries.extend(by_id.values())
         return entries
 
     def _path(self, entry: dict) -> str:

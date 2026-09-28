@@ -1,0 +1,1087 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "إحصاءات الأعمال قصيرة المدى / Short-Term Business Statistics",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa",
+      "description": "Prod Environment"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_IB_MNTH_EFIB1001": {
+      "get": {
+        "summary": "الرقم القياسي للإنتاج الصناعي حسب النشاط الإقتصادي (2010 = 100) / Industrial Production Index (IPI) by economic activity (2010 = 100)",
+        "description": "هو مؤشر اقتصادي يعكس التغيرات النسبية في حجم كميات الإنتاج الصناعي اعتمادًا على بيانات مسح الإنتاج الصناعي، الذي يتم تنفيذه على عينة من المنشآت الصناعية تعمل في الأنشطة الصناعية المستهدفة والمتمثلة في نشاط التعدين واستغلال المحاجر، ونشاط الصناعة التحويلية، ونشاط إمدادات الكهرباء والغاز، ويتم تصنيف بيانات هذا المؤشر التي يتم نشرها على أساس شهري وفقًا للتصنيف الصناعي الدولي للأنشطة الاقتصادية (ISIC 4). / The Industrial Production Index (IPI) is an economic indicator, reflecting the relative changes of the volume of industrial output. It is calculated based on the industrial production survey. The sample consists of industrial establishments operating in industrial activities, which are mining and quarrying, manufacturing, and electricity and gas supply.\r\nThe IPI data is based on the International Standard Industrial Classification of Economic Activities (ISIC_ 4). The IPI is published on a monthly basis.",
+        "tags": [
+          "إحصاءات الرقم القياسي للإنتاج الصناعي / Industrial Production Index"
+        ],
+        "operationId": "getAllDPV_IB_MNTH_EFIB1001",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ECONOMIC_ACTIVITIES",
+                  "INDICATOR_CD",
+                  "INDICATOR_NAME",
+                  "MONTH",
+                  "YEAR_MONTH",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MONTH_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of MONTH_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_MONTH_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_MONTH_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB_MNTH_EFIB1001 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB_MNTH_EFIB1001"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Short-Term Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال قصيرة المدى",
+        "x-sub": "Industrial Production Index",
+        "x-sub-ar": "إحصاءات الرقم القياسي للإنتاج الصناعي"
+      }
+    },
+    "/v1/stats/DPV_IB_MNTH_EFIB1003": {
+      "get": {
+        "summary": "نسبة التغير السنوية في الرقم القياسي للإنتاج الصناعي حسب النشاط الاقتصادي / Percentage change in the Industrial Production Index (IPI) by economic activity (monthly; change year-on-year)",
+        "description": "معدل التغير السنوي في الرقم القياسي للإنتاج الصناعي / The annual rate of change in the index of industrial production",
+        "tags": [
+          "إحصاءات الرقم القياسي للإنتاج الصناعي / Industrial Production Index"
+        ],
+        "operationId": "getAllDPV_IB_MNTH_EFIB1003",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "YEAR_MONTH",
+                  "YEAR",
+                  "MONTH",
+                  "ECONOMIC_ACTIVITIES",
+                  "INDICATOR_NAME",
+                  "INDICATOR_CD"
+                ]
+              }
+            }
+          },
+          {
+            "name": "YEAR_MONTH_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_MONTH_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MONTH_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of MONTH_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB_MNTH_EFIB1003 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB_MNTH_EFIB1003"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Short-Term Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال قصيرة المدى",
+        "x-sub": "Industrial Production Index",
+        "x-sub-ar": "إحصاءات الرقم القياسي للإنتاج الصناعي"
+      }
+    },
+    "/v1/stats/DPV_IB_MNTH_EFIB1004": {
+      "get": {
+        "summary": "نسبة التغير الشهرية في الرقم القياسي للإنتاج الصناعي حسب النشاط الاقتصادي / Percentage change in the Industrial Production Index (IPI) by economic activity  (monthly; change month-on-month)",
+        "description": "معدل التغير السنوي في الرقم القياسي للإنتاج الصناعي / The monthly rate of change in the industrial production index",
+        "tags": [
+          "إحصاءات الرقم القياسي للإنتاج الصناعي / Industrial Production Index"
+        ],
+        "operationId": "getAllDPV_IB_MNTH_EFIB1004",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "YEAR_MONTH",
+                  "YEAR",
+                  "MONTH",
+                  "ECONOMIC_ACTIVITIES",
+                  "INDICATOR_NAME",
+                  "INDICATOR_CD"
+                ]
+              }
+            }
+          },
+          {
+            "name": "YEAR_MONTH_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_MONTH_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MONTH_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of MONTH_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB_MNTH_EFIB1004 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB_MNTH_EFIB1004"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Short-Term Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال قصيرة المدى",
+        "x-sub": "Industrial Production Index",
+        "x-sub-ar": "إحصاءات الرقم القياسي للإنتاج الصناعي"
+      }
+    },
+    "/v1/stats/DPV_IB_YEAR_EFIB1005": {
+      "get": {
+        "summary": "الرقم القياسي للإنتاج الصناعي حسب النشاط الإقتصادي (2010 = 100) / Industrial Production Index (IPI) by economic activity (2010 = 100)",
+        "description": "هو مؤشر اقتصادي يعكس التغيرات النسبية السنوية في حجم كميات الإنتاج الصناعي اعتمادًا على بيانات مسح الإنتاج الصناعي. / The Annual Industrial Production Index (IPI) is an economic indicator, reflecting the annaul relative changes of the volume of industrial output",
+        "tags": [
+          "إحصاءات الرقم القياسي للإنتاج الصناعي / Industrial Production Index"
+        ],
+        "operationId": "getAllDPV_IB_YEAR_EFIB1005",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ECONOMIC_ACTIVITIES",
+                  "INDICATOR_CD",
+                  "INDICATOR_NAME",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB_YEAR_EFIB1005 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB_YEAR_EFIB1005"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Short-Term Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال قصيرة المدى",
+        "x-sub": "Industrial Production Index",
+        "x-sub-ar": "إحصاءات الرقم القياسي للإنتاج الصناعي"
+      }
+    },
+    "/v1/stats/DPV_IB_YEAR_EFIB1006": {
+      "get": {
+        "summary": "نسبة التغير السنوي في الرقم القياسي للإنتاج الصناعي حسب النشاط الاقتصادي / Percentage change in the Industrial Production Index (IPI) by economic activity (yearly; change year-on-year)",
+        "description": "معدل التغير السنوي في الرقم القياسي للإنتاج الصناعي / The annual rate of change in the index of industrial production.",
+        "tags": [
+          "إحصاءات الرقم القياسي للإنتاج الصناعي / Industrial Production Index"
+        ],
+        "operationId": "getAllDPV_IB_YEAR_EFIB1006",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ECONOMIC_ACTIVITIES",
+                  "INDICATOR_CD",
+                  "INDICATOR_NAME",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ECONOMIC_ACTIVITIES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of ECONOMIC_ACTIVITIES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_CD_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_CD_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATOR_NAME_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATOR_NAME_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_IB_YEAR_EFIB1006 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_IB_YEAR_EFIB1006"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Economic Statistics",
+        "x-parent-ar": "الإحصاءات الاقتصادية",
+        "x-main": "Short-Term Business Statistics",
+        "x-main-ar": "إحصاءات الأعمال قصيرة المدى",
+        "x-sub": "Industrial Production Index",
+        "x-sub-ar": "إحصاءات الرقم القياسي للإنتاج الصناعي"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DPV_IB_MNTH_EFIB1001": {
+        "type": "object",
+        "properties": {
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "MONTH_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 2
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_MONTH_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "ECONOMIC_ACTIVITIES_CODE",
+          "INDICATOR_CD_CODE",
+          "YEAR_MONTH_TIME"
+        ]
+      },
+      "DPV_IB_MNTH_EFIB1003": {
+        "type": "object",
+        "properties": {
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_MONTH_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "MONTH_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 2
+          },
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "YEAR_MONTH_TIME",
+          "ECONOMIC_ACTIVITIES_CODE",
+          "INDICATOR_CD_CODE"
+        ]
+      },
+      "DPV_IB_MNTH_EFIB1004": {
+        "type": "object",
+        "properties": {
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_MONTH_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 10
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "MONTH_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 2
+          },
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "YEAR_MONTH_TIME",
+          "ECONOMIC_ACTIVITIES_CODE",
+          "INDICATOR_CD_CODE"
+        ]
+      },
+      "DPV_IB_YEAR_EFIB1005": {
+        "type": "object",
+        "properties": {
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "ECONOMIC_ACTIVITIES_CODE",
+          "INDICATOR_CD_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_IB_YEAR_EFIB1006": {
+        "type": "object",
+        "properties": {
+          "ECONOMIC_ACTIVITIES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "ECONOMIC_ACTIVITIES_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "ECONOMIC_ACTIVITIES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_CD_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATOR_NAME_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATOR_NAME_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBSVALUE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "ECONOMIC_ACTIVITIES_CODE",
+          "INDICATOR_CD_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "CDataError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CDataInError"
+          }
+        }
+      },
+      "CDataInError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

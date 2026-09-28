@@ -34,8 +34,8 @@ topics:
     label_ar: سوق العمل
     label_en: Labour market
     keywords_ar: [العمل, سوق العمل, البطالة, التوظيف, العاملين, الموظفين, الأجور,
-                  القوى العاملة, التوطين]
-    keywords_en: [labour, labor, unemployment, employment, wages, workforce]
+                  القوى العاملة, التوطين, المناصب الإدارية, المشتغلين, تعويضات المشتغلين]
+    keywords_en: [labour, labor, unemployment, employment, wages, workforce, managerial positions]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data]
 
   - id: education
@@ -49,9 +49,9 @@ topics:
     label_ar: الصحة
     label_en: Health
     keywords_ar: [الصحة, المستشفيات, الأسرة, الأطباء, المراكز الصحية, الأمراض,
-                  متوسط العمر المتوقع, العمر المتوقع, معدل الوفيات, الحالة الصحية]
+                  متوسط العمر المتوقع, العمر المتوقع, معدل الوفيات, الحالة الصحية, سوء التغذية, التغذية, الممارسين الصحيين]
     keywords_en: [health, hospitals, beds, physicians, clinics, diseases,
-                  life expectancy, mortality, death rate]
+                  life expectancy, mortality, death rate, malnutrition, nutrition]
     preferred_sources: [moh, gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat]
 
   - id: water
@@ -94,8 +94,8 @@ topics:
   - id: tourism
     label_ar: السياحة
     label_en: Tourism
-    keywords_ar: [السياحة, السياح, الزوار, الفنادق, الرحلات]
-    keywords_en: [tourism, tourists, visitors, hotels]
+    keywords_ar: [السياحة, السياح, الزوار, الفنادق, الرحلات, الحج, العمرة, الحجاج, المعتمرين]
+    keywords_en: [tourism, tourists, visitors, hotels, hajj, umrah, pilgrims]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data]
 
   - id: transport
@@ -115,8 +115,8 @@ topics:
   - id: ict
     label_ar: تقنية المعلومات والاتصالات
     label_en: ICT
-    keywords_ar: [الاتصالات, الإنترنت, تقنية المعلومات, الرقمية, النطاق العريض]
-    keywords_en: [ict, internet, telecom, digital, broadband]
+    keywords_ar: [الاتصالات, الإنترنت, تقنية المعلومات, الرقمية, النطاق العريض, الهاتف المحمول, الهواتف المحمولة]
+    keywords_en: [ict, internet, telecom, digital, broadband, mobile phone]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat]
 
   - id: agriculture
@@ -129,9 +129,34 @@ topics:
   - id: finance
     label_ar: المالية والنقد
     label_en: Finance and money
-    keywords_ar: [البنوك, النقد, الائتمان, الميزانية, الاحتياطي, التمويل]
-    keywords_en: [banks, money supply, credit, budget, reserves, finance]
+    keywords_ar: [البنوك, النقد, الائتمان, الميزانية, الاحتياطي, التمويل, التحويلات المالية, الحوالات, المبالغ المحولة]
+    keywords_en: [banks, money supply, credit, budget, reserves, finance, remittances]
     preferred_sources: [sama, gastat_cdata, kapsarc, gastat_db, gastat]
+
+  - id: business
+    label_ar: إحصاءات الأعمال
+    label_en: Business statistics
+    keywords_ar: [المنشآت, المنشآت الاقتصادية, إحصاءات الأعمال, المنشآت الصغيرة والمتوسطة,
+                  الإيرادات التشغيلية, النفقات التشغيلية, فائض التشغيل, الشركات,
+                  القطاع الخاص, النشاط الاقتصادي, الرقم القياسي للإنتاج الصناعي]
+    keywords_en: [business, enterprises, establishments, smes, operating revenue,
+                  industrial production index]
+    preferred_sources: [gastat_cdata, gastat_db, saudi_open_data, gastat]
+
+  - id: research
+    label_ar: البحث والتطوير
+    label_en: Research and development
+    keywords_ar: [البحث والتطوير, الباحثين, الابتكار, براءات الاختراع]
+    keywords_en: [research and development, researchers, innovation, patents]
+    preferred_sources: [gastat_cdata, saudi_open_data, gastat]
+
+  - id: culture
+    label_ar: الثقافة وأساليب الحياة
+    label_en: Culture and lifestyle
+    keywords_ar: [الثقافة, الترفيه, أساليب الحياة, المكتبات, مكتبة منزلية, المتاحف,
+                  الفنون, السينما, الرياضة]
+    keywords_en: [culture, entertainment, lifestyle, libraries, museums, sports]
+    preferred_sources: [gastat_cdata, saudi_open_data, gastat]
 
 # Phrases that contain a topic word without being about that topic. They
 # are removed before a title is labelled with topics: GNI "بالأسعار الجارية"

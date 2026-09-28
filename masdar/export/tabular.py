@@ -30,6 +30,11 @@ MAX_ROWS = 200_000
 _YEAR_COLUMN_NAMES = ("السنة", "سنة", "العام", "عام", "year", "السنه", "الفترة", "period")
 
 
+_INAPPLICABLE = frozenset({
+    "لاينطبق", "لا ينطبق", "not-applicable", "not applicable", "not_applicable", "n/a",
+})
+
+
 class YearAxis(enum.Enum):
     ROWS = "rows"        # one column holds the year
     COLUMNS = "columns"  # each year is its own column
@@ -118,6 +123,35 @@ class Table:
             if any(contains_phrase(header_text, word) for word in words):
                 present.add(dimension)
         return present
+
+    # -- cleaning ------------------------------------------------------
+    def without_inapplicable_columns(self) -> tuple[Table, list[str]]:
+        """Drop columns whose every value says "not applicable".
+
+        GASTAT's SDG tables return some forty columns per row, nearly all
+        "لاينطبق" / "Not-Applicable". Removing a column that is constant and
+        empty of meaning changes no figure, and the dropped names are
+        returned so the workbook can list them.
+        """
+        if not self.rows:
+            return self, []
+        keep: list[int] = []
+        dropped: list[str] = []
+        for index, name in enumerate(self.columns):
+            values = {
+                str(row[index]).strip().lower() if index < len(row) and row[index] is not None
+                else ""
+                for row in self.rows
+            }
+            if values and values <= _INAPPLICABLE:
+                dropped.append(str(name))
+            else:
+                keep.append(index)
+        if not dropped:
+            return self, []
+        columns = [self.columns[i] for i in keep]
+        rows = [[row[i] if i < len(row) else None for i in keep] for row in self.rows]
+        return Table(columns, rows, self.sheet_name, list(self.preamble)), dropped
 
     # -- slicing -------------------------------------------------------
     def filter_years(self, years: frozenset[int]) -> Table:

@@ -1,0 +1,989 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "إحصاءات الصحة / Health Statistics",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa",
+      "description": "Prod Environment"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_HLTH13_DPHLTH130132": {
+      "get": {
+        "summary": "تقدير ات معدل الوفيات للسعوديين مع تصنيفه حسب النوع و الفئات العمرية ( 5 سنوات ) للفترة الزمنية من 2011 إلى 2022 / Estimated Saudi Age Specific Death Rate by gender and age group (5 years) 2011 - 2022",
+        "description": "تقدير معدل الوفيات للسعوديين في الإثني عشر شهرا السابقة لتاريخ الإسناد للسكان بالقيم المطلقة مع تصنيفهم حسب النوع والفئات العمرية للفترة الزمنية من  2011 إلى 2022.   / Estimated Saudi Age specific Death Rates of Population with breakdowns by Gender and age groups from 2011 to 2022. ",
+        "tags": [
+          "إحصاءات الحالة الصحية / Health Status Statistics"
+        ],
+        "operationId": "getAllDPV_HLTH13_DPHLTH130132",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "AGE",
+                  "INDICATORS",
+                  "NATIONALITY",
+                  "SEX",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "AGE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of AGE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NATIONALITY_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of NATIONALITY_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SEX_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SEX_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_HLTH13_DPHLTH130132 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_HLTH13_DPHLTH130132"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Social Statistics",
+        "x-parent-ar": "إحصاءات الخدمات الاجتماعية",
+        "x-main": "Health Statistics",
+        "x-main-ar": "إحصاءات الصحة",
+        "x-sub": "Health Status Statistics",
+        "x-sub-ar": "إحصاءات الحالة الصحية"
+      }
+    },
+    "/v1/stats/DPV_HLTH13_DPHLTH1304": {
+      "get": {
+        "summary": "تقديرات متوسط العمر المتوقع عند الميلاد للسعوديين مع تصنيفه حسب النوع للفترة الزمنية 2011 إلى 2022 / Estimated Saudi Life expectancy at Birth e(0) by Gender 2011 - 2022",
+        "description": "متوسط العمر المتوقع عند الميلاد للفترة الزمنية من 2011 إلى 2022  للسكان السعوديين بالسنوات مع تصنيفه حسب النوع.  / Life Expectancy at birth 2011 - 2022 for the Saudi population in years with breakdown on gender. ",
+        "tags": [
+          "إحصاءات الحالة الصحية / Health Status Statistics"
+        ],
+        "operationId": "getAllDPV_HLTH13_DPHLTH1304",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INDICATORS",
+                  "SEX",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "INDICATORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SEX_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SEX_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_HLTH13_DPHLTH1304 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_HLTH13_DPHLTH1304"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Social Statistics",
+        "x-parent-ar": "إحصاءات الخدمات الاجتماعية",
+        "x-main": "Health Statistics",
+        "x-main-ar": "إحصاءات الصحة",
+        "x-sub": "Health Status Statistics",
+        "x-sub-ar": "إحصاءات الحالة الصحية"
+      }
+    },
+    "/v1/stats/DPV_HLTH13_DPHLTH130789": {
+      "get": {
+        "summary": "تقديرات معدل الخصوبة للسعوديات مع تصنيفه حسب الفئات العمرية ( 5 سنوات ) للفترة الزمنية من 2011 إلى 2022 [مواليد لكل 1000 امرأة] / Estimated Saudi Age Specific Fertility Rate by age group (5 years) 2011 - 2022 [births per 1000 women]",
+        "description": "معدلات الخصوبة العمرية للسكان الإناث السعوديات (15-49 سنة) مع تصنيفهم حسب الفئات العمرية (5 سنوات) للفترة الزمنية من  2011 إلى 2022.  / Estimated Saudi Age specific Fertility Rates of Female Population (15 - 49 years) with breakdowns by 5-year age groups from 2011 to 2022. ",
+        "tags": [
+          "إحصاءات الحالة الصحية / Health Status Statistics"
+        ],
+        "operationId": "getAllDPV_HLTH13_DPHLTH130789",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "AGE",
+                  "INDICATORS",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "AGE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of AGE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_HLTH13_DPHLTH130789 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_HLTH13_DPHLTH130789"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Social Statistics",
+        "x-parent-ar": "إحصاءات الخدمات الاجتماعية",
+        "x-main": "Health Statistics",
+        "x-main-ar": "إحصاءات الصحة",
+        "x-sub": "Health Status Statistics",
+        "x-sub-ar": "إحصاءات الحالة الصحية"
+      }
+    },
+    "/v1/stats/DPV_HLTH13_DPHLTH1311": {
+      "get": {
+        "summary": "تقديرات معدل الخصوبة الكلي مع تصنيفة حسب الجنسية للفترة الزمنية من 2011 إلى 2022 / Estimated Total Fertility Rate per nationality 2011 - 2022",
+        "description": "معدل الخصوبة الكلي للإناث (15 - 49 سنة) مع تصنيفهم حسب الجنسية . / Total Fertility Rates of Female Population (15 - 49 years) with breakdowns by Nationality",
+        "tags": [
+          "إحصاءات الحالة الصحية / Health Status Statistics"
+        ],
+        "operationId": "getAllDPV_HLTH13_DPHLTH1311",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INDICATORS",
+                  "NATIONALITY",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "INDICATORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NATIONALITY_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of NATIONALITY_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_HLTH13_DPHLTH1311 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_HLTH13_DPHLTH1311"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Social Statistics",
+        "x-parent-ar": "إحصاءات الخدمات الاجتماعية",
+        "x-main": "Health Statistics",
+        "x-main-ar": "إحصاءات الصحة",
+        "x-sub": "Health Status Statistics",
+        "x-sub-ar": "إحصاءات الحالة الصحية"
+      }
+    },
+    "/v1/stats/DPV_HLTH13_DPHLTH1314": {
+      "get": {
+        "summary": "تقديرات معدل الخصوبة للسعوديات مع تصنيفه حسب الفئات العمرية ( 5 سنوات ) للفترة الزمنية من 2011 إلى 2022 [مواليد لكل امرأة خلال 5 سنوات] / Estimated Saudi Age Specific Fertility Rate by age group (5 years) 2011 - 2022 [births per a woman in 5 years]",
+        "description": "معدلات الخصوبة العمرية للسكان الإناث السعوديات (15-49 سنة) مع تصنيفهم حسب الفئات العمرية (5 سنوات) للفترة الزمنية من  2011 إلى 2022.   / Estimated Saudi Age specific Fertility Rates of Female Population (15 - 49 years) with breakdowns by 5-year age groups from 2011 to 2022. ",
+        "tags": [
+          "إحصاءات الحالة الصحية / Health Status Statistics"
+        ],
+        "operationId": "getAllDPV_HLTH13_DPHLTH1314",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "AGE",
+                  "INDICATORS",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "AGE_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of AGE_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_HLTH13_DPHLTH1314 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_HLTH13_DPHLTH1314"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Social Statistics",
+        "x-parent-ar": "إحصاءات الخدمات الاجتماعية",
+        "x-main": "Health Statistics",
+        "x-main-ar": "إحصاءات الصحة",
+        "x-sub": "Health Status Statistics",
+        "x-sub-ar": "إحصاءات الحالة الصحية"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DPV_HLTH13_DPHLTH130132": {
+        "type": "object",
+        "properties": {
+          "AGE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "AGE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "AGE_SPECIFIC_MORTALITY_RATE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "NATIONALITY_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "NATIONALITY_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SEX_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SEX_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "TOTAL_DEATH_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        }
+      },
+      "DPV_HLTH13_DPHLTH1304": {
+        "type": "object",
+        "properties": {
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SEX_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SEX_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "TOTAL_OBS_VALUE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_HLTH13_DPHLTH1307": {
+        "type": "object",
+        "properties": {
+          "AGE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "AGE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "NATIONALITY_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "NATIONALITY_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "TOTAL_OBS_VALUE_OBSV": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "string",
+            "maxLength": 0
+          }
+        }
+      },
+      "DPV_HLTH13_DPHLTH130789": {
+        "type": "object",
+        "properties": {
+          "AGE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "AGE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "TOTAL_NUMBER_OF_FEMALES_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "TOTAL_OF_ESTIMATED_AGE_SPECIFIC_FERTILTY_RATE_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "TOTAL_OF_ESTIMATED_BIRTHS_OBSV": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        }
+      },
+      "DPV_HLTH13_DPHLTH1311": {
+        "type": "object",
+        "properties": {
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "NATIONALITY_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "NATIONALITY_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "TOTAL_OBS_VALUE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_HLTH13_DPHLTH1314": {
+        "type": "object",
+        "properties": {
+          "AGE_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "AGE_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "TOTAL_OBS_VALUE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "YEAR_TIME"
+        ]
+      },
+      "CDataError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CDataInError"
+          }
+        }
+      },
+      "CDataInError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

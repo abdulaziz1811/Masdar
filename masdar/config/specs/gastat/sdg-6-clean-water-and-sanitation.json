@@ -1,0 +1,400 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "SDG 6: Clean Water and Sanitation",
+    "description": "This specification contains the documentation for: SDG 6: Clean Water and Sanitation",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.stats.gov.sa",
+      "description": "Prod Environment"
+    }
+  ],
+  "paths": {
+    "/v1/stats/DPV_SDG6_1_1": {
+      "get": {
+        "summary": "Indicator 6.1.1: Proportion of population using safely managed drinking water services / المؤشر 6.1.1: نسبة السـكان الذين يسـتفيدون من خدمات مياه الشـرب التي تدار بطريقة مأمونة",
+        "description": "Indicator 6.1.1: Proportion of population using safely managed drinking water services / المؤشر 6.1.1: نسبة السـكان الذين يسـتفيدون من خدمات مياه الشـرب التي تدار بطريقة مأمونة",
+        "tags": [
+          "SDG 6: Clean Water and Sanitation"
+        ],
+        "operationId": "getAllDPV_SDG6_1_1",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INDICATORS",
+                  "OBS_VALUE",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OBS_VALUE",
+            "in": "query",
+            "description": "Filter data based on the value of OBS_VALUE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_SDG6_1_1 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_SDG6_1_1"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Sustainable Development Indicators",
+        "x-sub": "SDG 6: Clean Water and Sanitation"
+      }
+    },
+    "/v1/stats/DPV_SDG6_2_1": {
+      "get": {
+        "summary": "Indicator 6.2.1: Proportion of population using (a) safely managed sanitation services and (b) a hand-washing facility with soap and water (%) / المؤشر 6.2.1: نسبة السكان الذين يستخدمون (أ) خدمات الصرف الصحي المدارة بأمان و (ب) مرفق لغسل اليدين بالماء والصابون (%)",
+        "description": "Indicator 6.2.1: Proportion of population using (a) safely managed sanitation services and (b) a hand-washing facility with soap and water (%) / المؤشر 6.2.1: نسبة السكان الذين يستخدمون (أ) خدمات الصرف الصحي المدارة بأمان و (ب) مرفق لغسل اليدين بالماء والصابون (%)",
+        "tags": [
+          "SDG 6: Clean Water and Sanitation"
+        ],
+        "operationId": "getAllDPV_SDG6_2_1",
+        "parameters": [
+          {
+            "name": "dimensions[]",
+            "in": "query",
+            "description": "Group data by any of these dimensions. You can only filter and order the data if the corresponding dimension is selected.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INDICATORS",
+                  "OBS_VALUE",
+                  "SANITATION_SERVICES",
+                  "YEAR"
+                ]
+              }
+            }
+          },
+          {
+            "name": "INDICATORS_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "INDICATORS_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of INDICATORS_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OBS_VALUE",
+            "in": "query",
+            "description": "Filter data based on the value of OBS_VALUE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SANITATION_SERVICES_CODE",
+            "in": "query",
+            "description": "Filter data based on the value of SANITATION_SERVICES_CODE",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SANITATION_SERVICES_ENGL",
+            "in": "query",
+            "description": "Filter data based on the value of SANITATION_SERVICES_ENGL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "YEAR_TIME",
+            "in": "query",
+            "description": "Filter data based on the value of YEAR_TIME",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order the results by this property in ascending or descending order.  Example for ascending: 'Name ASC' Example for descending: 'Name DESC'"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The number of results to return."
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "This is the offset of results to skip when returning results."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JSON",
+                "HTML",
+                "CSV"
+              ]
+            },
+            "description": "When set, the results will be returned in the requested format."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DPV_SDG6_2_1 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DPV_SDG6_2_1"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CDataError"
+                }
+              }
+            }
+          }
+        },
+        "x-parent": "Sustainable Development Indicators",
+        "x-sub": "SDG 6: Clean Water and Sanitation"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DPV_SDG6_1_1": {
+        "type": "object",
+        "properties": {
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBS_VALUE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "INDICATORS_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "DPV_SDG6_2_1": {
+        "type": "object",
+        "properties": {
+          "INDICATORS_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "INDICATORS_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "INDICATORS_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "OBS_VALUE": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          },
+          "SANITATION_SERVICES_ARAB": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "SANITATION_SERVICES_CODE": {
+            "description": "",
+            "type": "string",
+            "maxLength": 128
+          },
+          "SANITATION_SERVICES_ENGL": {
+            "description": "",
+            "type": "string",
+            "maxLength": 1024
+          },
+          "YEAR_TIME": {
+            "description": "",
+            "type": "number",
+            "maxLength": 22
+          }
+        },
+        "required": [
+          "INDICATORS_CODE",
+          "SANITATION_SERVICES_CODE",
+          "YEAR_TIME"
+        ]
+      },
+      "CDataError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CDataInError"
+          }
+        }
+      },
+      "CDataInError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
