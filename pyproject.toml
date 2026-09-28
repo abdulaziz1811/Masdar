@@ -24,7 +24,8 @@ include = ["masdar*"]
 
 [tool.setuptools.package-data]
 masdar = ["config/*.yaml", "config/specs/*/*.json", "config/specs/*/*.yaml",
-          "config/specs/*/*.md", "fixtures/*.yaml", "fixtures/*/*.json", "fixtures/*/*.csv"]
+          "config/specs/*/*.md", "fixtures/*.yaml", "fixtures/*/*.json", "fixtures/*/*.csv",
+          "chat/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

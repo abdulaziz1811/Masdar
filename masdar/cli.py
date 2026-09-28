@@ -15,6 +15,7 @@ from datetime import date
 from pathlib import Path
 
 from masdar.domain.models import Answer, Verdict
+from masdar.envfile import load_env_file
 from masdar.nlu.lexicon import load_lexicon
 from masdar.nlu.parser import parse as parse_query
 from masdar.pipeline.orchestrator import Agent, AgentConfig
@@ -67,7 +68,8 @@ def _answer_to_dict(answer: Answer) -> dict:
             for f in answer.findings
         ],
         "suggestions": [
-            {"year": s.year, "reason": s.reason_ar} for s in answer.suggestions
+            {"year": s.year, "reason": s.reason_ar, "source": s.source_ar, "title": s.title_ar}
+            for s in answer.suggestions
         ],
         "source_errors": [{"source_id": s, "reason": r} for s, r in answer.source_errors],
         "audit": list(answer.audit),
@@ -381,6 +383,43 @@ def cmd_specs(args: argparse.Namespace) -> int:
     return 1 if problems else 0
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    from masdar.chat.server import make_server
+
+    http = HttpClient(timeout=args.timeout, offline=args.offline)
+    registry = load_registry(demo=args.demo, http=http)
+    config = AgentConfig(
+        max_sources=args.max_sources,
+        max_downloads=args.max_downloads,
+        out_dir=Path(args.out),
+        today=date.fromisoformat(args.today) if args.today else None,
+    )
+    agent = Agent(registry=registry, http=http, config=config)
+    try:
+        server = make_server(agent, host=args.host, port=args.port)
+    except OSError as exc:
+        print(f"تعذّر تشغيل الخادم على {args.host}:{args.port} — {exc}", file=sys.stderr)
+        return 1
+    host, port = server.server_address[:2]
+    url = f"http://{'127.0.0.1' if host in ('0.0.0.0', '::') else host}:{port}/"
+    print(f"مصدر يعمل على {url}")
+    print(f"ملفات الإكسل تُحفظ في: {Path(args.out).resolve()}")
+    if args.host not in ("127.0.0.1", "localhost", "::1"):
+        print("⚠️ الخادم مفتوح لغير هذا الجهاز وليس عليه تسجيل دخول.")
+    print("للإيقاف: Ctrl+C")
+    if args.open:
+        import webbrowser
+
+        webbrowser.open(url)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="masdar",
@@ -418,6 +457,19 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--timeout", type=float, default=20.0)
     doctor.set_defaults(func=cmd_doctor)
 
+    serve = sub.add_parser("serve", help="شغّل واجهة الشات في المتصفح")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--open", action="store_true", help="افتح الصفحة في المتصفح")
+    serve.add_argument("--demo", action="store_true", help="أضف المصادر التجريبية")
+    serve.add_argument("--offline", action="store_true", help="استخدم المخزن المؤقت فقط")
+    serve.add_argument("--out", default="out", help="مجلد ملفات الإكسل")
+    serve.add_argument("--max-sources", type=int, default=4)
+    serve.add_argument("--max-downloads", type=int, default=3)
+    serve.add_argument("--timeout", type=float, default=20.0)
+    serve.add_argument("--today", help="تجاوز تاريخ اليوم (YYYY-MM-DD) للاختبار")
+    serve.set_defaults(func=cmd_serve)
+
     importer = sub.add_parser("import-spec", help="استورد ملفات مواصفات OpenAPI")
     importer.add_argument("files", nargs="+", help="ملفات JSON/YAML من بوابة المطوّرين")
     importer.add_argument("--source", default="gastat_cdata")
@@ -434,6 +486,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    load_env_file()
     return args.func(args)
 
 

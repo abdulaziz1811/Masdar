@@ -63,7 +63,12 @@ def _suggestions_block(answer: Answer) -> list[str]:
         return []
     lines = ["", "🔄 البديل المتاح:"]
     for suggestion in answer.suggestions:
-        lines.append(f"   • {suggestion.year} — {suggestion.reason_ar}")
+        line = f"   • {suggestion.year} — {suggestion.reason_ar}"
+        if suggestion.source_ar or suggestion.title_ar:
+            line += f": {suggestion.source_ar}" + (
+                f" («{suggestion.title_ar}»)" if suggestion.title_ar else ""
+            )
+        lines.append(line)
     lines.append("   اطلب أي سنة منها وسأجهّز الملف.")
     return lines
 

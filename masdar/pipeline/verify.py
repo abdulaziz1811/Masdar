@@ -14,6 +14,7 @@ claim may never exceed the strength of the evidence behind it.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 
@@ -21,6 +22,7 @@ from masdar.domain.models import (
     Coverage,
     CoverageOrigin,
     DataRequest,
+    Finding,
     PeriodKind,
     Verdict,
     YearSuggestion,
@@ -213,3 +215,35 @@ def suggest_years(
             add(min(above), f"أقرب سنة متاحة بعد {target}")
 
     return tuple(suggestions[:limit])
+
+
+def newer_elsewhere(best: Finding, others: Sequence[Finding]) -> YearSuggestion | None:
+    """A strictly newer year held by another dataset whose file was opened.
+
+    The answer is chosen for relevance first, so a dataset that matches the
+    question less closely is not promoted over it merely for being newer.
+    But "what is the latest?" is the question, and silence about a newer
+    year the agent itself has seen would be a quiet omission. Only files
+    actually opened count: they were among the most relevant results, and
+    their years are observed, not declared.
+    """
+    baseline = best.coverage.latest() if best.coverage.origin.can_support_availability else None
+    newest: Finding | None = None
+    for finding in others:
+        if finding is best or finding.provenance.sha256 is None:
+            continue
+        if finding.coverage.origin is not CoverageOrigin.OBSERVED_DATA:
+            continue
+        latest = finding.coverage.latest()
+        if latest is None or (baseline is not None and latest <= baseline):
+            continue
+        if newest is None or latest > (newest.coverage.latest() or 0):
+            newest = finding
+    if newest is None:
+        return None
+    return YearSuggestion(
+        year=newest.coverage.latest() or 0,
+        reason_ar="أحدث سنة وجدتها في مصدر آخر",
+        source_ar=newest.provenance.publisher_ar,
+        title_ar=newest.candidate.title_ar or newest.candidate.title_en,
+    )

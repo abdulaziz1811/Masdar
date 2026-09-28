@@ -323,6 +323,11 @@ class YearSuggestion:
 
     year: int
     reason_ar: str
+    # Set when the year comes from a different dataset than the answer's:
+    # the offer is then "this other publisher has newer data", and saying
+    # whose it is keeps the offer from reading as a claim about the first.
+    source_ar: str = ""
+    title_ar: str = ""
 
 
 @dataclass

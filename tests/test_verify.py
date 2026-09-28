@@ -154,3 +154,53 @@ class TestCoverageDescription:
 
     def test_unknown_coverage_says_unknown(self):
         assert Coverage.unknown().describe() == "غير معروفة"
+
+
+class TestNewerDataElsewhere:
+    """The answer is chosen for relevance; a newer year seen elsewhere is still said."""
+
+    @staticmethod
+    def finding(years, opened=True, origin=CoverageOrigin.OBSERVED_DATA, publisher="جهة"):
+        from datetime import UTC, datetime
+
+        from masdar.domain.models import DatasetCandidate, Finding, Provenance
+
+        return Finding(
+            candidate=DatasetCandidate(source_id="s", dataset_id=publisher, title_ar="عنوان"),
+            provenance=Provenance(
+                source_id="s", publisher_ar=publisher, publisher_en="",
+                landing_url="", retrieved_at=datetime.now(UTC),
+                sha256="ab" * 32 if opened else None,
+            ),
+            verdict=Verdict.NOT_AVAILABLE,
+            coverage=Coverage(years=frozenset(years), origin=origin, is_exhaustive=True),
+        )
+
+    def test_a_newer_opened_file_is_offered_with_its_publisher(self):
+        from masdar.pipeline.verify import newer_elsewhere
+
+        best = self.finding({2021, 2022}, publisher="الهيئة العامة للإحصاء")
+        other = self.finding({2023, 2024}, publisher="وزارة الطاقة")
+        offer = newer_elsewhere(best, [best, other])
+        assert offer is not None
+        assert offer.year == 2024 and offer.source_ar == "وزارة الطاقة"
+
+    def test_nothing_is_offered_when_the_answer_is_already_newest(self):
+        from masdar.pipeline.verify import newer_elsewhere
+
+        best = self.finding({2024})
+        assert newer_elsewhere(best, [best, self.finding({2022, 2024})]) is None
+
+    def test_a_declared_year_is_not_offered(self):
+        from masdar.pipeline.verify import newer_elsewhere
+
+        best = self.finding({2022})
+        declared = self.finding({2025}, origin=CoverageOrigin.METADATA_CLAIM)
+        assert newer_elsewhere(best, [best, declared]) is None
+
+    def test_a_file_never_opened_is_not_offered(self):
+        from masdar.pipeline.verify import newer_elsewhere
+
+        best = self.finding({2022})
+        unopened = self.finding({2025}, opened=False)
+        assert newer_elsewhere(best, [best, unopened]) is None

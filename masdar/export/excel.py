@@ -220,7 +220,10 @@ def default_path(
         period = str(years[0]) if len(years) == 1 else f"{min(years)}-{max(years)}"
     else:
         period = request.period.label().replace("–", "-").replace(" ", "")
+    # The dataset id keeps two datasets of one source, exported in the same
+    # second for the same question, from overwriting each other.
     name = safe_filename(
-        "masdar", topic, period, candidate.source_id, now.strftime("%Y%m%d-%H%M%S")
+        "masdar", topic, period, candidate.source_id, candidate.dataset_id[-24:],
+        now.strftime("%Y%m%d-%H%M%S"),
     )
     return out_dir / f"{name}.xlsx"

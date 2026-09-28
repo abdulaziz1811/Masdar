@@ -20,7 +20,7 @@ import json
 import os
 import time
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -37,6 +37,23 @@ from masdar.sources.transport import Transport, build_transport, looks_rejected
 
 DEFAULT_TIMEOUT = 20.0
 DEFAULT_RETRIES = 3
+# How long a cached response may stand in for the source. Sources are asked
+# live precisely so that a newly published year is seen; a copy kept forever
+# would answer "not published" about a year published since. Six hours keeps
+# a conversation's repeated questions cheap without outliving a publication
+# day. Override with MASDAR_CACHE_MAX_AGE_HOURS (0 = always ask the source).
+DEFAULT_CACHE_MAX_AGE = timedelta(hours=6)
+
+
+def cache_max_age() -> timedelta:
+    raw = os.environ.get("MASDAR_CACHE_MAX_AGE_HOURS", "").strip()
+    if not raw:
+        return DEFAULT_CACHE_MAX_AGE
+    try:
+        hours = float(raw)
+    except ValueError:
+        return DEFAULT_CACHE_MAX_AGE
+    return timedelta(hours=max(hours, 0.0))
 
 
 def concise_reason(exc: Exception, host: str) -> str:
@@ -118,10 +135,12 @@ class HttpClient:
         use_cache: bool = True,
         offline: bool = False,
         transport: Transport | None = None,
+        max_age: timedelta | None = None,
     ):
         self.timeout = timeout
         self.retries = retries
         self.use_cache = use_cache
+        self.max_age = cache_max_age() if max_age is None else max_age
         # `offline` makes any un-cached request fail loudly instead of
         # silently degrading, which keeps test runs honest.
         self.offline = offline
@@ -143,6 +162,17 @@ class HttpClient:
             return None
         try:
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            retrieved_at = datetime.fromisoformat(meta["retrieved_at"])
+        except (OSError, ValueError, KeyError):
+            return None
+        if retrieved_at.tzinfo is None:
+            retrieved_at = retrieved_at.replace(tzinfo=UTC)
+        # Offline runs have no source to ask, so any copy is the best
+        # available -- and it carries its own retrieval time into the
+        # workbook. Online, an old copy must not stand in for the source.
+        if not self.offline and datetime.now(UTC) - retrieved_at > self.max_age:
+            return None
+        try:
             content = path.read_bytes()
         except OSError:
             return None
@@ -152,7 +182,7 @@ class HttpClient:
             status=meta.get("status", 200),
             content=content,
             media_type=meta.get("media_type", "application/octet-stream"),
-            retrieved_at=datetime.fromisoformat(meta["retrieved_at"]),
+            retrieved_at=retrieved_at,
             sha256=meta.get("sha256", hashlib.sha256(content).hexdigest()),
             from_cache=True,
             headers=meta.get("headers", {}),

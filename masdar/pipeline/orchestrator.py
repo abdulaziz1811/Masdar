@@ -72,9 +72,16 @@ class Agent:
 
     # -- public --------------------------------------------------------
     def answer(self, query: str) -> Answer:
-        request = parse(query, self.lexicon)
-        today = self.config.today or date.today()
+        return self.answer_request(parse(query, self.lexicon))
 
+    def answer_request(self, request: DataRequest) -> Answer:
+        """Answer an already-understood request.
+
+        A conversation builds requests from more than one message ("and for
+        2021?" keeps the previous topic), so understanding and answering are
+        separate steps.
+        """
+        today = self.config.today or date.today()
         if not request.is_answerable:
             return Answer(
                 request=request,
@@ -111,11 +118,24 @@ class Agent:
 
         best = findings[0] if findings else None
         verdict = best.verdict if best else Verdict.NO_SOURCE
+
+        # A search can succeed from a local catalogue while the data behind it
+        # cannot be fetched; such sources are listed with the ones whose search
+        # failed, so no outage is invisible.
+        reported = {source_id for source_id, _ in errors}
+        for finding in findings:
+            source_id = finding.candidate.source_id
+            if finding.verdict is Verdict.SOURCE_UNREACHABLE and source_id not in reported:
+                reported.add(source_id)
+                errors.append((source_id, "تعذّر تنزيل البيانات من المصدر"))
         suggestions = (
             verify_module.suggest_years(request, best.coverage, best.matched_years)
             if best
             else ()
         )
+        newer = verify_module.newer_elsewhere(best, findings) if best else None
+        if newer is not None:
+            suggestions = (newer, *suggestions)
 
         answer = Answer(
             request=request,
@@ -180,6 +200,10 @@ class Agent:
     ) -> list[Finding]:
         findings: list[Finding] = []
         downloads = 0
+        # Sources that could not deliver a file for this question. Their other
+        # datasets are not tried again: each attempt would spend a download on
+        # a source already known to be down, starving the ones that answer.
+        down: dict[str, str] = {}
 
         for candidate in ranked:
             descriptor = descriptors.get(candidate.source_id)
@@ -188,6 +212,23 @@ class Agent:
             fetched = None
             notes: list[str] = []
 
+            if candidate.source_id in down and (
+                coverage.is_empty or not coverage.origin.can_support_availability
+            ):
+                findings.append(
+                    Finding(
+                        candidate=candidate,
+                        provenance=self._provenance(candidate, descriptor),
+                        verdict=Verdict.SOURCE_UNREACHABLE,
+                        coverage=coverage,
+                        notes=(
+                            "لم يُحاوَل التنزيل: المصدر لم يُجب قبل قليل "
+                            f"({down[candidate.source_id]})",
+                        ),
+                    )
+                )
+                continue
+
             may_download = (
                 self.config.download
                 and downloads < self.config.max_downloads
@@ -195,10 +236,38 @@ class Agent:
             )
             if may_download:
                 downloads += 1
-                observed, table, fetched, problem = self._observe(candidate)
+                try:
+                    observed, table, fetched, problem = self._observe(candidate)
+                except _Unreachable as exc:
+                    down.setdefault(candidate.source_id, exc.reason)
+                    known = candidate.claimed_coverage
+                    if known.is_empty or not known.origin.can_support_availability:
+                        # No file could be fetched and nothing trustworthy is
+                        # known about the years: "unverified" would read as a
+                        # finding. It is an outage, and sorts as one.
+                        audit.append(f"{candidate.title_ar}: {exc.reason}")
+                        findings.append(
+                            Finding(
+                                candidate=candidate,
+                                provenance=self._provenance(candidate, descriptor),
+                                verdict=Verdict.SOURCE_UNREACHABLE,
+                                coverage=known,
+                                notes=(exc.reason,),
+                            )
+                        )
+                        continue
+                    # The source already told us its years; only the file is
+                    # missing, so the verdict stands on that and no workbook
+                    # is written.
+                    observed, table, fetched, problem = None, None, None, exc.reason
                 if problem:
                     notes.append(problem)
                     audit.append(f"{candidate.title_ar}: {problem}")
+                if fetched is not None and fetched.from_cache:
+                    notes.append(
+                        "الملف من نسخة محفوظة جُلبت من المصدر في "
+                        f"{fetched.retrieved_at:%Y-%m-%d %H:%M} (UTC)."
+                    )
                 if observed is not None:
                     coverage = _merge_coverage(candidate.claimed_coverage, observed)
                     audit.append(
@@ -269,9 +338,15 @@ class Agent:
                 )
             )
 
-            # A confirmed, exported answer ends the search; anything weaker
-            # keeps looking in case a better source exists.
-            if verification.verdict is Verdict.AVAILABLE and export_path:
+            # A confirmed, exported answer for the years asked ends the search;
+            # anything weaker keeps looking in case a better source exists. A
+            # request for "the latest" keeps looking too: the first dataset
+            # with any year answers it, but not necessarily with the newest.
+            if (
+                verification.verdict is Verdict.AVAILABLE
+                and export_path
+                and request.period.years
+            ):
                 break
 
         return findings
@@ -291,10 +366,12 @@ class Agent:
 
         problems: list[str] = []
         fallback: tuple[Table, object] | None = None
+        unreachable = 0
         for resource in resources:
             try:
                 fetched = self._fetch(candidate.source_id, resource.url)
             except SourceUnreachable as exc:
+                unreachable += 1
                 problems.append(f"تعذّر تنزيل ملف {resource.format}: {exc.reason}")
                 continue
             except SourceError as exc:
@@ -330,6 +407,8 @@ class Agent:
         # Nothing had a year axis. A file that opened can still be exported,
         # but it cannot upgrade the claim; the declared coverage stands.
         joined = "؛ ".join(problems)
+        if unreachable == len(resources):
+            raise _Unreachable(joined)
         if fallback is not None:
             return None, fallback[0], fallback[1], joined
         return None, None, None, joined
@@ -378,6 +457,14 @@ class Agent:
         )
 
 
+class _Unreachable(Exception):
+    """Every file of a dataset failed for lack of access, none for content."""
+
+    def __init__(self, reason: str):
+        super().__init__(reason)
+        self.reason = reason
+
+
 def _merge_coverage(enumerated: Coverage, observed: Coverage) -> Coverage:
     """Combine coverage a source enumerated with coverage seen in a download.
 
@@ -410,8 +497,15 @@ _VERDICT_RANK = {
 
 
 def _finding_sort_key(finding: Finding) -> tuple:
+    rank: float = _VERDICT_RANK.get(finding.verdict, 9)
+    # "Unverified" with nothing known about the years -- a dataset never
+    # opened -- carries no evidence at all, so it does not outrank a source
+    # that was opened and showed the year is absent. The answer then says
+    # what was established, and the unopened result is still listed.
+    if finding.verdict is Verdict.UNVERIFIED and finding.coverage.is_empty:
+        rank = _VERDICT_RANK[Verdict.NOT_AVAILABLE] + 0.5
     return (
-        _VERDICT_RANK.get(finding.verdict, 9),
+        rank,
         0 if finding.export_path else 1,
         -finding.candidate.score,
     )
