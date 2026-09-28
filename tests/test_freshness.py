@@ -12,7 +12,14 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from masdar.sources.http import DEFAULT_CACHE_MAX_AGE, HttpClient, cache_max_age
+from masdar.sources.base import SourceRejected, SourceUnreachable
+from masdar.sources.http import (
+    DEFAULT_CACHE_MAX_AGE,
+    DEFAULT_STALE_MAX_AGE,
+    HttpClient,
+    cache_max_age,
+    stale_max_age,
+)
 from masdar.sources.transport import Response, Transport
 
 URL = "https://api.example.invalid/v1/stats/X?dimensions[]=YEAR"
@@ -44,6 +51,7 @@ def years(fetched) -> list[int]:
 def isolated_cache(tmp_path, monkeypatch):
     monkeypatch.setenv("MASDAR_CACHE_DIR", str(tmp_path / "cache"))
     monkeypatch.delenv("MASDAR_CACHE_MAX_AGE_HOURS", raising=False)
+    monkeypatch.delenv("MASDAR_STALE_MAX_DAYS", raising=False)
 
 
 def age_cache(client: HttpClient, url: str, by: timedelta) -> None:
@@ -101,3 +109,58 @@ class TestConfiguredMaxAge:
     def test_nonsense_falls_back_to_the_default(self, monkeypatch):
         monkeypatch.setenv("MASDAR_CACHE_MAX_AGE_HOURS", "soon")
         assert cache_max_age() == DEFAULT_CACHE_MAX_AGE
+
+
+class Down(Transport):
+    """A source that has gone away since it was last read."""
+
+    name = "down"
+
+    def __init__(self, error=SourceUnreachable):
+        self.error = error
+
+    def get(self, url, source_id, params=None, headers=None):
+        raise self.error(source_id, "انتهت مهلة الاتصال")
+
+
+class TestSourceDown:
+    """A source that is down should not sink a presentation, nor be hidden."""
+
+    def _saved(self, age: timedelta) -> HttpClient:
+        HttpClient(transport=Publishing(), retries=1).get(URL)
+        client = HttpClient(transport=Down(), retries=1)
+        age_cache(client, URL, age)
+        return client
+
+    def test_an_expired_copy_answers_and_says_it_is_stale(self):
+        copy = self._saved(timedelta(days=3)).get(URL)
+        assert copy.stale and copy.from_cache
+        assert years(copy) == [2021, 2022]
+        assert datetime.now(UTC) - copy.retrieved_at > timedelta(days=2)
+
+    def test_a_firewall_refusal_also_falls_back(self):
+        HttpClient(transport=Publishing(), retries=1).get(URL)
+        client = HttpClient(transport=Down(SourceRejected), retries=1)
+        age_cache(client, URL, timedelta(days=1))
+        assert client.get(URL).stale
+
+    def test_a_copy_older_than_the_limit_is_not_used(self):
+        client = self._saved(DEFAULT_STALE_MAX_AGE + timedelta(days=1))
+        with pytest.raises(SourceUnreachable):
+            client.get(URL)
+
+    def test_without_a_copy_the_outage_is_reported(self):
+        with pytest.raises(SourceUnreachable):
+            HttpClient(transport=Down(), retries=1).get(URL)
+
+    def test_the_fallback_can_be_switched_off(self, monkeypatch):
+        monkeypatch.setenv("MASDAR_STALE_MAX_DAYS", "0")
+        with pytest.raises(SourceUnreachable):
+            self._saved(timedelta(days=1)).get(URL)
+
+    def test_a_live_answer_is_never_marked_stale(self):
+        fetched = HttpClient(transport=Publishing(), retries=1).get(URL)
+        assert not fetched.stale
+
+    def test_default_limit(self):
+        assert stale_max_age() == DEFAULT_STALE_MAX_AGE

@@ -96,8 +96,7 @@ class TestSessions:
         assert again != first
 
 
-@pytest.fixture
-def server(tmp_path):
+def _start(tmp_path, access_code=None):
     http = HttpClient(offline=True, use_cache=False, retries=1)
     registry = Registry(load_descriptors(DEMO_SOURCES_FILE), http)
     agent = Agent(
@@ -105,9 +104,24 @@ def server(tmp_path):
         http=http,
         config=AgentConfig(out_dir=tmp_path / "out", today=date(2026, 9, 27)),
     )
-    srv = make_server(agent, host="127.0.0.1", port=0)
+    srv = make_server(agent, host="127.0.0.1", port=0, access_code=access_code)
     thread = threading.Thread(target=srv.serve_forever, daemon=True)
     thread.start()
+    return srv
+
+
+@pytest.fixture
+def server(tmp_path, monkeypatch):
+    monkeypatch.delenv("MASDAR_ACCESS_CODE", raising=False)
+    srv = _start(tmp_path)
+    yield f"http://127.0.0.1:{srv.server_address[1]}"
+    srv.shutdown()
+    srv.server_close()
+
+
+@pytest.fixture
+def protected(tmp_path):
+    srv = _start(tmp_path, access_code="رمز-العرض-2026")
     yield f"http://127.0.0.1:{srv.server_address[1]}"
     srv.shutdown()
     srv.server_close()
@@ -121,14 +135,19 @@ def get(url):
         return response.status, dict(response.headers), response.read()
 
 
-def post(url, body, raw=None):
+def post(url, body, raw=None, cookie=None, full=False):
     data = raw if raw is not None else json.dumps(body).encode("utf-8")
-    request = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    headers = {"Content-Type": "application/json"}
+    if cookie:
+        headers["Cookie"] = cookie
+    request = urllib.request.Request(url, data=data, headers=headers)
     try:
         with _OPENER.open(request, timeout=60) as response:
-            return response.status, json.loads(response.read())
+            result = response.status, json.loads(response.read())
+            return (*result, dict(response.headers)) if full else result
     except urllib.error.HTTPError as exc:
-        return exc.code, json.loads(exc.read())
+        result = exc.code, json.loads(exc.read())
+        return (*result, dict(exc.headers)) if full else result
 
 
 class TestServer:
@@ -136,7 +155,41 @@ class TestServer:
         status, headers, body = get(server + "/")
         assert status == 200
         assert "dir=\"rtl\"" in body.decode("utf-8")
-        assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]
+        policy = headers["Content-Security-Policy"]
+        assert "frame-ancestors 'none'" in policy
+        assert "unsafe-inline" not in policy  # no inline script or style at all
+        assert "<script>" not in body.decode("utf-8")
+
+    def test_the_page_assets_are_served_and_nothing_else(self, server):
+        _, _, page = get(server + "/")
+        for asset in ("/static/app.js", "/static/app.css"):
+            assert asset in page.decode("utf-8")
+            status, headers, _ = get(server + asset)
+            assert status == 200 and headers["X-Content-Type-Options"] == "nosniff"
+        for path in ("/static/../server.py", "/static/%2e%2e/server.py", "/static/index.html",
+                     "/static/fonts/../../server.py", "/static/nothing.js"):
+            with pytest.raises(urllib.error.HTTPError) as caught:
+                get(server + path)
+            assert caught.value.code == 404
+
+    def test_the_overview_counts_what_can_be_searched(self, server):
+        _, _, body = get(server + "/api/overview")
+        data = json.loads(body)
+        assert data["examples"] and all(e["q"] for e in data["examples"])
+        assert data["stats"]["topics"] > 10
+        assert data["locked"] is False and data["demo"] is True
+
+    def test_an_answer_says_where_it_looked_and_previews_the_file(self, server):
+        _, data = post(server + "/api/ask", {"message": "استهلاك الكهرباء 2022 حسب المناطق"})
+        assert data["verdict"] == "available"
+        assert data["consulted"] and all("source" in c for c in data["consulted"])
+        preview = data["findings"][0]["preview"]
+        assert preview["columns"][0] == "السنة" and preview["total_rows"] >= len(preview["rows"])
+        chart = preview["charts"][0]
+        assert chart["kind"] == "categories" and chart["note"] == "سنة 2022"
+        values = [p["value"] for p in chart["points"]]
+        assert values == sorted(values, reverse=True)
+        assert data["seconds"] >= 0
 
     def test_the_unpublished_year_is_refused_with_the_latest_offered(self, server):
         status, data = post(server + "/api/ask", {"message": FIRST})
@@ -174,3 +227,32 @@ class TestServer:
         for finding in data["findings"]:
             for key in ("landing_url", "resource_url"):
                 assert finding[key] is None or finding[key].startswith(("http://", "https://"))
+
+
+class TestAccessCode:
+    def test_questions_and_downloads_need_the_code(self, protected):
+        _, _, body = get(protected + "/api/overview")
+        assert json.loads(body)["locked"] is True
+        assert post(protected + "/api/ask", {"message": FIRST})[0] == 401
+        with pytest.raises(urllib.error.HTTPError) as caught:
+            get(protected + "/files/anything")
+        assert caught.value.code == 401
+
+    def test_a_wrong_code_is_refused(self, protected):
+        assert post(protected + "/api/unlock", {"code": "خطأ"})[0] == 403
+        assert post(protected + "/api/unlock", {"code": 1234})[0] == 403
+
+    def test_the_right_code_opens_the_session(self, protected):
+        status, _, headers = post(
+            protected + "/api/unlock", {"code": "رمز-العرض-2026"}, full=True
+        )
+        assert status == 200
+        cookie = headers["Set-Cookie"]
+        assert "HttpOnly" in cookie and "SameSite=Strict" in cookie
+        grant = cookie.split(";", 1)[0]
+        status, data = post(protected + "/api/ask", {"message": FIRST}, cookie=grant)
+        assert status == 200 and data["verdict"] == "not_available"
+
+    def test_a_forged_grant_is_refused(self, protected):
+        forged = "masdar_access=not-a-grant"
+        assert post(protected + "/api/ask", {"message": FIRST}, cookie=forged)[0] == 401

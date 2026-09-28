@@ -226,6 +226,8 @@ class Provenance:
     byte_size: int | None = None
     media_type: str | None = None
     license_name: str | None = None
+    # The source could not be reached, and this is an older saved copy.
+    stale: bool = False
 
     def citation_ar(self) -> str:
         parts = [self.publisher_ar]
@@ -353,6 +355,17 @@ class Finding:
     notes: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class Consulted:
+    """One source asked during a search, and what it returned."""
+
+    source_id: str
+    name_ar: str
+    # Results offered, or None when the source could not answer.
+    found: int | None
+    international: bool = False
+
+
 @dataclass
 class Answer:
     """The complete, self-describing reply to one DataRequest."""
@@ -366,6 +379,9 @@ class Answer:
     # Sources that failed to answer, as (source_id, reason). Reported
     # alongside any verdict so partial outages are never invisible.
     source_errors: tuple[tuple[str, str], ...] = ()
+    # Every source asked, in the order asked, so an answer can show where it
+    # looked -- including the sources that had nothing.
+    consulted: tuple[Consulted, ...] = ()
     message_ar: str = ""
 
     @property

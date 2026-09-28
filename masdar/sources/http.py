@@ -19,7 +19,7 @@ import hashlib
 import json
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -45,15 +45,31 @@ DEFAULT_RETRIES = 3
 DEFAULT_CACHE_MAX_AGE = timedelta(hours=6)
 
 
-def cache_max_age() -> timedelta:
-    raw = os.environ.get("MASDAR_CACHE_MAX_AGE_HOURS", "").strip()
+# When a source cannot be reached, an older saved copy (up to this age) is
+# better than nothing -- a presentation should not fail because one ministry
+# is down -- provided the answer says it is a saved copy, from when, and that
+# newer data may exist. Override with MASDAR_STALE_MAX_DAYS (0 = never).
+DEFAULT_STALE_MAX_AGE = timedelta(days=90)
+
+
+def _env_float(name: str) -> float | None:
+    raw = os.environ.get(name, "").strip()
     if not raw:
-        return DEFAULT_CACHE_MAX_AGE
+        return None
     try:
-        hours = float(raw)
+        return max(float(raw), 0.0)
     except ValueError:
-        return DEFAULT_CACHE_MAX_AGE
-    return timedelta(hours=max(hours, 0.0))
+        return None
+
+
+def cache_max_age() -> timedelta:
+    hours = _env_float("MASDAR_CACHE_MAX_AGE_HOURS")
+    return DEFAULT_CACHE_MAX_AGE if hours is None else timedelta(hours=hours)
+
+
+def stale_max_age() -> timedelta:
+    days = _env_float("MASDAR_STALE_MAX_DAYS")
+    return DEFAULT_STALE_MAX_AGE if days is None else timedelta(days=days)
 
 
 def concise_reason(exc: Exception, host: str) -> str:
@@ -97,6 +113,8 @@ class Fetched:
     sha256: str
     from_cache: bool = False
     headers: dict[str, str] | None = None
+    # A saved copy used because the source could not be reached just now.
+    stale: bool = False
 
     @property
     def byte_size(self) -> int:
@@ -136,11 +154,13 @@ class HttpClient:
         offline: bool = False,
         transport: Transport | None = None,
         max_age: timedelta | None = None,
+        stale_age: timedelta | None = None,
     ):
         self.timeout = timeout
         self.retries = retries
         self.use_cache = use_cache
         self.max_age = cache_max_age() if max_age is None else max_age
+        self.stale_age = stale_max_age() if stale_age is None else stale_age
         # `offline` makes any un-cached request fail loudly instead of
         # silently degrading, which keeps test runs honest.
         self.offline = offline
@@ -155,7 +175,7 @@ class HttpClient:
         host = urlparse(url).netloc.replace(":", "_") or "unknown"
         return cache_dir() / host / f"{digest}.bin"
 
-    def _read_cache(self, url: str) -> Fetched | None:
+    def _read_cache(self, url: str, max_age: timedelta | None = None) -> Fetched | None:
         path = self._cache_path(url)
         meta_path = path.with_suffix(".json")
         if not (path.exists() and meta_path.exists()):
@@ -170,7 +190,8 @@ class HttpClient:
         # Offline runs have no source to ask, so any copy is the best
         # available -- and it carries its own retrieval time into the
         # workbook. Online, an old copy must not stand in for the source.
-        if not self.offline and datetime.now(UTC) - retrieved_at > self.max_age:
+        limit = self.max_age if max_age is None else max_age
+        if not self.offline and datetime.now(UTC) - retrieved_at > limit:
             return None
         try:
             content = path.read_bytes()
@@ -236,6 +257,28 @@ class HttpClient:
         if self.offline:
             raise SourceUnreachable(source_id, f"offline mode and no cached copy of {url}")
 
+        try:
+            return self._get_live(url, source_id, params, headers)
+        except SourceUnreachable:
+            saved = self._stale_copy(url, params)
+            if saved is None:
+                raise
+            return saved
+
+    def _stale_copy(self, url: str, params: dict | None) -> Fetched | None:
+        """An older saved copy, for when the source cannot be reached."""
+        if not self.use_cache or params is not None or self.stale_age <= timedelta(0):
+            return None
+        cached = self._read_cache(url, max_age=self.stale_age)
+        return replace(cached, stale=True) if cached is not None else None
+
+    def _get_live(
+        self,
+        url: str,
+        source_id: str,
+        params: dict | None,
+        headers: dict[str, str] | None,
+    ) -> Fetched:
         last_error: Exception | None = None
         for attempt in range(self.retries):
             try:

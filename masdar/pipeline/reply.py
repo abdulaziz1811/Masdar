@@ -113,14 +113,14 @@ def compose_message(answer: Answer) -> str:
         lines.extend(_notes_block(best))
 
     elif answer.verdict is Verdict.NOT_AVAILABLE and best is not None:
-        lines.append(f"❌ ما لقيت بيانات لـ {topic} للفترة {period}.")
+        lines.append(f"❌ ما لقيت بيانات «{topic}» للفترة {period}.")
         lines.append("")
         lines.append("بحثت ووجدت مجموعة البيانات، لكن السنة المطلوبة غير موجودة فيها:")
         lines.extend(_finding_block(best))
         lines.extend(_notes_block(best))
 
     elif answer.verdict is Verdict.UNVERIFIED and best is not None:
-        lines.append(f"🔶 لقيت نتائج محتملة لـ {topic}، لكن ما أقدر أأكد توفر {period}.")
+        lines.append(f"🔶 لقيت نتائج محتملة عن «{topic}»، لكن ما أقدر أأكد توفر {period}.")
         lines.append("   ما أعطيك تأكيداً بدون دليل من الملف نفسه.")
         lines.append("")
         lines.extend(_finding_block(best))

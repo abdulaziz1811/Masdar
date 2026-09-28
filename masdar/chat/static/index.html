@@ -3,444 +3,95 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>مصدر — البيانات الرسمية المفتوحة</title>
-<link rel="icon" href="data:,">
-<style>
-  :root {
-    --bg: #f6f7f5;
-    --surface: #ffffff;
-    --surface-2: #f0f2ef;
-    --text: #1d2521;
-    --muted: #5d6a63;
-    --border: #dfe4e0;
-    --accent: #0b6e4f;
-    --accent-ink: #ffffff;
-    --user: #0b6e4f;
-    --user-ink: #ffffff;
-    --ok: #0b6e4f;       --ok-bg: #e3f3ec;
-    --warn: #8a5a00;     --warn-bg: #fbf0d9;
-    --bad: #a3312b;      --bad-bg: #fbe7e5;
-    --info: #3b5b8c;     --info-bg: #e7eef9;
-    --shadow: 0 1px 2px rgba(20, 30, 25, .06), 0 2px 8px rgba(20, 30, 25, .05);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #121614;
-      --surface: #1a201d;
-      --surface-2: #222a26;
-      --text: #e6ece8;
-      --muted: #9aa8a0;
-      --border: #2e3833;
-      --accent: #3fb68b;
-      --accent-ink: #0d1411;
-      --user: #1f5c46;
-      --user-ink: #eaf5ef;
-      --ok: #5fd0a3;   --ok-bg: #173529;
-      --warn: #f0c060; --warn-bg: #3a2f14;
-      --bad: #f08a80;  --bad-bg: #3d1f1c;
-      --info: #9bb8ea; --info-bg: #1d2a40;
-      --shadow: none;
-    }
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Noto Naskh Arabic", "Noto Sans Arabic", "Segoe UI", Tahoma, "Geeza Pro", sans-serif;
-    font-size: 16px;
-    line-height: 1.7;
-    display: flex;
-    flex-direction: column;
-  }
-  header {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .brand { display: flex; flex-direction: column; }
-  .brand strong { font-size: 20px; letter-spacing: 0; }
-  .brand span { color: var(--muted); font-size: 13px; }
-  button { font: inherit; cursor: pointer; }
-  .ghost {
-    border: 1px solid var(--border); background: transparent; color: var(--text);
-    border-radius: 8px; padding: 6px 12px; font-size: 14px;
-  }
-  .ghost:hover { background: var(--surface-2); }
-
-  main { flex: 1; overflow-y: auto; }
-  .thread { max-width: 860px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-
-  .intro { text-align: center; padding: 32px 8px 8px; color: var(--muted); }
-  .intro h1 { color: var(--text); font-size: 22px; margin: 0 0 6px; }
-  .intro p { margin: 0 0 18px; }
-  .examples { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-
-  .chip {
-    border: 1px solid var(--border); background: var(--surface); color: var(--text);
-    border-radius: 999px; padding: 6px 14px; font-size: 14px; text-align: start;
-  }
-  .chip:hover { border-color: var(--accent); }
-  .chip small { color: var(--muted); }
-
-  .msg-user {
-    align-self: flex-end; max-width: 80%;
-    background: var(--user); color: var(--user-ink);
-    padding: 8px 14px; border-radius: 14px 14px 14px 4px;
-    white-space: pre-wrap; overflow-wrap: anywhere;
-  }
-  .msg-agent {
-    align-self: stretch;
-    background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
-    border-radius: 14px; padding: 14px 16px;
-    display: flex; flex-direction: column; gap: 10px;
-    overflow-wrap: anywhere;
-  }
-  .status { display: flex; align-items: flex-start; gap: 10px; }
-  .pill {
-    flex: none; font-size: 13px; font-weight: 600; padding: 2px 10px; border-radius: 999px;
-    white-space: nowrap;
-  }
-  .pill.ok { color: var(--ok); background: var(--ok-bg); }
-  .pill.warn { color: var(--warn); background: var(--warn-bg); }
-  .pill.bad { color: var(--bad); background: var(--bad-bg); }
-  .pill.info { color: var(--info); background: var(--info-bg); }
-  .headline { font-weight: 600; }
-  .understood { color: var(--muted); font-size: 13px; }
-
-  .finding { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: var(--surface-2); }
-  .finding h3 { margin: 0 0 8px; font-size: 16px; }
-  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 6px 16px; margin: 0; }
-  .facts div { display: flex; flex-direction: column; }
-  .facts dt { color: var(--muted); font-size: 12px; }
-  .facts dd { margin: 0; font-size: 14px; }
-  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    border-radius: 8px; padding: 6px 12px; font-size: 14px; text-decoration: none;
-    border: 1px solid var(--border); color: var(--text); background: var(--surface);
-  }
-  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-  .btn:hover { filter: brightness(0.97); }
-
-  details { font-size: 14px; }
-  details summary { cursor: pointer; color: var(--muted); }
-  details ul { margin: 6px 0 0; padding-inline-start: 20px; }
-  .suggestions { display: flex; flex-direction: column; gap: 6px; }
-  .suggestions .label { color: var(--muted); font-size: 13px; }
-  .suggestions .row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .others .finding { margin-top: 8px; background: var(--surface); }
-
-  .thinking { color: var(--muted); display: flex; align-items: center; gap: 10px; }
-  .dots { display: inline-flex; gap: 4px; }
-  .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
-  .dots i:nth-child(2) { animation-delay: .2s; } .dots i:nth-child(3) { animation-delay: .4s; }
-  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .dots i { animation: none; opacity: .6; } }
-
-  footer { border-top: 1px solid var(--border); background: var(--surface); }
-  form { max-width: 860px; margin: 0 auto; padding: 12px 16px; display: flex; gap: 8px; align-items: flex-end; }
-  textarea {
-    flex: 1; resize: none; min-height: 44px; max-height: 160px;
-    font: inherit; color: var(--text); background: var(--bg);
-    border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px;
-  }
-  textarea:focus, button:focus-visible, .chip:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .send { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 0 18px; height: 44px; font-weight: 600; }
-  .send:disabled { opacity: .5; cursor: default; }
-  .hint { max-width: 860px; margin: -6px auto 0; padding: 0 16px 10px; color: var(--muted); font-size: 12px; }
-
-  @media (max-width: 560px) {
-    .msg-user { max-width: 92%; }
-    .brand span { display: none; }
-  }
-</style>
+<meta name="description" content="وكيل ذكي يبحث في مصادر البيانات الرسمية السعودية ويجيب بالملف ومصدره وتاريخ تحديثه.">
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/app.js" defer></script>
 </head>
-<body>
-<header>
+<body class="is-landing">
+<a class="skip" href="#input">انتقل إلى خانة السؤال</a>
+
+<header class="topbar">
   <div class="brand">
-    <strong>مصدر</strong>
-    <span>بيانات رسمية مفتوحة — بمصدرها وتاريخ تحديثها وملف إكسل جاهز</span>
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="1" y="1" width="30" height="30" rx="9" class="mark-bg"/>
+      <path d="M9 21.5V14M14.3 21.5V10.5M19.6 21.5V16.5M24.9 21.5V12" class="mark-bars"/>
+    </svg>
+    <div class="brand-text">
+      <strong>مصدر</strong>
+      <span>البيانات الرسمية بمصدرها وتاريخ تحديثها</span>
+    </div>
   </div>
-  <button type="button" class="ghost" id="reset">محادثة جديدة</button>
+  <div class="topbar-actions">
+    <span class="badge badge-muted" id="mode-badge" hidden></span>
+    <span class="badge" id="ai-badge" hidden></span>
+    <button type="button" class="icon-btn" id="theme" aria-label="تبديل المظهر" title="تبديل المظهر">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path class="icon-moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/><g class="icon-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>
+    </button>
+    <button type="button" class="btn btn-ghost" id="reset">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>محادثة جديدة</span>
+    </button>
+  </div>
 </header>
 
-<main id="scroller">
-  <div class="thread" id="thread">
-    <section class="intro" id="intro">
-      <h1>وش البيانات اللي تبيها؟</h1>
-      <p>اكتب الموضوع والسنة والتفصيل، وأبحث لك في المصادر الرسمية وأتحقق من السنة من الملف نفسه.</p>
+<main id="scroller" tabindex="-1">
+  <div class="page">
+    <section class="hero" id="landing" aria-labelledby="hero-title">
+      <p class="eyebrow">وكيل بحث في البيانات المفتوحة الحكومية</p>
+      <h1 id="hero-title">اسأل عن أي إحصاء رسمي،<br>وخذ الملف ومصدره وتاريخ تحديثه.</h1>
+      <p class="lede">يبحث في الهيئة العامة للإحصاء ومنصة البيانات المفتوحة الوطنية والوزارات، ويتحقق من السنة داخل الملف نفسه — وإذا السنة غير منشورة يقولها بوضوح ويقترح أحدث المتاح.</p>
+      <div class="hero-composer" id="hero-slot"></div>
+      <ul class="stats" id="stats" aria-label="نطاق البحث"></ul>
+
+      <div class="section-head">
+        <h2>جرّب سؤالاً</h2>
+        <span class="section-note">كل مثال يعرض جانباً مختلفاً من عمل الوكيل</span>
+      </div>
       <div class="examples" id="examples"></div>
+
+      <div class="section-head">
+        <h2>كيف يعمل</h2>
+      </div>
+      <ol class="steps">
+        <li><span class="step-num">١</span><div><strong>يفهم سؤالك</strong><p>الموضوع والسنة (ميلادية أو هجرية) والتفصيل المطلوب، بالفصحى أو العامية.</p></div></li>
+        <li><span class="step-num">٢</span><div><strong>يبحث في المصادر الرسمية</strong><p>واجهات برمجية مباشرة، لا نسخ قديمة: السنة الجديدة تظهر بمجرد نشرها.</p></div></li>
+        <li><span class="step-num">٣</span><div><strong>يتحقق ويجهّز الملف</strong><p>يفتح الملف ويتأكد من السنوات فيه، ثم يعطيك إكسل فيه ورقة بالمصدر وتاريخ التحديث.</p></div></li>
+      </ol>
+
+      <div class="section-head">
+        <h2>المصادر</h2>
+        <span class="section-note">مصادر تحقّقنا من واجهاتها فعلياً</span>
+      </div>
+      <div class="sources" id="sources"></div>
     </section>
+
+    <div class="thread" id="thread" aria-live="polite"></div>
   </div>
 </main>
 
-<footer>
-  <form id="form" autocomplete="off">
+<footer class="dock" id="dock">
+  <form class="composer" id="form" autocomplete="off">
+    <label class="visually-hidden" for="input">اكتب سؤالك</label>
     <textarea id="input" rows="1" maxlength="500"
-      placeholder="مثال: احصاءات الطاقة الكهربائية لسنة 2026 حسب المناطق"
-      aria-label="اكتب سؤالك"></textarea>
-    <button class="send" id="send" type="submit">إرسال</button>
+      placeholder="مثال: احصاءات الطاقة الكهربائية لسنة 2026 حسب المناطق"></textarea>
+    <button class="send" id="send" type="submit" aria-label="إرسال">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
   </form>
-  <div class="hint">تقدر تكمل على نفس السؤال: «طيب 2021» أو «وحسب الجنس».</div>
+  <p class="dock-hint">تقدر تكمل على نفس السؤال: «طيب 2021» أو «وحسب الجنس». كل ملف إكسل فيه ورقة «المصدر».</p>
 </footer>
 
-<script>
-(function () {
-  "use strict";
-
-  var EXAMPLES = [
-    "احصاءات الطاقة الكهربائية لسنة 2026 حسب المناطق",
-    "استهلاك الكهرباء 2022 حسب المناطق",
-    "أحدث بيانات متوسط العمر المتوقع",
-    "عدد الحجاج 2023",
-    "الناتج المحلي الإجمالي من 2019 إلى 2022"
-  ];
-  var TONE = {
-    available: "ok", partial: "warn", not_available: "bad",
-    unverified: "warn", no_source: "info", source_unreachable: "info"
-  };
-  var EVIDENCE = {
-    observed_data: "تحقّقت من السنوات في الملف نفسه",
-    metadata_claim: "حسب البيانات الوصفية المعلنة من المصدر",
-    inferred_title: "استنتاج من العنوان (غير مؤكد)"
-  };
-
-  var thread = document.getElementById("thread");
-  var scroller = document.getElementById("scroller");
-  var form = document.getElementById("form");
-  var input = document.getElementById("input");
-  var send = document.getElementById("send");
-  var session = null;
-  var busy = false;
-
-  try { session = window.sessionStorage.getItem("masdar-session"); } catch (e) { session = null; }
-
-  function remember(id) {
-    session = id;
-    try { window.sessionStorage.setItem("masdar-session", id); } catch (e) { /* not essential */ }
-  }
-
-  // Everything from a source is inserted as text, never as markup.
-  function el(tag, cls, text) {
-    var node = document.createElement(tag);
-    if (cls) node.className = cls;
-    if (text !== undefined && text !== null) node.textContent = String(text);
-    return node;
-  }
-  function safeHref(url) {
-    try {
-      var parsed = new URL(url, window.location.href);
-      return (parsed.protocol === "http:" || parsed.protocol === "https:") ? parsed.href : null;
-    } catch (e) { return null; }
-  }
-  function link(url, label, cls) {
-    var href = safeHref(url);
-    if (!href) return null;
-    var a = el("a", cls || "btn", label);
-    a.href = href;
-    if (href.indexOf(window.location.origin) !== 0) { a.target = "_blank"; a.rel = "noopener noreferrer"; }
-    return a;
-  }
-  function scrollDown() { scroller.scrollTop = scroller.scrollHeight; }
-
-  function fact(dl, label, value) {
-    if (value === null || value === undefined || value === "") return;
-    var box = el("div");
-    box.appendChild(el("dt", null, label));
-    box.appendChild(el("dd", null, value));
-    dl.appendChild(box);
-  }
-
-  function renderFinding(f, compact) {
-    var card = el("section", "finding");
-    card.appendChild(el("h3", null, f.title));
-    var dl = el("dl", "facts");
-    fact(dl, "الجهة الناشرة", f.publisher || "—");
-    fact(dl, "آخر تحديث معلن", f.last_updated || "غير معلن من المصدر");
-    fact(dl, "أحدث سنة في البيانات", f.latest_year);
-    if (!compact) {
-      fact(dl, "السنوات المطابقة لطلبك", f.matched_years.length ? f.matched_years.join("، ") : null);
-      fact(dl, "تغطية المصدر", f.coverage);
-      fact(dl, "أساس التحقق", EVIDENCE[f.evidence] || f.evidence);
-    } else {
-      fact(dl, "الحكم", f.verdict_label);
-    }
-    card.appendChild(dl);
-
-    var actions = el("div", "actions");
-    if (f.download) {
-      var dl_link = link(f.download, "⬇ تنزيل ملف الإكسل", "btn primary");
-      if (dl_link) { dl_link.setAttribute("download", ""); actions.appendChild(dl_link); }
-    }
-    var page = link(f.landing_url, "صفحة المصدر");
-    if (page) actions.appendChild(page);
-    var file = link(f.resource_url, "رابط البيانات الأصلي");
-    if (file) actions.appendChild(file);
-    if (actions.childNodes.length) card.appendChild(actions);
-
-    if (!compact && f.notes && f.notes.length) {
-      var notes = el("details");
-      notes.appendChild(el("summary", null, "ملاحظات (" + f.notes.length + ")"));
-      var list = el("ul");
-      f.notes.forEach(function (n) { list.appendChild(el("li", null, n)); });
-      notes.appendChild(list);
-      card.appendChild(notes);
-    }
-    return card;
-  }
-
-  function renderAnswer(data) {
-    var box = el("article", "msg-agent");
-
-    var status = el("div", "status");
-    status.appendChild(el("span", "pill " + (TONE[data.verdict] || "info"), data.verdict_label));
-    status.appendChild(el("div", "headline", data.headline.replace(/^[^؀-ۿA-Za-z0-9]+/, "")));
-    box.appendChild(status);
-
-    var u = data.understood;
-    var parts = [];
-    if (u.topic) parts.push("الموضوع: " + u.topic);
-    parts.push("الفترة: " + u.period);
-    if (u.dimensions.length) parts.push("التفصيل: " + u.dimensions.join("، "));
-    var understood = (u.follow_up ? "متابعة للسؤال السابق — " : "فهمت طلبك: ") + parts.join(" · ");
-    if (u.method === "llm") understood += " (بمساعدة الذكاء الاصطناعي)";
-    box.appendChild(el("div", "understood", understood));
-    if (u.method === "llm" && u.note) box.appendChild(el("div", "understood", "«" + u.note + "»"));
-
-    if (data.findings.length) box.appendChild(renderFinding(data.findings[0], false));
-
-    if (data.suggestions.length) {
-      var sug = el("div", "suggestions");
-      sug.appendChild(el("div", "label", "البديل المتاح — اضغط لتجهيز الملف:"));
-      var row = el("div", "row");
-      data.suggestions.forEach(function (s) {
-        var chip = el("button", "chip");
-        chip.type = "button";
-        chip.appendChild(document.createTextNode(s.year + " — " + s.reason));
-        if (s.source) chip.appendChild(el("small", null, " (" + s.source + ")"));
-        chip.addEventListener("click", function () { ask(s.ask); });
-        row.appendChild(chip);
-      });
-      sug.appendChild(row);
-      box.appendChild(sug);
-    }
-
-    if (data.findings.length > 1) {
-      var others = el("details", "others");
-      others.appendChild(el("summary", null, "نتائج أخرى ذات صلة (" + (data.findings.length - 1) + ")"));
-      data.findings.slice(1).forEach(function (f) { others.appendChild(renderFinding(f, true)); });
-      box.appendChild(others);
-    }
-
-    if (!data.findings.length && data.message) {
-      var lines = data.message.split("\n").slice(1).join("\n").trim();
-      if (lines) { var p = el("div", null, lines); p.style.whiteSpace = "pre-wrap"; box.appendChild(p); }
-    }
-
-    if (data.source_errors.length) {
-      var errs = el("details");
-      errs.appendChild(el("summary", null, "مصادر لم تُجب في هذه المحاولة (" + data.source_errors.length + ")"));
-      var list = el("ul");
-      data.source_errors.forEach(function (e) { list.appendChild(el("li", null, e.source + ": " + e.reason)); });
-      errs.appendChild(list);
-      box.appendChild(errs);
-    }
-    return box;
-  }
-
-  function renderError(text) {
-    var box = el("article", "msg-agent");
-    var status = el("div", "status");
-    status.appendChild(el("span", "pill bad", "خطأ"));
-    status.appendChild(el("div", "headline", text));
-    box.appendChild(status);
-    return box;
-  }
-
-  function setBusy(value) {
-    busy = value;
-    send.disabled = value;
-  }
-
-  function ask(message) {
-    message = (message || "").trim();
-    if (!message || busy) return;
-    var intro = document.getElementById("intro");
-    if (intro) intro.remove();
-
-    thread.appendChild(el("div", "msg-user", message));
-    var waiting = el("article", "msg-agent");
-    var thinking = el("div", "thinking");
-    var dots = el("span", "dots");
-    dots.appendChild(el("i")); dots.appendChild(el("i")); dots.appendChild(el("i"));
-    thinking.appendChild(dots);
-    thinking.appendChild(el("span", null, "أبحث في المصادر الرسمية وأتحقق من الملفات…"));
-    waiting.appendChild(thinking);
-    thread.appendChild(waiting);
-    scrollDown();
-    setBusy(true);
-
-    fetch("/api/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session: session, message: message })
-    })
-      .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
-      .then(function (res) {
-        waiting.remove();
-        if (!res.ok || res.body.error) {
-          thread.appendChild(renderError(res.body.error || "تعذّر الحصول على إجابة."));
-        } else {
-          remember(res.body.session);
-          thread.appendChild(renderAnswer(res.body));
-        }
-      })
-      .catch(function () {
-        waiting.remove();
-        thread.appendChild(renderError("تعذّر الاتصال بالخادم المحلي. هل ما زال `masdar serve` يعمل؟"));
-      })
-      .then(function () { setBusy(false); scrollDown(); input.focus(); });
-  }
-
-  EXAMPLES.forEach(function (text) {
-    var chip = el("button", "chip", text);
-    chip.type = "button";
-    chip.addEventListener("click", function () { ask(text); });
-    document.getElementById("examples").appendChild(chip);
-  });
-
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    var text = input.value;
-    input.value = "";
-    input.style.height = "";
-    ask(text);
-  });
-  input.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
-      e.preventDefault();
-      form.requestSubmit();
-    }
-  });
-  input.addEventListener("input", function () {
-    input.style.height = "auto";
-    input.style.height = Math.min(input.scrollHeight, 160) + "px";
-  });
-  document.getElementById("reset").addEventListener("click", function () {
-    fetch("/api/reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session: session })
-    }).catch(function () {});
-    try { window.sessionStorage.removeItem("masdar-session"); } catch (e) { /* ignore */ }
-    session = null;
-    window.location.reload();
-  });
-  input.focus();
-})();
-</script>
+<dialog class="unlock" id="unlock" aria-labelledby="unlock-title">
+  <form id="unlock-form" method="dialog">
+    <h2 id="unlock-title">رمز الدخول</h2>
+    <p>هذا العرض محمي. أدخل الرمز الذي أُعطي لك.</p>
+    <input id="unlock-code" type="password" autocomplete="current-password" required aria-label="رمز الدخول">
+    <p class="unlock-error" id="unlock-error" hidden>الرمز غير صحيح.</p>
+    <button class="btn btn-primary" type="submit">دخول</button>
+  </form>
+</dialog>
 </body>
 </html>

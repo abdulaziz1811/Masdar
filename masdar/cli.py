@@ -402,7 +402,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     llm, llm_status = LlmUnderstanding.from_environment(lexicon)
     agent = Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
     try:
-        server = make_server(agent, host=args.host, port=args.port)
+        server = make_server(agent, host=args.host, port=args.port, llm_status=llm_status)
     except OSError as exc:
         print(f"تعذّر تشغيل الخادم على {args.host}:{args.port} — {exc}", file=sys.stderr)
         return 1
@@ -411,8 +411,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
     print(f"مصدر يعمل على {url}")
     print(f"ملفات الإكسل تُحفظ في: {Path(args.out).resolve()}")
     print(f"الفهم بالذكاء الاصطناعي: {llm_status}")
-    if args.host not in ("127.0.0.1", "localhost", "::1"):
-        print("⚠️ الخادم مفتوح لغير هذا الجهاز وليس عليه تسجيل دخول.")
+    import os
+
+    protected = bool(os.environ.get("MASDAR_ACCESS_CODE", "").strip())
+    if protected:
+        print("رمز الدخول مفعّل (MASDAR_ACCESS_CODE): الصفحة تطلبه قبل أول سؤال.")
+    if args.host not in ("127.0.0.1", "localhost", "::1") and not protected:
+        print("⚠️ الخادم مفتوح لغير هذا الجهاز وليس عليه رمز دخول — "
+              "عيّن MASDAR_ACCESS_CODE في ملف .env قبل نشره.")
     print("للإيقاف: Ctrl+C")
     if args.open:
         import webbrowser
@@ -425,6 +431,53 @@ def cmd_serve(args: argparse.Namespace) -> int:
     finally:
         server.server_close()
     return 0
+
+
+def cmd_warmup(args: argparse.Namespace) -> int:
+    """Ask the showcase questions now, so the presentation finds them ready.
+
+    Every answer is kept in the cache (six hours fresh, and a saved copy for
+    up to ninety days if a source is down later), and the table printed is
+    a rehearsal: which questions answer, from where, and how fast.
+    """
+    import time
+
+    from masdar.chat.overview import SHOWCASE
+
+    http = HttpClient(timeout=args.timeout)
+    registry = load_registry(http=http)
+    lexicon = load_lexicon()
+    llm, _ = LlmUnderstanding.from_environment(lexicon)
+    config = AgentConfig(out_dir=Path(args.out), max_sources=args.max_sources)
+    agent = Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
+    questions = [e["q"] for e in SHOWCASE] + list(args.questions or [])
+
+    print(f"تجهيز {len(questions)} سؤالاً (قد يستغرق بضع دقائق)…\n")
+    ready = 0
+    for question in questions:
+        started = time.monotonic()
+        try:
+            answer = agent.answer(question)
+        except Exception as exc:  # one broken question must not stop the rest
+            print(f"❌ {question}\n     خطأ غير متوقع: {exc}\n")
+            continue
+        seconds = time.monotonic() - started
+        primary = answer.primary
+        good = answer.verdict in (Verdict.AVAILABLE, Verdict.PARTIAL, Verdict.NOT_AVAILABLE)
+        ready += good
+        mark = "✅" if good else "⚠️"
+        print(f"{mark} {question}  ({seconds:.0f} ث)")
+        print(f"     الحكم: {answer.verdict.value}"
+              + (f" — {primary.provenance.publisher_ar}: {primary.candidate.title_ar}"
+                 if primary else ""))
+        for source, reason in answer.source_errors[:3]:
+            print(f"     تعذّر: {source} — {reason}")
+        print()
+    print(f"جاهز: {ready} من {len(questions)}.")
+    if ready < len(questions):
+        print("الأسئلة المعلَّمة بـ ⚠️ لم تجد مصدراً يجيب الآن: أعد التشغيل لاحقاً، أو "
+              "تجنّبها في العرض. (خارج المملكة بعض المواقع الحكومية لا تُفتح.)")
+    return 0 if ready else 3
 
 
 def cmd_publishers(args: argparse.Namespace) -> int:
@@ -543,6 +596,13 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--timeout", type=float, default=20.0)
     serve.add_argument("--today", help="تجاوز تاريخ اليوم (YYYY-MM-DD) للاختبار")
     serve.set_defaults(func=cmd_serve)
+
+    warm = sub.add_parser("warmup", help="جهّز أسئلة العرض مسبقاً وافحص جاهزيتها")
+    warm.add_argument("questions", nargs="*", help="أسئلة إضافية غير أسئلة العرض")
+    warm.add_argument("--out", default="out", help="مجلد ملفات الإكسل")
+    warm.add_argument("--max-sources", type=int, default=6)
+    warm.add_argument("--timeout", type=float, default=30.0)
+    warm.set_defaults(func=cmd_warmup)
 
     from masdar.sources.discover import DISCOVERED_FILE
 

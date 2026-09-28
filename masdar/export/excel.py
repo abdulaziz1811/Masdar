@@ -147,6 +147,8 @@ def _write_source_sheet(
     if provenance.last_updated_note:
         field("ملاحظة على تاريخ التحديث", provenance.last_updated_note)
     field("تاريخ الاستخراج", provenance.retrieved_at.isoformat(timespec="seconds"))
+    if provenance.stale:
+        field("تنبيه", "نسخة محفوظة: تعذّر الوصول إلى المصدر وقت الطلب، وقد توجد بيانات أحدث")
     field("الترخيص", provenance.license_name or "غير محدد")
     field("بصمة الملف (SHA-256)", provenance.sha256 or "—")
     field("حجم الملف (بايت)", provenance.byte_size if provenance.byte_size is not None else "—")

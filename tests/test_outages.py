@@ -81,3 +81,39 @@ def test_everything_down_says_so(tmp_path):
     answer = agent.answer(QUESTION)
     assert answer.verdict is Verdict.SOURCE_UNREACHABLE
     assert "لا يعني أن البيانات غير موجودة" in answer.message_ar
+
+
+def test_a_saved_copy_answers_when_the_source_is_down_and_says_so(tmp_path, monkeypatch):
+    """During a presentation a ministry may be down; the last saved copy then
+    answers, labelled with its date and the warning that newer data may exist."""
+    import json
+    from datetime import UTC, datetime, timedelta
+
+    from openpyxl import load_workbook
+
+    from tests.test_worldbank import Recorded, worldbank
+
+    monkeypatch.setenv("MASDAR_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.delenv("MASDAR_STALE_MAX_DAYS", raising=False)
+    question = "استهلاك الكهرباء للفرد 2023"
+
+    def agent(transport):
+        http = HttpClient(retries=1, transport=transport)
+        return Agent(registry=Registry((worldbank(),), http), http=http,
+                     config=AgentConfig(out_dir=tmp_path / "out", today=date(2026, 9, 28)))
+
+    live = agent(Recorded())
+    assert live.answer(question).verdict is Verdict.AVAILABLE
+    for meta_path in (tmp_path / "cache").rglob("*.json"):  # two days pass
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        meta["retrieved_at"] = (datetime.now(UTC) - timedelta(days=2)).isoformat()
+        meta_path.write_text(json.dumps(meta), encoding="utf-8")
+
+    answer = agent(Down()).answer(question)
+    assert answer.verdict is Verdict.AVAILABLE
+    assert answer.primary.provenance.stale
+    assert any("آخر نسخة محفوظة" in n and "أحدث" in n for n in answer.primary.notes)
+    from masdar.export.excel import SOURCE_SHEET
+
+    sheet = load_workbook(answer.primary.export_path)[SOURCE_SHEET]
+    assert any("نسخة محفوظة" in str(c) for row in sheet.iter_rows(values_only=True) for c in row)

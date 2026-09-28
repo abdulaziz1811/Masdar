@@ -13,6 +13,7 @@ from pathlib import Path
 
 from masdar.domain.models import (
     Answer,
+    Consulted,
     Coverage,
     CoverageOrigin,
     DataRequest,
@@ -57,6 +58,7 @@ class SearchOutcome:
     errors: list[tuple[str, str]]
     audit: list[str]
     attempted: int
+    consulted: list[Consulted] = field(default_factory=list)
 
 
 class Agent:
@@ -117,6 +119,7 @@ class Agent:
                 verdict=verdict,
                 audit=tuple(audit),
                 source_errors=tuple(errors),
+                consulted=tuple(search.consulted),
             )
             return answer.with_message(compose_message(answer))
 
@@ -152,6 +155,7 @@ class Agent:
             suggestions=suggestions,
             audit=tuple(audit),
             source_errors=tuple(errors),
+            consulted=tuple(search.consulted),
         )
         return answer.with_message(compose_message(answer))
 
@@ -172,29 +176,35 @@ class Agent:
         ]
         candidates: list[DatasetCandidate] = []
         errors: list[tuple[str, str]] = []
+        consulted: list[Consulted] = []
 
         for descriptor in plan:
+            found: list[DatasetCandidate] | None = None
             try:
                 adapter = self.registry.adapter(descriptor.id)
                 found = adapter.search(request, limit=self.config.per_source_limit)
             except SourceUnreachable as exc:
                 errors.append((descriptor.id, f"تعذّر الوصول: {exc.reason}"))
                 audit.append(f"{descriptor.name_ar}: تعذّر الوصول ({exc.reason})")
-                continue
             except SourceError as exc:
                 errors.append((descriptor.id, exc.reason))
                 audit.append(f"{descriptor.name_ar}: خطأ ({exc.reason})")
-                continue
             except Exception as exc:  # an adapter bug must not sink the run
                 errors.append((descriptor.id, f"خطأ غير متوقع: {exc}"))
                 audit.append(f"{descriptor.name_ar}: خطأ غير متوقع ({exc})")
+            consulted.append(Consulted(
+                descriptor.id, descriptor.name_ar,
+                None if found is None else len(found), descriptor.international,
+            ))
+            if found is None:
                 continue
 
             candidates.extend(found)
             audit.append(f"{descriptor.name_ar}: {len(found)} نتيجة")
 
         return SearchOutcome(
-            candidates=candidates, errors=errors, audit=audit, attempted=len(plan)
+            candidates=candidates, errors=errors, audit=audit, attempted=len(plan),
+            consulted=consulted,
         )
 
     # -- verify and export ---------------------------------------------
@@ -271,7 +281,14 @@ class Agent:
                 if problem:
                     notes.append(problem)
                     audit.append(f"{candidate.title_ar}: {problem}")
-                if fetched is not None and fetched.from_cache:
+                if fetched is not None and fetched.stale:
+                    notes.append(
+                        "تعذّر الوصول إلى المصدر الآن، فاستُخدمت آخر نسخة محفوظة منه "
+                        f"(جُلبت في {fetched.retrieved_at:%Y-%m-%d %H:%M} UTC). "
+                        "قد تكون نُشرت بيانات أحدث بعد ذلك التاريخ."
+                    )
+                    audit.append(f"{candidate.title_ar}: نسخة محفوظة لتعذّر الوصول")
+                elif fetched is not None and fetched.from_cache:
                     notes.append(
                         "الملف من نسخة محفوظة جُلبت من المصدر في "
                         f"{fetched.retrieved_at:%Y-%m-%d %H:%M} (UTC)."
@@ -462,6 +479,7 @@ class Agent:
             byte_size=fetched.byte_size if fetched else None,
             media_type=fetched.media_type if fetched else None,
             license_name=candidate.license_name,
+            stale=bool(fetched is not None and fetched.stale),
         )
 
 
