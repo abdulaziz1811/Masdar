@@ -8,7 +8,7 @@ ones the agent actually works with.
 from __future__ import annotations
 
 from masdar.nlu.lexicon import Lexicon
-from masdar.sources.registry import Registry
+from masdar.sources.registry import Registry, reachable_here
 
 # Questions shown on the landing screen and run by `masdar warmup`. Each one
 # shows a different part of what the agent does; `shows` says which, for the
@@ -27,7 +27,7 @@ SHOWCASE: tuple[dict[str, str], ...] = (
     {"q": "استهلاك الكهرباء للفرد 2023",
      "shows": "مصدر دولي (البنك الدولي) يأتي بعد الجهات السعودية ويُذكر أنه دولي"},
     {"q": "عدد الحجاج 2023",
-     "shows": "منصة البيانات المفتوحة الوطنية ووزارة الحج والعمرة"},
+     "shows": "سؤال قصير يكفي: الموضوع والسنة، والباقي على الوكيل"},
     {"q": "الناتج المحلي الإجمالي من 2019 إلى 2022",
      "shows": "نطاق سنوات: يتحقق من كل سنة في الملف نفسه"},
 )
@@ -58,7 +58,7 @@ def _reach(registry: Registry, descriptor) -> int | None:
 def _portal_publishers(registry: Registry) -> set[str]:
     names: set[str] = set()
     for d in registry.descriptors:
-        if d.adapter == "saudi_open_data" and d.enabled:
+        if d.adapter == "saudi_open_data" and d.enabled and reachable_here(d):
             try:
                 orgs = registry.adapter(d.id)._organizations()
             except Exception:
@@ -73,6 +73,8 @@ def _portal_datasets(registry: Registry) -> int:
     for descriptor in registry.descriptors:
         if descriptor.adapter != "saudi_open_data" or not descriptor.enabled:
             continue
+        if not reachable_here(descriptor):
+            continue
         for org in descriptor.api.get("organizations") or ():
             count = org.get("datasets") if isinstance(org, dict) else None
             if isinstance(count, int):
@@ -81,9 +83,15 @@ def _portal_datasets(registry: Registry) -> int:
 
 
 def overview(registry: Registry, lexicon: Lexicon, llm_status: str = "") -> dict:
-    sources = []
+    sources, elsewhere = [], []
     for d in registry.descriptors:
         if not d.enabled or d.synthetic or not d.api_verified:
+            continue
+        if not reachable_here(d):
+            # Listed, not counted: the page says plainly what this server
+            # cannot see, instead of every answer saying it again.
+            elsewhere.append({"id": d.id, "name": d.name_ar,
+                              "reason": "لا تُفتح إلا من خادم داخل المملكة"})
             continue
         count = _reach(registry, d)
         kind = "دولي" if d.international else "لحظي" if d.adapter == "live_data" else "رسمي"
@@ -114,6 +122,7 @@ def overview(registry: Registry, lexicon: Lexicon, llm_status: str = "") -> dict
             "topics": len(lexicon.topics),
         },
         "sources": sources,
+        "unavailable": elsewhere,
         "topics": [t.label_ar for t in lexicon.topics],
         "examples": [dict(e) for e in SHOWCASE],
         "llm": llm_status,

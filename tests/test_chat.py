@@ -179,6 +179,10 @@ class TestServer:
         assert data["stats"]["topics"] > 10
         assert data["locked"] is False and data["demo"] is True
 
+    def test_status_reports_no_warmup_unless_asked(self, server):
+        _, _, body = get(server + "/api/status")
+        assert json.loads(body) == {"warmup": None}
+
     def test_an_answer_says_where_it_looked_and_previews_the_file(self, server):
         _, data = post(server + "/api/ask", {"message": "استهلاك الكهرباء 2022 حسب المناطق"})
         assert data["verdict"] == "available"

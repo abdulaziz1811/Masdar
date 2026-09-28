@@ -1,0 +1,31 @@
+# One-click hosting on Render (free plan): the "Deploy to Render" button in
+# the README reads this file. Render asks for the values marked `sync: false`
+# when the service is created; leave the optional ones empty.
+#
+# The service runs in Frankfurt, outside the Kingdom. Every verified source
+# answers from there except the national open-data portal (open.data.gov.sa),
+# which refuses non-Saudi connections; MASDAR_OUTSIDE_KSA skips it instead of
+# waiting on it, and the page says so. For the portal too, host inside the
+# Kingdom: deploy/cloudrun.sh (Google Cloud, Dammam).
+services:
+  - type: web
+    name: masdar
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    envVars:
+      - key: MASDAR_OUTSIDE_KSA
+        value: "1"
+      - key: MASDAR_WARMUP_ON_START
+        value: "1"
+      # The code the presenter types before the first question. Required in
+      # practice: without it anyone with the link can use the service.
+      - key: MASDAR_ACCESS_CODE
+        sync: false
+      # Optional: Claude reads questions the rules cannot (nlu/llm.py).
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Optional: the GASTAT developer-portal key, for the datasets that need it.
+      - key: GASTAT_API_KEY
+        sync: false

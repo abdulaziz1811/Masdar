@@ -40,6 +40,7 @@ from urllib.parse import quote, urlparse
 from masdar.chat.overview import overview
 from masdar.chat.preview import read_preview
 from masdar.chat.session import Sessions
+from masdar.chat.warmup import Warmup
 from masdar.domain.models import Answer, Finding, Verdict
 from masdar.pipeline.orchestrator import Agent
 
@@ -198,12 +199,18 @@ class ChatApp:
     overview: dict = field(default_factory=dict)
     # When set, every question and download needs the code first.
     access_code: str | None = None
+    # Showcase questions being asked in the background at start-up, if any.
+    warmup: Warmup | None = None
     _grants: set[str] = field(default_factory=set)
     _grants_lock: threading.Lock = field(default_factory=threading.Lock)
 
     @classmethod
     def build(
-        cls, agent: Agent, llm_status: str = "", access_code: str | None = None
+        cls,
+        agent: Agent,
+        llm_status: str = "",
+        access_code: str | None = None,
+        warmup: Warmup | None = None,
     ) -> ChatApp:
         if access_code is None:
             access_code = os.environ.get("MASDAR_ACCESS_CODE", "").strip() or None
@@ -214,6 +221,7 @@ class ChatApp:
             answer_lock=threading.Lock(),
             overview=overview(agent.registry, agent.lexicon, llm_status),
             access_code=access_code,
+            warmup=warmup,
         )
 
     @property
@@ -317,6 +325,9 @@ def make_handler(app: ChatApp) -> type[BaseHTTPRequestHandler]:
                 self._static(path.removeprefix("/static/"))
             elif path == "/api/health":
                 self._json(HTTPStatus.OK, {"ok": True})
+            elif path == "/api/status":
+                warm = app.warmup.status() if app.warmup else None
+                self._json(HTTPStatus.OK, {"warmup": warm})
             elif path == "/api/overview":
                 locked = not app.allowed(self._grant())
                 self._json(HTTPStatus.OK, {**app.overview, "locked": locked})
@@ -414,8 +425,9 @@ def make_server(
     port: int = 8000,
     llm_status: str = "",
     access_code: str | None = None,
+    warmup: Warmup | None = None,
 ) -> ThreadingHTTPServer:
-    app = ChatApp.build(agent, llm_status=llm_status, access_code=access_code)
+    app = ChatApp.build(agent, llm_status=llm_status, access_code=access_code, warmup=warmup)
     server = ThreadingHTTPServer((host, port), make_handler(app))
     server.daemon_threads = True
     return server

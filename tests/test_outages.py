@@ -27,8 +27,10 @@ class Down(Transport):
 
     def __init__(self):
         self.datasets: list[str] = []
+        self.calls = 0
 
     def get(self, url, source_id, params=None, headers=None):
+        self.calls += 1
         # Count data downloads, not the year-only probes made while searching.
         decoded = unquote(url)
         if decoded.count("dimensions[]=") > 1:
@@ -65,6 +67,16 @@ def test_the_outage_is_reported_as_one(tmp_path):
 
 
 def test_a_down_source_is_tried_once_per_question(tmp_path):
+    # The host is asked once; after it fails to connect it is not asked again
+    # for a short while (HttpClient's host cooldown), neither for the other
+    # datasets' probes nor for their downloads.
+    agent, transport = agent_with_cdata_down(tmp_path)
+    agent.answer(QUESTION)
+    assert transport.calls == 1
+
+
+def test_without_the_cooldown_each_dataset_is_still_tried_at_most_once(tmp_path, monkeypatch):
+    monkeypatch.setenv("MASDAR_HOST_COOLDOWN_SECONDS", "0")
     agent, transport = agent_with_cdata_down(tmp_path)
     agent.answer(QUESTION)
     assert len(set(transport.datasets)) == 1

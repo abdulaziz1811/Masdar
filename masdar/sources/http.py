@@ -72,6 +72,19 @@ def stale_max_age() -> timedelta:
     return DEFAULT_STALE_MAX_AGE if days is None else timedelta(days=days)
 
 
+# A host that could not be reached is not asked again for this long. Every
+# attempt at a dead host waits out its timeouts and retries -- a minute or
+# more -- and a live demonstration cannot spend that on each question. A
+# saved copy still answers meanwhile. Override with MASDAR_HOST_COOLDOWN_SECONDS
+# (0 = always try).
+DEFAULT_HOST_COOLDOWN = timedelta(minutes=2)
+
+
+def host_cooldown() -> timedelta:
+    seconds = _env_float("MASDAR_HOST_COOLDOWN_SECONDS")
+    return DEFAULT_HOST_COOLDOWN if seconds is None else timedelta(seconds=seconds)
+
+
 def concise_reason(exc: Exception, host: str) -> str:
     """A one-line cause a user can act on.
 
@@ -155,12 +168,19 @@ class HttpClient:
         transport: Transport | None = None,
         max_age: timedelta | None = None,
         stale_age: timedelta | None = None,
+        cooldown: timedelta | None = None,
+        down_hosts: dict | None = None,
     ):
         self.timeout = timeout
         self.retries = retries
         self.use_cache = use_cache
         self.max_age = cache_max_age() if max_age is None else max_age
         self.stale_age = stale_max_age() if stale_age is None else stale_age
+        self.cooldown = host_cooldown() if cooldown is None else cooldown
+        # host -> (until, reason): hosts that failed to connect just now.
+        # Clients in one server may share it (`down_hosts`), so what the
+        # start-up warm-up learnt spares the presenter's first question.
+        self._down: dict[str, tuple[datetime, str]] = {} if down_hosts is None else down_hosts
         # `offline` makes any un-cached request fail loudly instead of
         # silently degrading, which keeps test runs honest.
         self.offline = offline
@@ -258,12 +278,26 @@ class HttpClient:
             raise SourceUnreachable(source_id, f"offline mode and no cached copy of {url}")
 
         try:
+            self._check_host(url, source_id)
             return self._get_live(url, source_id, params, headers)
         except SourceUnreachable:
             saved = self._stale_copy(url, params)
             if saved is None:
                 raise
             return saved
+
+    def _check_host(self, url: str, source_id: str) -> None:
+        down = self._down.get(urlparse(url).netloc)
+        if down is None:
+            return
+        until, reason = down
+        if datetime.now(UTC) < until:
+            raise SourceUnreachable(source_id, f"{reason} (تعذّر قبل قليل؛ لن يُعاد قبل مهلة قصيرة)")
+        self._down.pop(urlparse(url).netloc, None)
+
+    def _mark_down(self, url: str, reason: str) -> None:
+        if self.cooldown > timedelta(0):
+            self._down[urlparse(url).netloc] = (datetime.now(UTC) + self.cooldown, reason)
 
     def _stale_copy(self, url: str, params: dict | None) -> Fetched | None:
         """An older saved copy, for when the source cannot be reached."""
@@ -293,6 +327,10 @@ class HttpClient:
                     time.sleep(2 ** attempt)
                     continue
                 if isinstance(exc, SourceUnreachable):
+                    # The host itself could not be reached (network, DNS,
+                    # timeout). A refusal (401/403/WAF) or a 5xx concerns one
+                    # path, and the rest of the host may answer: not marked.
+                    self._mark_down(url, exc.reason)
                     raise
                 raise SourceUnreachable(
                     source_id, f"{exc.reason} (بعد {self.retries} محاولات)"

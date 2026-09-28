@@ -191,6 +191,26 @@
       sources.appendChild(card);
     });
 
+    if ((data.unavailable || []).length) {
+      // This server cannot see every source; the intro must not promise it.
+      document.getElementById("lede").textContent =
+        "يبحث في الهيئة العامة للإحصاء والوزارات ومصادر رسمية أخرى، ويتحقق من السنة داخل الملف نفسه — وإذا السنة غير منشورة يقولها بوضوح ويقترح أحدث المتاح.";
+    }
+    (data.unavailable || []).forEach(function (src) {
+      var card = el("div", "source source-off");
+      var ic = el("span", "source-icon");
+      ic.appendChild(icon("database"));
+      card.appendChild(ic);
+      var b = el("div", "source-body");
+      b.appendChild(el("strong", null, src.name));
+      var meta = el("div", "source-meta");
+      meta.appendChild(el("span", "tag", "غير متاح هنا"));
+      meta.appendChild(el("span", null, src.reason));
+      b.appendChild(meta);
+      card.appendChild(b);
+      sources.appendChild(card);
+    });
+
     var ai = document.getElementById("ai-badge");
     if (data.llm) {
       var on = data.llm.indexOf("مفعّل") === 0;
@@ -210,8 +230,43 @@
 
   fetch("/api/overview", { credentials: "same-origin" })
     .then(function (r) { return r.json(); })
-    .then(renderOverview)
+    .then(function (data) { renderOverview(data); pollStatus(); })
     .catch(function () { /* the page still works without the overview */ });
+
+  // -- warm-up progress (hosted demos ask the examples at start-up) ------
+  function markExamples(failed) {
+    Array.prototype.forEach.call(document.querySelectorAll(".example"), function (b) {
+      var q = b.firstChild ? b.firstChild.textContent : "";
+      var weak = failed.indexOf(q) !== -1;
+      b.classList.toggle("example-weak", weak);
+      if (weak && !b.querySelector(".weak-note")) {
+        b.appendChild(el("span", "weak-note", "لم تُجب المصادر عند التجهيز — قد يتأخر أو لا يُجاب"));
+      }
+    });
+  }
+  function pollStatus() {
+    var badge = document.getElementById("ready-badge");
+    fetch("/api/status", { credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        var w = s.warmup;
+        if (!w) return;
+        badge.hidden = false;
+        markExamples(w.failed || []);
+        if (w.running || w.done < w.total) {
+          badge.className = "badge badge-gold";
+          badge.textContent = "يجهّز أسئلة العرض " + w.done + "/" + w.total;
+          window.setTimeout(pollStatus, 3000);
+        } else {
+          var good = w.total - w.failed.length;
+          badge.className = good ? "badge" : "badge badge-gold";
+          badge.textContent = good === w.total ? "جاهز للعرض"
+            : good ? "جاهز: " + good + " من " + w.total
+            : "المصادر لا تُجيب الآن";
+        }
+      })
+      .catch(function () { window.setTimeout(pollStatus, 5000); });
+  }
 
   // -- access code ----------------------------------------------------
   var unlockDialog = document.getElementById("unlock");

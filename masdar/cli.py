@@ -388,10 +388,11 @@ def cmd_specs(args: argparse.Namespace) -> int:
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
+    from masdar.chat import warmup as warmup_module
+    from masdar.chat.overview import SHOWCASE
     from masdar.chat.server import make_server
+    from masdar.sources.registry import outside_ksa
 
-    http = HttpClient(timeout=args.timeout, offline=args.offline)
-    registry = load_registry(demo=args.demo, http=http)
     config = AgentConfig(
         max_sources=args.max_sources,
         max_downloads=args.max_downloads,
@@ -399,10 +400,22 @@ def cmd_serve(args: argparse.Namespace) -> int:
         today=date.fromisoformat(args.today) if args.today else None,
     )
     lexicon = load_lexicon()
+
+    down_hosts: dict = {}
+
+    def make_agent(llm=None) -> Agent:
+        http = HttpClient(timeout=args.timeout, offline=args.offline, down_hosts=down_hosts)
+        registry = load_registry(demo=args.demo, http=http)
+        return Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
+
     llm, llm_status = LlmUnderstanding.from_environment(lexicon)
-    agent = Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
+    agent = make_agent(llm)
+    warm = None
+    if warmup_module.enabled():
+        warm = warmup_module.Warmup([e["q"] for e in SHOWCASE])
     try:
-        server = make_server(agent, host=args.host, port=args.port, llm_status=llm_status)
+        server = make_server(agent, host=args.host, port=args.port, llm_status=llm_status,
+                             warmup=warm)
     except OSError as exc:
         print(f"تعذّر تشغيل الخادم على {args.host}:{args.port} — {exc}", file=sys.stderr)
         return 1
@@ -411,6 +424,11 @@ def cmd_serve(args: argparse.Namespace) -> int:
     print(f"مصدر يعمل على {url}")
     print(f"ملفات الإكسل تُحفظ في: {Path(args.out).resolve()}")
     print(f"الفهم بالذكاء الاصطناعي: {llm_status}")
+    if outside_ksa():
+        print("الخادم خارج المملكة (MASDAR_OUTSIDE_KSA): المصادر المقيَّدة جغرافياً لن تُسأل.")
+    if warm is not None:
+        warm.start(make_agent)
+        print(f"يجهّز {len(warm.questions)} من أسئلة العرض في الخلفية…")
     import os
 
     protected = bool(os.environ.get("MASDAR_ACCESS_CODE", "").strip())
@@ -547,6 +565,15 @@ def cmd_worldbank_catalogue(args: argparse.Namespace) -> int:
     return 0
 
 
+def _env_port(default: int = 8000) -> int:
+    import os
+
+    try:
+        return int(os.environ.get("PORT") or default)
+    except ValueError:
+        return default
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="masdar",
@@ -586,7 +613,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     serve = sub.add_parser("serve", help="شغّل واجهة الشات في المتصفح")
     serve.add_argument("--host", default="127.0.0.1")
-    serve.add_argument("--port", type=int, default=8000)
+    # Hosting platforms (Render, Cloud Run) say which port to listen on in PORT.
+    serve.add_argument("--port", type=int, default=_env_port())
     serve.add_argument("--open", action="store_true", help="افتح الصفحة في المتصفح")
     serve.add_argument("--demo", action="store_true", help="أضف المصادر التجريبية")
     serve.add_argument("--offline", action="store_true", help="استخدم المخزن المؤقت فقط")

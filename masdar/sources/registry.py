@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import os
 from pathlib import Path
 
 import yaml
@@ -11,6 +12,22 @@ from masdar.sources.base import SourceAdapter, SourceDescriptor
 
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 SOURCES_FILE = CONFIG_DIR / "sources.yaml"
+
+
+def outside_ksa() -> bool:
+    """Whether this server runs outside the Kingdom (MASDAR_OUTSIDE_KSA=1).
+
+    Set on a host abroad. Sources verified to refuse non-Saudi connections
+    (`geo_restricted`) are then not asked at all: each attempt would only
+    wait for a timeout, and the answer would read "could not reach" on every
+    question instead of saying once, on the landing page, that this server
+    cannot see them.
+    """
+    return os.environ.get("MASDAR_OUTSIDE_KSA", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def reachable_here(descriptor: SourceDescriptor) -> bool:
+    return not (descriptor.geo_restricted and outside_ksa())
 
 
 def load_descriptors(path: Path | None = None) -> tuple[SourceDescriptor, ...]:
@@ -101,7 +118,10 @@ class Registry:
 
     def for_topic(self, topic_id: str | None) -> tuple[SourceDescriptor, ...]:
         """Sources that claim the topic, most authoritative first."""
-        matches = [d for d in self.descriptors if d.enabled and d.covers_topic(topic_id)]
+        matches = [
+            d for d in self.descriptors
+            if d.enabled and reachable_here(d) and d.covers_topic(topic_id)
+        ]
         return tuple(sorted(matches, key=lambda d: -d.authority))
 
     def plan(
