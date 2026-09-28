@@ -82,11 +82,12 @@ def agent(tmp_path, transport):
 
 class TestCatalogue:
     def test_one_failing_publisher_does_not_sink_the_others(self):
-        entries, problems = registry(PortalTransport()).adapter("saudi_open_data").catalogue()
-        # Only the energy fixture answers; the other five configured
-        # publishers fail and are reported, not fatal.
+        adapter = registry(PortalTransport()).adapter("saudi_open_data")
+        entries, problems = adapter.catalogue()
+        # Only the energy fixture answers; every other configured publisher
+        # fails and is reported, not fatal.
         assert len(entries) == 8
-        assert len(problems) == 5
+        assert len(problems) == len(adapter._organizations()) - 1
 
     def test_titles_arrive_in_arabic(self):
         entries, _ = registry(PortalTransport()).adapter("saudi_open_data").catalogue()
@@ -137,9 +138,33 @@ class TestSearch:
     def test_unrelated_question_finds_nothing(self):
         from masdar.nlu.parser import parse
 
+        # No topic, so every publisher is asked; the energy catalogue answers
+        # and holds nothing about giraffes.
         assert registry(PortalTransport()).adapter("saudi_open_data").search(
-            parse("عدد الطلاب في الجامعات 2022")
+            parse("عدد الزرافات 2022")
         ) == []
+
+    def test_only_publishers_of_the_topic_are_asked(self):
+        from masdar.nlu.parser import parse
+
+        transport = PortalTransport()
+        registry(transport).adapter("saudi_open_data").search(parse("استهلاك الكهرباء 2022"))
+        asked = {
+            dict(parse_qsl(urlsplit(u).query)).get("organization")
+            for u in transport.urls if urlsplit(u).path.endswith("/organizations")
+        }
+        assert ENERGY in asked
+        assert "35c63412-c4ae-4303-8fef-56cfd71303cf" not in asked  # the courts
+        assert "bd9ff32e-4956-4dbf-bdde-1c1e4d786640" in asked  # GASTAT: no topic list
+
+    def test_a_topicless_question_asks_everyone(self):
+        from masdar.nlu.parser import parse
+
+        transport = PortalTransport()
+        adapter = registry(transport).adapter("saudi_open_data")
+        adapter.search(parse("عدد الزرافات 2022"))
+        asked = [u for u in transport.urls if urlsplit(u).path.endswith("/organizations")]
+        assert len(asked) == len(adapter._organizations())
 
 
 class TestPeriods:

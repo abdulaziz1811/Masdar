@@ -158,6 +158,14 @@ topics:
     keywords_en: [culture, entertainment, lifestyle, libraries, museums, sports]
     preferred_sources: [gastat_cdata, saudi_open_data, gastat]
 
+  - id: justice
+    label_ar: العدل والقضاء
+    label_en: Justice
+    keywords_ar: [القضايا, المحاكم, الأحكام القضائية, الوكالات, الصكوك, التوثيق,
+                  القضايا المنجزة, طلبات التنفيذ, عقود الزواج, الطلاق]
+    keywords_en: [court cases, courts, judiciary, notarization, powers of attorney]
+    preferred_sources: [saudi_open_data, gastat]
+
 # Phrases that contain a topic word without being about that topic. They
 # are removed before a title is labelled with topics: GNI "بالأسعار الجارية"
 # (at current prices) is national accounts, not prices or inflation.

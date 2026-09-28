@@ -7,7 +7,7 @@ hand rather than from an intention formed earlier.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -24,7 +24,7 @@ from masdar.domain.models import (
 from masdar.export import excel
 from masdar.export.tabular import Table, read_table
 from masdar.nlu.lexicon import Lexicon, load_lexicon
-from masdar.nlu.parser import parse
+from masdar.nlu.understand import LLM, Understanding, understand
 from masdar.pipeline import resolve
 from masdar.pipeline import verify as verify_module
 from masdar.pipeline.reply import compose_message
@@ -64,15 +64,20 @@ class Agent:
         http: HttpClient | None = None,
         lexicon: Lexicon | None = None,
         config: AgentConfig | None = None,
+        llm=None,
     ):
         self.config = config or AgentConfig()
         self.http = http or HttpClient()
         self.registry = registry or Registry.load(http=self.http)
         self.lexicon = lexicon or load_lexicon()
+        # Optional: Claude reads questions the rules cannot (see nlu/llm.py).
+        self.llm = llm
 
     # -- public --------------------------------------------------------
     def answer(self, query: str) -> Answer:
-        return self.answer_request(parse(query, self.lexicon))
+        understood = understand(query, self.lexicon, llm=self.llm)
+        answer = self.answer_request(understood.request)
+        return replace(answer, audit=(*understanding_audit(understood), *answer.audit))
 
     def answer_request(self, request: DataRequest) -> Answer:
         """Answer an already-understood request.
@@ -455,6 +460,14 @@ class Agent:
             media_type=fetched.media_type if fetched else None,
             license_name=candidate.license_name,
         )
+
+
+def understanding_audit(understood: Understanding) -> tuple[str, ...]:
+    """How the question was read, first in the audit trail."""
+    if understood.method == LLM:
+        line = "فُهم السؤال بمساعدة نموذج لغوي (لم تحدد القواعد موضوعاً)"
+        return (f"{line}: {understood.note}",) if understood.note else (line,)
+    return (understood.note,) if understood.note else ()
 
 
 class _Unreachable(Exception):

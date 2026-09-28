@@ -306,7 +306,9 @@
     parts.push("الفترة: " + u.period);
     if (u.dimensions.length) parts.push("التفصيل: " + u.dimensions.join("، "));
     var understood = (u.follow_up ? "متابعة للسؤال السابق — " : "فهمت طلبك: ") + parts.join(" · ");
+    if (u.method === "llm") understood += " (بمساعدة الذكاء الاصطناعي)";
     box.appendChild(el("div", "understood", understood));
+    if (u.method === "llm" && u.note) box.appendChild(el("div", "understood", "«" + u.note + "»"));
 
     if (data.findings.length) box.appendChild(renderFinding(data.findings[0], false));
 

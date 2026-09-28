@@ -102,7 +102,9 @@ def _finding_payload(finding: Finding, downloads: Downloads) -> dict:
     }
 
 
-def answer_payload(answer: Answer, downloads: Downloads, follow_up: bool) -> dict:
+def answer_payload(
+    answer: Answer, downloads: Downloads, follow_up: bool, method: str = "rules", note: str = ""
+) -> dict:
     request = answer.request
     return {
         "verdict": answer.verdict.value,
@@ -114,6 +116,10 @@ def answer_payload(answer: Answer, downloads: Downloads, follow_up: bool) -> dic
             "period": request.period.label(),
             "dimensions": [d.label_ar for d in request.dimensions],
             "follow_up": follow_up,
+            # "llm" when Claude read the question; `note` is its restatement,
+            # or why it could not help.
+            "method": method,
+            "note": note,
         },
         "findings": [_finding_payload(f, downloads) for f in answer.findings[:4]],
         "suggestions": [
@@ -143,7 +149,7 @@ class ChatApp:
     def build(cls, agent: Agent) -> ChatApp:
         return cls(
             agent=agent,
-            sessions=Sessions(agent.lexicon),
+            sessions=Sessions(agent.lexicon, llm=agent.llm),
             downloads=Downloads(),
             answer_lock=threading.Lock(),
         )
@@ -154,7 +160,7 @@ class ChatApp:
             turn = conversation.understand(message)
             with self.answer_lock:
                 answer = self.agent.answer_request(turn.request)
-        payload = answer_payload(answer, self.downloads, turn.follow_up)
+        payload = answer_payload(answer, self.downloads, turn.follow_up, turn.method, turn.note)
         payload["session"] = session_id
         return payload
 

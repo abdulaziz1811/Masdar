@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit
 
@@ -44,6 +45,8 @@ from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 
 TABULAR = {"CSV", "XLSX", "XLS", "JSON", "TSV"}
 MAX_DETAIL_FETCHES = 5
+# Publishers fetched at once when the catalogue is not cached.
+CATALOGUE_WORKERS = 6
 _DATE = re.compile(r"(\d{4})-\d{2}-\d{2}")
 
 
@@ -106,29 +109,49 @@ class SaudiOpenDataAdapter(SourceAdapter):
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise SourceError(self.id, f"استجابة غير صالحة: {exc}") from exc
 
-    def _organizations(self) -> list[dict]:
+    def _organizations(self, topic_id: str | None = None) -> list[dict]:
+        """Configured publishers, narrowed to those that publish the topic.
+
+        A publisher may list the topics it covers; one that does is skipped
+        for questions on other topics, which saves requests and keeps, say,
+        court statistics out of an electricity search. A publisher with no
+        list -- or a question with no topic -- is always searched.
+        """
         configured = self.descriptor.api.get("organizations") or []
-        return [o for o in configured if isinstance(o, dict) and o.get("id")]
+        orgs = [o for o in configured if isinstance(o, dict) and o.get("id")]
+        if topic_id is None:
+            return orgs
+        return [o for o in orgs if not o.get("topics") or topic_id in o["topics"]]
 
     # -- catalogue -----------------------------------------------------
-    def catalogue(self) -> tuple[list[dict], list[str]]:
-        """Every dataset of every configured publisher, with any failures.
+    def catalogue(self, topic_id: str | None = None) -> tuple[list[dict], list[str]]:
+        """Every dataset of the relevant publishers, with any failures.
 
-        One request per publisher, cached on disk by the HTTP layer. A
-        publisher that fails is reported, not fatal: the others still answer.
+        One request per publisher, made in parallel and cached on disk by the
+        HTTP layer. A publisher that fails is reported, not fatal: the others
+        still answer.
         """
-        entries: list[dict] = []
-        problems: list[str] = []
-        for org in self._organizations():
+        orgs = self._organizations(topic_id)
+
+        def load(org: dict):
             url = self._api(
                 "organization",
                 "/data/api/organizations?version=-1&organization={id}",
                 id=str(org["id"]),
             )
             try:
-                payload = self._get_json(url)
+                return org, self._get_json(url), None
             except (SourceError, SourceUnreachable) as exc:
-                problems.append(f"{org.get('name_ar', org['id'])}: {exc.reason}")
+                return org, None, exc.reason
+
+        with ThreadPoolExecutor(max_workers=CATALOGUE_WORKERS) as pool:
+            results = list(pool.map(load, orgs))  # map keeps the configured order
+
+        entries: list[dict] = []
+        problems: list[str] = []
+        for org, payload, problem in results:
+            if problem is not None:
+                problems.append(f"{org.get('name_ar', org['id'])}: {problem}")
                 continue
             for item in payload.get("datasets") or [] if isinstance(payload, dict) else []:
                 if isinstance(item, dict) and item.get("id"):
@@ -160,7 +183,7 @@ class SaudiOpenDataAdapter(SourceAdapter):
     def search(self, request: DataRequest, limit: int = 10) -> list[DatasetCandidate]:
         if self.http is None:
             raise SourceError(self.id, "no HTTP client configured")
-        entries, problems = self.catalogue()
+        entries, problems = self.catalogue(request.topic.id if request.topic else None)
         if not entries and problems:
             raise SourceUnreachable(self.id, "؛ ".join(problems[:3]))
 

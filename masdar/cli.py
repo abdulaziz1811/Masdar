@@ -17,6 +17,7 @@ from pathlib import Path
 from masdar.domain.models import Answer, Verdict
 from masdar.envfile import load_env_file
 from masdar.nlu.lexicon import load_lexicon
+from masdar.nlu.llm import LlmUnderstanding
 from masdar.nlu.parser import parse as parse_query
 from masdar.pipeline.orchestrator import Agent, AgentConfig
 from masdar.sources.base import SourceError, SourceRejected, SourceUnreachable
@@ -92,7 +93,9 @@ def cmd_ask(args: argparse.Namespace) -> int:
         export=not args.no_export,
         today=date.fromisoformat(args.today) if args.today else None,
     )
-    agent = Agent(registry=registry, http=http, config=config)
+    lexicon = load_lexicon()
+    llm, _ = LlmUnderstanding.from_environment(lexicon)
+    agent = Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
     answer = agent.answer(args.query)
 
     if args.json:
@@ -156,6 +159,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     registry = load_registry(demo=args.demo, http=http)
 
     print(f"منفذ الجلب: {http.describe_transport()}")
+    print(f"الفهم بالذكاء الاصطناعي: {LlmUnderstanding.from_environment(load_lexicon())[1]}")
     if http.transport.name == "direct":
         print(
             "ملاحظة: بعض نطاقات gov.sa مقيَّدة جغرافياً (تم التحقق من\n"
@@ -394,7 +398,9 @@ def cmd_serve(args: argparse.Namespace) -> int:
         out_dir=Path(args.out),
         today=date.fromisoformat(args.today) if args.today else None,
     )
-    agent = Agent(registry=registry, http=http, config=config)
+    lexicon = load_lexicon()
+    llm, llm_status = LlmUnderstanding.from_environment(lexicon)
+    agent = Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
     try:
         server = make_server(agent, host=args.host, port=args.port)
     except OSError as exc:
@@ -404,6 +410,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     url = f"http://{'127.0.0.1' if host in ('0.0.0.0', '::') else host}:{port}/"
     print(f"مصدر يعمل على {url}")
     print(f"ملفات الإكسل تُحفظ في: {Path(args.out).resolve()}")
+    print(f"الفهم بالذكاء الاصطناعي: {llm_status}")
     if args.host not in ("127.0.0.1", "localhost", "::1"):
         print("⚠️ الخادم مفتوح لغير هذا الجهاز وليس عليه تسجيل دخول.")
     print("للإيقاف: Ctrl+C")

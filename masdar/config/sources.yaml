@@ -67,19 +67,61 @@ sources:
       organization: /data/api/organizations?version=-1&organization={id}
       dataset: /data/api/datasets?version=-1&dataset={id}
       resources: /data/api/datasets/resources?version=-1&dataset={id}
-      # Publishers whose catalogues are searched. Each was verified live on
-      # 2026-09-28; the count is what it held then. Add more by id: a
-      # publisher's id is in its page URL, /ar/publishers/<id>.
+      # Publishers whose catalogues are searched, each verified live by id
+      # (2026-09-28); `datasets` is roughly what it held then. `topics`, when
+      # given, limits a publisher to questions on those topics; one without
+      # the list is searched for every question.
+      #
+      # To add one: the API also accepts the exact Arabic name in place of
+      # the id (organization=وزارة التجارة), and a publisher's page URL,
+      # /ar/publishers/<id>, carries its id.
       organizations:
-        - {id: 886f6d71-8034-47f7-914d-9613825d9153, name_ar: وزارة الطاقة, datasets: 100}
         - {id: bd9ff32e-4956-4dbf-bdde-1c1e4d786640, name_ar: الهيئة العامة للإحصاء, datasets: 84}
-        - {id: c43616c3-f3ac-41b9-bbad-040670bc396d, name_ar: وزارة الصحة, datasets: 100}
-        - {id: 3910a763-1829-445f-97b1-2bd988249b7e, name_ar: وزارة التعليم, datasets: 134}
-        - {id: 694ebd35-2ea6-4f1d-84b6-2ea875159b95, name_ar: وزارة البيئة والمياه والزراعة, datasets: 183}
-        - {id: 267814ec-1d12-40f6-9e6a-a2b3239aef7c, name_ar: وزارة الموارد البشرية والتنمية الاجتماعية, datasets: 122}
+        - {id: 886f6d71-8034-47f7-914d-9613825d9153, name_ar: وزارة الطاقة, datasets: 100,
+           topics: [electricity, energy, environment]}
+        - {id: c43616c3-f3ac-41b9-bbad-040670bc396d, name_ar: وزارة الصحة, datasets: 100,
+           topics: [health, population]}
+        - {id: 3910a763-1829-445f-97b1-2bd988249b7e, name_ar: وزارة التعليم, datasets: 134,
+           topics: [education, research]}
+        - {id: 694ebd35-2ea6-4f1d-84b6-2ea875159b95, name_ar: وزارة البيئة والمياه والزراعة,
+           datasets: 183, topics: [water, agriculture, environment]}
+        - {id: 267814ec-1d12-40f6-9e6a-a2b3239aef7c, name_ar: وزارة الموارد البشرية والتنمية الاجتماعية,
+           datasets: 122, topics: [labour, population]}
+        - {id: 35c63412-c4ae-4303-8fef-56cfd71303cf, name_ar: وزارة العدل, datasets: 1598,
+           topics: [justice, housing]}
+        - {id: 59a61901-0624-4616-b7b0-688a82fca411, name_ar: وزارة التجارة, datasets: 113,
+           topics: [business, trade, prices]}
+        - {id: 62a5b4a2-b453-445d-bb67-386c6013adb2, name_ar: وزارة السياحة, datasets: 240,
+           topics: [tourism]}
+        - {id: ebd97f7d-190e-496b-952e-0838a69ac677, name_ar: وزارة الحج والعمرة, datasets: 174,
+           topics: [tourism]}
+        - {id: 687e070e-ebbd-4803-b1cd-e56a25887e77, name_ar: وزارة النقل والخدمات اللوجستية,
+           datasets: 158, topics: [transport]}
+        - {id: 66bdb834-7759-41d5-883a-d31f9f420642, name_ar: الهيئة العامة للطيران المدني,
+           datasets: 108, topics: [transport, tourism]}
+        - {id: 2e373873-7daf-417b-897b-a942b203f8c3, name_ar: هيئة الزكاة والضريبة والجمارك,
+           datasets: 287, topics: [trade, finance, business]}
+        - {id: 87eb7a14-22c0-485c-950b-e4ddbc31c714, name_ar: وزارة الاقتصاد والتخطيط,
+           datasets: 114, topics: [gdp, population, labour, prices, business]}
+        - {id: ff8ab8a9-dd7c-4e18-9ff7-e91747b7a7d3, name_ar: وزارة المالية, datasets: 97,
+           topics: [finance, gdp]}
+        - {id: 83a1712a-7cb3-4879-bd02-4bb36880f90a, name_ar: البنك المركزي السعودي, datasets: 37,
+           topics: [finance, prices, gdp]}
+        - {id: 8278c551-a21a-49b9-a3f1-7ef0f548aa83, name_ar: وزارة الاستثمار, datasets: 40,
+           topics: [business, finance, gdp]}
+        - {id: ed1f266a-b956-40f3-b2a9-b0f513eed695, name_ar: المؤسسة العامة للتأمينات الاجتماعية,
+           datasets: 131, topics: [labour, finance]}
+        - {id: 5169ba94-db2a-4e4a-bc1d-840dd3d86bdd, name_ar: وزارة الاتصالات وتقنية المعلومات,
+           datasets: 80, topics: [ict]}
+        - {id: 0798a8ef-0c94-474e-a6e0-c9e02fc44030, name_ar: وزارة الثقافة, datasets: 107,
+           topics: [culture]}
+        - {id: c06bceca-2179-487e-b544-1bd96e195e60, name_ar: وزارة الإعلام, datasets: 128,
+           topics: [culture, ict]}
+        - {id: 529da479-2e94-4d79-8e71-55aa9e81baee, name_ar: وزارة الرياضة, datasets: 45,
+           topics: [culture]}
     topics: [electricity, energy, population, labour, education, health, water,
              housing, trade, prices, tourism, transport, environment, gdp, ict,
-             agriculture, finance, business, research, culture]
+             agriculture, finance, business, research, culture, justice]
 
   - id: gastat
     name_ar: الهيئة العامة للإحصاء
