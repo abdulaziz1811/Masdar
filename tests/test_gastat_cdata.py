@@ -37,9 +37,11 @@ class RoutingTransport(Transport):
 
     def __init__(self):
         self.requests: list[str] = []
+        self.headers: list[dict] = []
 
-    def get(self, url, source_id, params=None):
+    def get(self, url, source_id, params=None, headers=None):
         self.requests.append(url)
+        self.headers.append(dict(headers or {}))
         decoded = unquote(url)
         consumption = "HES0303" in decoded
         if "dimensions[]=REGION" in decoded:
@@ -331,3 +333,56 @@ class TestProvidedDimensions:
         # This dataset has no gender axis, so the warning must appear.
         answer = agent.answer("استهلاك الكهرباء 2022 حسب الجنس")
         assert any("لا يحتوي عمود" in note for note in answer.primary.notes)
+
+
+class TestKeyReachesTheWire:
+    """The bug this guards: the key was read but never sent.
+
+    `_auth_headers()` existed and fed the doctor's "with key" label, while no
+    request ever carried the header -- so setting the key could not have
+    unlocked a keyed route. Nothing asserted on the outgoing request, which
+    is exactly what these tests do.
+    """
+
+    KEY = "test-key-0000"
+
+    def test_coverage_probe_sends_the_key(self, registry, transport, monkeypatch):
+        from masdar.nlu.parser import parse
+
+        monkeypatch.setenv("GASTAT_API_KEY", self.KEY)
+        registry.adapter("gastat_cdata").search(parse("الكهرباء 2022"))
+        assert transport.headers, "no request was made"
+        assert all(h.get("apikey") == self.KEY for h in transport.headers)
+
+    def test_data_download_sends_the_key(self, agent, transport, monkeypatch):
+        monkeypatch.setenv("GASTAT_API_KEY", self.KEY)
+        agent.answer("استهلاك الكهرباء 2022 حسب المناطق")
+        downloads = [
+            h for u, h in zip(transport.requests, transport.headers, strict=True)
+            if "REGION" in unquote(u)
+        ]
+        assert downloads, "the data itself was never downloaded"
+        assert all(h.get("apikey") == self.KEY for h in downloads)
+
+    def test_no_header_without_a_key(self, agent, transport, monkeypatch):
+        monkeypatch.delenv("GASTAT_API_KEY", raising=False)
+        agent.answer("استهلاك الكهرباء 2022 حسب المناطق")
+        assert all("apikey" not in h for h in transport.headers)
+
+    def test_key_never_appears_in_the_answer(self, agent, monkeypatch):
+        import json
+
+        from masdar.cli import _answer_to_dict
+
+        monkeypatch.setenv("GASTAT_API_KEY", self.KEY)
+        answer = agent.answer("استهلاك الكهرباء 2022 حسب المناطق")
+        dumped = json.dumps(_answer_to_dict(answer), ensure_ascii=False)
+        assert self.KEY not in dumped
+
+    def test_key_never_appears_in_the_workbook(self, agent, monkeypatch):
+        monkeypatch.setenv("GASTAT_API_KEY", self.KEY)
+        answer = agent.answer("استهلاك الكهرباء 2022 حسب المناطق")
+        workbook = load_workbook(answer.primary.export_path)
+        for sheet in workbook.worksheets:
+            for row in sheet.iter_rows(values_only=True):
+                assert all(self.KEY not in str(c) for c in row if c is not None)

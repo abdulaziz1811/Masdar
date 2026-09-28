@@ -108,6 +108,36 @@ class SourceAdapter(abc.ABC):
         positive statement: "I looked and I have nothing."
         """
 
+    def request_headers(self) -> dict[str, str]:
+        """Credentials for this source, read from the environment at call time.
+
+        The descriptor's `auth` block names where a key lives (`key_env`) and
+        which header carries it; the value itself is never in the repository.
+        No variable set means no header -- public endpoints need none.
+        """
+        import os
+
+        auth = self.descriptor.auth or {}
+        key_env = auth.get("key_env")
+        if not key_env:
+            return {}
+        key = os.environ.get(key_env, "").strip()
+        if not key:
+            return {}
+        return {auth.get("header", "apikey"): key}
+
+    def fetch(self, url: str):
+        """Download one of this source's resources, with its credentials.
+
+        The orchestrator calls this rather than the HTTP client directly, so
+        knowing how a source authenticates stays inside the source layer and
+        credentials never travel on domain objects such as `Resource`, which
+        are printed, serialised to JSON and written into workbooks.
+        """
+        if self.http is None:
+            raise SourceError(self.id, "no HTTP client configured")
+        return self.http.get(url, source_id=self.id, headers=self.request_headers())
+
     def probe(self) -> str:
         """Cheap liveness check used by `masdar doctor`."""
         raise NotImplementedError

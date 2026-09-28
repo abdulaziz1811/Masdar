@@ -181,7 +181,19 @@ class HttpClient:
             pass  # a cache that cannot be written must not fail the request
 
     # -- fetch ---------------------------------------------------------
-    def get(self, url: str, source_id: str = "", params: dict | None = None) -> Fetched:
+    def get(
+        self,
+        url: str,
+        source_id: str = "",
+        params: dict | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> Fetched:
+        """Fetch a URL.
+
+        `headers` are request headers, typically an API key. They are passed
+        to the transport and never stored: the cache records the response,
+        keyed by URL, and nothing about how it was authorised.
+        """
         source_id = source_id or urlparse(url).netloc or "local"
         if url.startswith("file://"):
             return self._get_file(url, source_id)
@@ -197,7 +209,7 @@ class HttpClient:
         last_error: Exception | None = None
         for attempt in range(self.retries):
             try:
-                response = self.transport.get(url, source_id, params)
+                response = self.transport.get(url, source_id, params, headers)
             except SourceRejected:
                 # A policy or WAF refusal is deterministic; repeating it only
                 # wastes time and looks like abuse.

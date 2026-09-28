@@ -39,7 +39,7 @@ class FakeTransport(Transport):
         self.outcomes = list(outcomes)
         self.calls = 0
 
-    def get(self, url, source_id, params=None):
+    def get(self, url, source_id, params=None, headers=None):
         self.calls += 1
         outcome = self.outcomes.pop(0) if self.outcomes else self.outcomes
         if isinstance(outcome, Exception):
@@ -203,3 +203,32 @@ class TestRecordedAccessFacts:
         # Only open.data.gov.sa was actually demonstrated to be restricted.
         restricted = {d.id for d in load_descriptors() if d.geo_restricted}
         assert restricted == {"saudi_open_data"}
+
+
+class TestCredentialsStayLocal:
+    def test_firecrawl_refuses_to_forward_a_key(self):
+        # Forwarding would hand the publisher's key to a third party.
+        transport = FirecrawlTransport(api_key="firecrawl-key")
+        with pytest.raises(SourceError) as caught:
+            transport.get("https://api.stats.gov.sa/x", "s", headers={"apikey": "secret"})
+        assert "وسيط خارجي" in caught.value.reason
+
+    def test_firecrawl_refusal_is_not_retried(self):
+        # A policy refusal is deterministic; it must surface on the first try.
+        transport = FakeTransport([SourceError("s", "refused")] * 3)
+        client = HttpClient(use_cache=False, retries=3, transport=transport)
+        with pytest.raises(SourceError):
+            client.get("https://example.invalid/x", source_id="s", headers={"apikey": "k"})
+        assert transport.calls == 1
+
+    def test_cache_records_nothing_about_request_headers(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("MASDAR_CACHE_DIR", str(tmp_path))
+        client = HttpClient(use_cache=True, retries=1, transport=FakeTransport([response()]))
+        client.get("https://example.invalid/cached", source_id="s", headers={"apikey": "SECRET-1"})
+        stored = "".join(
+            f.read_text(encoding="utf-8", errors="replace")
+            for f in tmp_path.rglob("*")
+            if f.is_file()
+        )
+        assert stored, "expected a cache entry"
+        assert "SECRET-1" not in stored

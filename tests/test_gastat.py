@@ -191,7 +191,7 @@ class TestCredentialHygiene:
         adapter = Registry(descriptors, HttpClient(offline=True, retries=1)).adapter(
             "gastat_cdata"
         )
-        assert adapter._auth_headers() == {}
+        assert adapter.request_headers() == {}
 
     def test_a_configured_key_is_read_from_the_environment(self, monkeypatch):
         from masdar.sources.http import HttpClient
@@ -202,7 +202,7 @@ class TestCredentialHygiene:
         adapter = Registry(descriptors, HttpClient(offline=True, retries=1)).adapter(
             "gastat_cdata"
         )
-        assert adapter._auth_headers() == {"apikey": "test-value-not-a-real-key"}
+        assert adapter.request_headers() == {"apikey": "test-value-not-a-real-key"}
 
     def test_config_contains_no_long_opaque_tokens(self):
         """Guards against a key being pasted into the repo by accident."""

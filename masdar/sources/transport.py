@@ -127,7 +127,13 @@ class Transport(abc.ABC):
     name = "transport"
 
     @abc.abstractmethod
-    def get(self, url: str, source_id: str, params: dict | None = None) -> Response:
+    def get(
+        self,
+        url: str,
+        source_id: str,
+        params: dict | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> Response:
         """Fetch `url`, or raise `SourceUnreachable`/`SourceError`."""
 
     def describe(self) -> str:
@@ -148,10 +154,21 @@ class DirectTransport(Transport):
             "MASDAR_USER_AGENT", DEFAULT_USER_AGENT
         )
 
-    def get(self, url: str, source_id: str, params: dict | None = None) -> Response:
+    def get(
+        self,
+        url: str,
+        source_id: str,
+        params: dict | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> Response:
         try:
             response = self._session.get(
-                url, params=params, timeout=self.timeout, stream=True, allow_redirects=True
+                url,
+                params=params,
+                headers=headers or None,
+                timeout=self.timeout,
+                stream=True,
+                allow_redirects=True,
             )
         except requests.exceptions.SSLError as exc:
             raise SourceUnreachable(
@@ -223,7 +240,24 @@ class FirecrawlTransport(Transport):
     def describe(self) -> str:
         return f"firecrawl (exit: {self.country})"
 
-    def get(self, url: str, source_id: str, params: dict | None = None) -> Response:
+    def get(
+        self,
+        url: str,
+        source_id: str,
+        params: dict | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> Response:
+        if headers:
+            # Forwarding a publisher's API key through a scraping service
+            # would hand the credential to a third party the key's owner never
+            # agreed to share it with. Refused outright, not silently dropped:
+            # dropping it would turn into a 401 that reads like a data problem.
+            raise SourceError(
+                source_id,
+                "هذا الطلب يحمل مفتاح API، ولن يُرسَل المفتاح عبر وسيط خارجي "
+                "(Firecrawl). شغّل الأداة من داخل السعودية بالمنفذ المباشر "
+                "(MASDAR_HTTP_BACKEND=direct) لاستخدام المسارات التي تتطلب مفتاحاً.",
+            )
         if not self.api_key:
             raise SourceUnreachable(
                 source_id,

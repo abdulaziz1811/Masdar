@@ -81,23 +81,6 @@ class GastatCdataAdapter(SourceAdapter):
         template = self.descriptor.api.get("dataset_path", "/v1/stats/{id}")
         return self.descriptor.url(template.replace("{id}", dataset_id))
 
-    def _auth_headers(self) -> dict[str, str]:
-        """An API key only if one is configured; Public APIs need none.
-
-        Read from the environment at call time. Credentials are never stored
-        in this repository.
-        """
-        import os
-
-        auth = self.descriptor.auth or {}
-        key_env = auth.get("key_env")
-        if not key_env:
-            return {}
-        key = os.environ.get(key_env, "").strip()
-        if not key:
-            return {}
-        return {auth.get("header", "apikey"): key}
-
     def _query_url(self, dataset_id: str, params: list[tuple[str, str]]) -> str:
         # Brackets kept literal: this is the form verified against the API.
         return f"{self._path(dataset_id)}?{urlencode(params, safe='[]')}"
@@ -132,7 +115,7 @@ class GastatCdataAdapter(SourceAdapter):
         url = self._query_url(
             dataset_id, [("dimensions[]", TIME_DIMENSION), ("format", DEFAULT_FORMAT)]
         )
-        fetched = self.http.get(url, source_id=self.id)
+        fetched = self.fetch(url)
         table = read_json(fetched.content)
         years = table.observed_years()
         if not years:
@@ -228,7 +211,7 @@ class GastatCdataAdapter(SourceAdapter):
         coverage = self._observe_coverage(dataset_id)
         years = sorted(coverage.years)
         span = f"{years[0]}–{years[-1]}" if years else "غير معروفة"
-        keyed = "مع مفتاح" if self._auth_headers() else "بلا مفتاح"
+        keyed = "مع مفتاح" if self.request_headers() else "بلا مفتاح"
         return (
             f"{len(datasets)} مجموعة معلنة، {dataset_id}: {len(years)} سنة "
             f"({span}) — {keyed}"

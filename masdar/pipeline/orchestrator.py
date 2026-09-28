@@ -278,7 +278,7 @@ class Agent:
         if resource is None:
             return None, None, None, None
         try:
-            fetched = self.http.get(resource.url, source_id=candidate.source_id)
+            fetched = self._fetch(candidate.source_id, resource.url)
         except SourceUnreachable as exc:
             return None, None, None, f"تعذّر تنزيل الملف للتحقق: {exc.reason}"
         except SourceError as exc:
@@ -311,6 +311,12 @@ class Agent:
             fetched,
             None,
         )
+
+    def _fetch(self, source_id: str, url: str):
+        """Let the owning adapter download its resource, credentials and all."""
+        if self.registry.get(source_id) is not None:
+            return self.registry.adapter(source_id).fetch(url)
+        return self.http.get(url, source_id=source_id)
 
     def _provenance(
         self,
