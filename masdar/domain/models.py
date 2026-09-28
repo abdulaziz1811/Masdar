@@ -115,6 +115,10 @@ class DataRequest:
     topic: Topic | None = None
     dimensions: tuple[Dimension, ...] = ()
     free_terms: tuple[str, ...] = ()
+    # Lexicon phrases that actually occur in the question. They say far more
+    # than the topic's full keyword list: "متوسط العمر المتوقع" picks out one
+    # health dataset, whereas the health keywords match them all.
+    typed_phrases: tuple[str, ...] = ()
     language: str = "ar"
     # Parts of the question the parser could not resolve; surfaced to the
     # user instead of being silently dropped.
@@ -258,6 +262,10 @@ class DatasetCandidate:
     title_ar: str
     title_en: str = ""
     description: str = ""
+    # Search words a source attaches to a dataset beyond its title. Used for
+    # ranking only, never shown: a title says "الطاقة الكهربائية" where a user
+    # types "الكهرباء", and curated keywords are what bridge the two.
+    keywords: str = ""
     landing_url: str = ""
     publisher_ar: str = ""
     publisher_en: str = ""

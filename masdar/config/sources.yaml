@@ -278,4 +278,9 @@ sources:
       key_env: GASTAT_API_KEY
       secret_env: GASTAT_API_SECRET
       header: apikey
-    topics: [electricity, energy, housing]
+    # Every topic GASTAT publishes: which datasets exist is decided by the
+    # specs in spec_dir, and a search with no matching dataset is local and
+    # returns nothing, so listing a topic here costs no request.
+    topics: [population, labour, prices, gdp, trade, education, health, tourism,
+             transport, environment, housing, energy, electricity, water, ict,
+             agriculture, finance]

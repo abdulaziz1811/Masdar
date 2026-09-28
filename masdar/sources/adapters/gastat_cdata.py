@@ -15,7 +15,15 @@ The API is OData-flavoured and unusually well suited to this agent:
   measures, and `*_ARAB`/`*_ENGL`/`*_CODE` the dimension labels.
 * `$top`, `$skip` and `$orderby` page and sort.
 
-The important consequence is coverage. Asking for `dimensions[]=YEAR` alone
+The API aggregates -- by SUM -- over every dimension a request leaves out.
+Verified on 2026-09-28 against the life-expectancy dataset: grouped by YEAR
+alone, 2022 comes back as 234.09, which is female 80.89 + total 77.90 + male
+75.30. A sum of rates is meaningless, and because dimensions carry a "Total"
+member alongside their parts, even a sum of counts double-counts. So every
+data request asks for *all* of a dataset's dimensions and receives the
+figures exactly as published; nothing is ever aggregated on our behalf.
+
+The important consequence for coverage is the opposite one. Asking for `dimensions[]=YEAR` alone
 returns one row per year the dataset holds -- a handful of rows rather than
 the whole table -- so the years can be established authoritatively and
 cheaply, from the publisher's own data, before anything is downloaded. On
@@ -40,6 +48,7 @@ from masdar.domain.models import (
 from masdar.export.tabular import read_json
 from masdar.nlu.lexicon import CONFIG_DIR
 from masdar.nlu.normalize import contains_phrase
+from masdar.nlu.parser import typed_phrase_score
 from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 from masdar.sources.openapi import datasets_from_dir
 
@@ -62,6 +71,12 @@ DIMENSION_NAMES: dict[Dimension, tuple[str, ...]] = {
 TIME_DIMENSION = "YEAR"
 DEFAULT_FORMAT = "JSON"
 MAX_COVERAGE_PROBES = 5
+
+# Paging. Requesting every dimension can mean thousands of rows, and nothing
+# verified whether or where the server caps a response, so rows are fetched
+# page by page until the server returns an empty page.
+PAGE_SIZE = 5000
+MAX_PAGES = 200
 
 
 class GastatCdataAdapter(SourceAdapter):
@@ -153,6 +168,90 @@ class GastatCdataAdapter(SourceAdapter):
                     break
         return chosen
 
+    @staticmethod
+    def _provided_dimensions(available: list[str]) -> tuple[Dimension, ...]:
+        """Our dimensions that this dataset carries as columns."""
+        provided: list[Dimension] = []
+        for dimension, names in DIMENSION_NAMES.items():
+            if any(name in available for name in names) and dimension not in provided:
+                provided.append(dimension)
+        return tuple(provided)
+
+    # -- fetching ------------------------------------------------------
+    def fetch(self, url: str):
+        """Fetch every row, across pages, or fail -- never a silent subset.
+
+        The response is paged with `$top`/`$skip` and ordered by the time
+        column until the server returns an empty page. A cap on page size
+        that the server imposes on its own is therefore harmless. Two things
+        are refused rather than returned: more than MAX_PAGES pages, and a
+        repeated row. With every dimension requested each row is unique, so a
+        repeat means pages shifted underneath us, and rows may be missing.
+        """
+        import hashlib
+        import json
+        from dataclasses import replace
+        from urllib.parse import parse_qsl, urlsplit, urlunsplit
+
+        parts = urlsplit(url)
+        query = parse_qsl(parts.query, keep_blank_values=True)
+        if any(key in ("$top", "$skip") for key, _ in query):
+            return super().fetch(url)  # an explicit page was asked for
+
+        grouped = [value for key, value in query if key == "dimensions[]"]
+        time_dimension = next(
+            (d for d in ("YEAR", "QUARTER", "MONTH") if d in grouped),
+            grouped[-1] if grouped else "",
+        )
+        order = [("$orderby", f"{time_dimension}_TIME ASC")] if time_dimension else []
+
+        rows: list[dict] = []
+        seen: set[str] = set()
+        first = None
+        pages = 0
+        while True:
+            if pages >= MAX_PAGES:
+                raise SourceError(
+                    self.id,
+                    f"المجموعة أكبر من {MAX_PAGES * PAGE_SIZE} صف؛ رُفض التصدير بدل "
+                    "تسليم جزء منها على أنه كامل.",
+                )
+            page_query = query + order + [("$top", str(PAGE_SIZE)), ("$skip", str(len(rows)))]
+            page_url = urlunsplit(parts._replace(query=urlencode(page_query, safe="[]$ ")))
+            fetched = super().fetch(page_url)
+            first = first or fetched
+            pages += 1
+            try:
+                payload = json.loads(fetched.content.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise SourceError(self.id, f"استجابة غير صالحة: {exc}") from exc
+            page = payload.get("value") if isinstance(payload, dict) else None
+            if not isinstance(page, list):
+                raise SourceError(self.id, "الاستجابة لا تحتوي قائمة value")
+            if not page:
+                break
+            for row in page:
+                key = json.dumps(row, sort_keys=True, ensure_ascii=False)
+                if key in seen:
+                    raise SourceError(
+                        self.id,
+                        "صف مكرر بين الصفحات — ترتيب الصفحات غير ثابت، وقد تكون صفوف "
+                        "ناقصة. رُفض التصدير بدل تسليم بيانات غير مكتملة.",
+                    )
+                seen.add(key)
+                rows.append(row)
+
+        body = json.dumps({"value": rows}, ensure_ascii=False).encode("utf-8")
+        # Provenance cites the canonical query; the hash covers every row.
+        return replace(
+            first,
+            url=url,
+            final_url=url,
+            content=body,
+            sha256=hashlib.sha256(body).hexdigest(),
+            from_cache=False,
+        )
+
     # -- coverage ------------------------------------------------------
     def _observe_coverage(self, entry: dict) -> Coverage:
         """Ask the dataset which periods it holds.
@@ -199,6 +298,7 @@ class GastatCdataAdapter(SourceAdapter):
             score += sum(1 for term in terms if term and contains_phrase(haystack, term))
             if score <= 0:
                 continue
+            score += typed_phrase_score(request, haystack)[0]
             available = [str(d) for d in (entry.get("dimensions") or [])]
             if self._requested_dimensions(request, available):
                 score += 2.0
@@ -212,13 +312,14 @@ class GastatCdataAdapter(SourceAdapter):
             available = [str(d) for d in (entry.get("dimensions") or [])]
             time_dimension = self._time_dimension(entry)
 
-            grouped = self._requested_dimensions(request, available)
-            params: list[tuple[str, str]] = []
-            for _, name in grouped:
-                params.append(("dimensions[]", name))
-            if time_dimension:
+            # Every dimension, always. Leaving one out makes the server SUM
+            # across it -- rates included -- which would put numbers in the
+            # workbook that the publisher never published.
+            params: list[tuple[str, str]] = [("dimensions[]", name) for name in available]
+            if time_dimension and time_dimension not in available:
                 params.append(("dimensions[]", time_dimension))
             params.append(("format", DEFAULT_FORMAT))
+            provided = self._provided_dimensions(available)
 
             # Coverage is worth a request only for the few best matches.
             coverage = Coverage.unknown()
@@ -236,6 +337,7 @@ class GastatCdataAdapter(SourceAdapter):
                     title_ar=str(entry.get("title_ar") or entry.get("title_en") or dataset_id),
                     title_en=str(entry.get("title_en") or ""),
                     description=str(entry.get("description") or ""),
+                    keywords=str(entry.get("keywords") or ""),
                     landing_url=self._path(entry),
                     publisher_ar=self.descriptor.name_ar,
                     publisher_en=self.descriptor.name_en,
@@ -248,9 +350,9 @@ class GastatCdataAdapter(SourceAdapter):
                     ),
                     claimed_coverage=coverage,
                     license_name=str(entry.get("license") or "") or None,
-                    # The server grouped by these, so they are present by
-                    # construction -- no need to guess from column names.
-                    provided_dimensions=tuple(d for d, _ in grouped),
+                    # Every dimension was requested, so each of these is a
+                    # column by construction -- no guessing from names.
+                    provided_dimensions=provided,
                 )
             )
         return candidates

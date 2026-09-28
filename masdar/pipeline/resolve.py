@@ -12,6 +12,7 @@ from datetime import date
 from masdar.domain.models import DataRequest, DatasetCandidate, Dimension
 from masdar.nlu.lexicon import Lexicon, load_lexicon
 from masdar.nlu.normalize import contains_phrase
+from masdar.nlu.parser import typed_phrase_score
 from masdar.sources.base import SourceDescriptor
 
 W_TERM = 2.0
@@ -21,6 +22,8 @@ W_TABULAR = 5.0
 W_DIMENSION = 3.0
 W_AUTHORITY = 0.06      # 0-100 authority contributes up to 6 points
 W_FRESHNESS = 2.0
+
+
 
 
 def _freshness(last_updated: date | None, today: date) -> float:
@@ -42,7 +45,10 @@ def score_candidate(
     lexicon = lexicon or load_lexicon()
     today = today or date.today()
     haystack = " ".join(
-        filter(None, (candidate.title_ar, candidate.title_en, candidate.description))
+        filter(
+            None,
+            (candidate.title_ar, candidate.title_en, candidate.description, candidate.keywords),
+        )
     )
 
     score = 0.0
@@ -54,6 +60,11 @@ def score_candidate(
                 score += W_TOPIC_LABEL
                 reasons.append(f"العنوان يذكر الموضوع: {label}")
                 break
+
+    typed, typed_hits = typed_phrase_score(request, haystack)
+    if typed:
+        score += typed
+        reasons.append(f"يطابق عبارة السؤال: {', '.join(typed_hits)}")
 
     hits = [t for t in request.free_terms if contains_phrase(haystack, t)]
     if hits:

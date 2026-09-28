@@ -1,9 +1,17 @@
 """Tests for the GASTAT cdata API adapter.
 
-Both fixtures are responses captured verbatim from the live API on
-2026-09-27, so the parsing under test faces the real shapes -- including
-the real coverage of this dataset: 2017-2019 and 2021-2022, with 2020
-genuinely absent.
+The fixtures are responses captured verbatim from the live API, so the
+parsing under test faces the real shapes -- including the real coverage of
+these datasets: 2017-2019 and 2021-2022, with 2020 genuinely absent.
+
+A caution about `by_region.json`: it was captured with only REGION and YEAR
+requested, so the server SUMMED its measures over the three dimensions left
+out. Its values ("157 million connected households" in Riyadh) are therefore
+aggregates the publisher never published. It stays as a shape fixture for
+labels and routing; nothing here asserts on its numbers. The adapter now
+requests every dimension precisely so such figures never reach a workbook --
+see test_completeness.py. `HES0303_by_region_season.json` was captured with
+all three of its dimensions and holds published values.
 """
 
 from datetime import date
@@ -18,6 +26,7 @@ from masdar.pipeline.orchestrator import Agent, AgentConfig
 from masdar.sources.http import HttpClient
 from masdar.sources.registry import Registry, load_descriptors
 from masdar.sources.transport import Response, Transport
+from tests.fakes import paged
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "gastat_cdata"
 TODAY = date(2026, 9, 27)
@@ -50,7 +59,7 @@ class RoutingTransport(Transport):
             name = "HES0303_years.json" if consumption else "coverage_years.json"
         else:
             raise AssertionError(f"unexpected request: {url}")
-        body = (FIXTURES / name).read_bytes()
+        body = paged((FIXTURES / name).read_bytes(), url)
         return Response(
             url=url,
             final_url=url,

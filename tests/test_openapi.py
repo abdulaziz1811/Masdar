@@ -23,6 +23,7 @@ from masdar.sources.openapi import (
     load_spec,
     split_bilingual,
 )
+from tests.fakes import paged
 
 SPECS = Path(__file__).resolve().parent / "fixtures" / "specs"
 BASE = "https://api.stats.gov.sa"
@@ -196,7 +197,7 @@ class SpecOnlyTransport:
         else:
             rows = [{"YEAR_TIME": "2021"}, {"YEAR_TIME": "2022"}]
         body = json.dumps({"value": rows}, ensure_ascii=False).encode("utf-8")
-        return Response(url, url, 200, body, "application/json", {})
+        return Response(url, url, 200, paged(body, url), "application/json", {})
 
     def describe(self):
         return self.name

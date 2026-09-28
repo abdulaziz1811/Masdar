@@ -147,7 +147,16 @@ def _measures(spec: dict, operation: dict) -> list[str]:
     schema = _resolve(spec, (media or {}).get("schema", {}))
     records = _resolve(spec, (schema.get("properties") or {}).get("value", {}))
     item = _resolve(spec, records.get("items", {}))
-    return sorted(k for k in (item.get("properties") or {}) if k.upper().endswith("_OBSV"))
+    return sorted(k for k in (item.get("properties") or {}) if _is_measure(k))
+
+
+# Measure columns seen in the live specs: *_OBSV (energy) and TOTAL_OBS_VALUE
+# (health). Both are matched rather than assuming one convention.
+_MEASURE = re.compile(r"(_OBSV|OBS_VALUE|OBSVALUE)$", re.IGNORECASE)
+
+
+def _is_measure(name: str) -> bool:
+    return bool(_MEASURE.search(name))
 
 
 def _same_host(url: str, base_url: str) -> bool:

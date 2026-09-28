@@ -17,7 +17,9 @@ from masdar.nlu.normalize import (
     contains_phrase,
     normalize,
     normalize_light,
+    stems,
     strip_article,
+    strip_phrase_articles,
     tokens,
 )
 
@@ -164,6 +166,24 @@ def topics_in_text(text: str, lexicon: Lexicon | None = None) -> list[str]:
     return [topic_id for _, topic_id in scored]
 
 
+# Per token, squared: a three-word phrase the user typed is decisive.
+W_TYPED = 3.0
+def typed_phrase_score(request: DataRequest, text: str) -> tuple[float, tuple[str, ...]]:
+    """Reward text containing the phrases the user actually typed.
+
+    Weighted by length squared, like topic detection, so a specific phrase
+    ("متوسط العمر المتوقع") outweighs any number of generic topic words.
+    """
+    score = 0.0
+    hits: list[str] = []
+    for phrase in request.typed_phrases:
+        if phrase and contains_phrase(text, phrase):
+            tokens = len(phrase.split())
+            score += W_TYPED * tokens * tokens
+            hits.append(phrase)
+    return score, tuple(hits)
+
+
 def detect_dimensions(text: str, lexicon: Lexicon) -> tuple[tuple[Dimension, ...], tuple[str, ...]]:
     found: list[Dimension] = []
     matched_words: list[str] = []
@@ -196,6 +216,16 @@ def _free_terms(text: str, consumed: set[str], stopwords: frozenset[str]) -> tup
     return tuple(result)
 
 
+def _without_phrases(text: str, phrases: tuple[str, ...]) -> str:
+    """The text with the given phrases removed, compared article-insensitively."""
+    remaining = " " + " ".join(stems(text)) + " "
+    for phrase in sorted(phrases, key=len, reverse=True):
+        needle = strip_phrase_articles(phrase)
+        if needle:
+            remaining = remaining.replace(f" {needle} ", " ")
+    return remaining.strip()
+
+
 def detect_language(text: str) -> str:
     arabic = sum(1 for ch in text if "؀" <= ch <= "ۿ")
     latin = sum(1 for ch in text if ch.isascii() and ch.isalpha())
@@ -208,7 +238,11 @@ def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
 
     period = parse_period(query)
     topic, topic_hits = detect_topic(query, lexicon)
-    dimensions, dimension_words = detect_dimensions(query, lexicon)
+    # Words that named the topic are spent: "متوسط العمر المتوقع" is life
+    # expectancy, and its "العمر" must not also request an age breakdown.
+    dimensions, dimension_words = detect_dimensions(
+        _without_phrases(query, topic_hits), lexicon
+    )
 
     consumed: set[str] = set(dimension_words)
     for hit in topic_hits:
@@ -234,6 +268,7 @@ def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
         topic=topic,
         dimensions=dimensions,
         free_terms=free,
+        typed_phrases=tuple(sorted(set(topic_hits), key=lambda h: (-len(h), h))),
         language=detect_language(query),
         unresolved=tuple(unresolved),
     )
