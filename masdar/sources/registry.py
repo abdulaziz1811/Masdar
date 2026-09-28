@@ -30,6 +30,7 @@ def load_descriptors(path: Path | None = None) -> tuple[SourceDescriptor, ...]:
             notes_ar=(entry.get("notes_ar") or "").strip(),
             topics=tuple(entry.get("topics", ())),
             synthetic=bool(entry.get("synthetic", False)),
+            international=bool(entry.get("international", False)),
             rendering=entry.get("rendering", "server"),
             geo_restricted=bool(entry.get("geo_restricted", False)),
             waf=bool(entry.get("waf", False)),
@@ -57,6 +58,7 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
     from masdar.sources.adapters.live_data import LiveDataAdapter
     from masdar.sources.adapters.opendatasoft import OpendatasoftAdapter
     from masdar.sources.adapters.saudi_open_data import SaudiOpenDataAdapter
+    from masdar.sources.adapters.worldbank import WorldBankAdapter
 
     registry: dict[str, type[SourceAdapter]] = {
         "saudi_open_data": SaudiOpenDataAdapter,
@@ -65,6 +67,7 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
         "opendatasoft": OpendatasoftAdapter,
         "html_index": HtmlIndexAdapter,
         "live_data": LiveDataAdapter,
+        "worldbank": WorldBankAdapter,
         "fixture": FixtureAdapter,
     }
     try:

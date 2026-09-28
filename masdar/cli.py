@@ -478,6 +478,22 @@ def cmd_publishers(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_worldbank_catalogue(args: argparse.Namespace) -> int:
+    """Rebuild the local list of World Bank indicators for the Kingdom."""
+    from masdar.sources.adapters import worldbank
+
+    http = HttpClient(timeout=args.timeout, use_cache=False)
+    try:
+        catalogue = worldbank.build_catalogue(http, load_lexicon())
+    except (SourceUnreachable, SourceError) as exc:
+        print(f"تعذّر الوصول إلى واجهة البنك الدولي: {exc.reason}")
+        return 3
+    worldbank.write_catalogue(catalogue, Path(args.out))
+    print(f"كُتب {args.out}: {len(catalogue['indicators'])} مؤشراً "
+          f"(آخر تحديث لدى البنك: {catalogue.get('lastupdated') or '؟'}).")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="masdar",
@@ -535,6 +551,13 @@ def build_parser() -> argparse.ArgumentParser:
     pubs.add_argument("--out", default=str(DISCOVERED_FILE), help="ملف النتيجة")
     pubs.add_argument("--timeout", type=float, default=30.0)
     pubs.set_defaults(func=cmd_publishers)
+
+    from masdar.sources.adapters.worldbank import CATALOGUE
+
+    wb = sub.add_parser("worldbank-catalogue", help="أعد بناء فهرس مؤشرات البنك الدولي")
+    wb.add_argument("--out", default=str(CATALOGUE), help="ملف النتيجة")
+    wb.add_argument("--timeout", type=float, default=60.0)
+    wb.set_defaults(func=cmd_worldbank_catalogue)
 
     importer = sub.add_parser("import-spec", help="استورد ملفات مواصفات OpenAPI")
     importer.add_argument("files", nargs="+", help="ملفات JSON/YAML من بوابة المطوّرين")

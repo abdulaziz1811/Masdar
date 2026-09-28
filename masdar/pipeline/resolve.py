@@ -22,8 +22,12 @@ W_TABULAR = 5.0
 W_DIMENSION = 3.0
 W_AUTHORITY = 0.06      # 0-100 authority contributes up to 6 points
 W_FRESHNESS = 2.0
-
-
+# An international compiler's copy of a figure ranks below the Saudi
+# publisher's own, even when both match the question equally.
+W_INTERNATIONAL = -3.0
+# A source's own reading of how well a result fits (see
+# DatasetCandidate.relevance), worth up to this much.
+W_SOURCE_RELEVANCE = 4.0
 
 
 def _freshness(last_updated: date | None, today: date) -> float:
@@ -90,10 +94,18 @@ def score_candidate(
             score += W_DIMENSION
             reasons.append(f"العنوان يشير إلى التفصيل المطلوب: {dimension.value}")
 
+    if candidate.relevance > 0:
+        score += W_SOURCE_RELEVANCE * min(candidate.relevance, 1.0)
+        if candidate.relevance >= 0.5:
+            reasons.append("الأقرب إلى صياغة السؤال بين نتائج المصدر")
+
     if descriptor is not None:
         score += W_AUTHORITY * descriptor.authority
         if descriptor.authority >= 90:
             reasons.append(f"مصدر مرجعي: {descriptor.name_ar}")
+        if descriptor.international:
+            score += W_INTERNATIONAL
+            reasons.append(f"مصدر دولي، يأتي بعد الجهة السعودية: {descriptor.name_ar}")
 
     fresh = _freshness(candidate.last_updated, today)
     if fresh > 0:

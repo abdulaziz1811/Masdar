@@ -498,3 +498,32 @@ sources:
       المشتركين تقول 2005-2022 وبياناتها حتى 2025)، لذا لا تُقرأ التغطية منه.
     topics: [energy, electricity, water, gdp, trade, prices, population, labour,
              environment, transport, finance, agriculture, housing, tourism, ict]
+
+  - id: worldbank
+    name_ar: البنك الدولي — مؤشرات التنمية العالمية
+    name_en: World Bank — World Development Indicators
+    operator_ar: البنك الدولي
+    operator_en: World Bank
+    base_url: https://api.worldbank.org/v2
+    adapter: worldbank
+    # An international compiler, not the origin: most values come from
+    # Saudi agencies or UN bodies, and each indicator names which. Ranked
+    # below the Saudi sources and every answer says it is international.
+    international: true
+    authority: 70
+    # VERIFIED by direct calls on 2026-09-28: indicator names in Arabic
+    # (/v2/ar/...), country series with `lastupdated`, and null values for
+    # years without a figure all confirmed; no key is needed.
+    api_verified: true
+    access_checked: "2026-09-28"
+    api:
+      catalogue: ""  # empty: the bundled config/worldbank/wdi_sau.json
+    access_notes_ar: >-
+      واجهة البنك الدولي مفتوحة بلا مفتاح وتعيد أسماء المؤشرات بالعربية.
+      الفهرس محفوظ محلياً (1,037 مؤشراً فيها قيمة للمملكة بين 2019 و2024)
+      لأن الواجهة لا تدعم البحث النصي، أما القيم فتُجلب حية وقت السؤال، وتاريخ
+      آخر تحديث يُقرأ من حقل lastupdated في الرد. السنوات التي يدرجها البنك
+      بقيمة فارغة (null) تُستبعد ولا تُعد متاحة.
+    topics: [population, labour, education, health, water, energy, electricity,
+             environment, gdp, trade, prices, finance, agriculture, ict,
+             transport, tourism, business, research, housing]

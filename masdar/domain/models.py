@@ -282,6 +282,11 @@ class DatasetCandidate:
     # adapter and carried into the answer's notes (e.g. "a live snapshot,
     # not an annual statistic").
     caveats: tuple[str, ...] = ()
+    # How closely the source's own search matched the question, from 0 to 1,
+    # for a source that can tell apart what the generic ranker sees as ties
+    # (the World Bank's many near-identical indicator names). 0 means the
+    # source gave no opinion.
+    relevance: float = 0.0
     # Filled in by the ranker.
     score: float = 0.0
     match_reasons: tuple[str, ...] = ()

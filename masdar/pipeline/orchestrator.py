@@ -121,7 +121,8 @@ class Agent:
             return answer.with_message(compose_message(answer))
 
         findings = self._evaluate(request, ranked, descriptors, today, audit)
-        findings.sort(key=_finding_sort_key)
+        international = frozenset(d.id for d in descriptors.values() if d.international)
+        findings.sort(key=lambda f: _finding_sort_key(f, international))
 
         best = findings[0] if findings else None
         verdict = best.verdict if best else Verdict.NO_SOURCE
@@ -511,7 +512,7 @@ _VERDICT_RANK = {
 }
 
 
-def _finding_sort_key(finding: Finding) -> tuple:
+def _finding_sort_key(finding: Finding, international: frozenset[str] = frozenset()) -> tuple:
     rank: float = _VERDICT_RANK.get(finding.verdict, 9)
     # "Unverified" with nothing known about the years -- a dataset never
     # opened -- carries no evidence at all, so it does not outrank a source
@@ -521,6 +522,9 @@ def _finding_sort_key(finding: Finding) -> tuple:
         rank = _VERDICT_RANK[Verdict.NOT_AVAILABLE] + 0.5
     return (
         rank,
+        # At the same verdict, the Saudi publisher's own file comes before an
+        # international compiler's copy; a better verdict still wins.
+        finding.candidate.source_id in international,
         0 if finding.export_path else 1,
         -finding.candidate.score,
     )

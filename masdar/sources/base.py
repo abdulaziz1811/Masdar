@@ -76,6 +76,10 @@ class SourceDescriptor:
     # True for fixture/demo sources. Anything derived from one is labelled
     # as sample data so it can never be mistaken for an official figure.
     synthetic: bool = False
+    # True for an international organisation's data about the Kingdom (the
+    # World Bank, say): reliable, but second to the Saudi publisher of the
+    # same figure, so it ranks below Saudi sources and every answer says so.
+    international: bool = False
 
     def covers_topic(self, topic_id: str | None) -> bool:
         if topic_id is None:

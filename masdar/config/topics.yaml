@@ -13,14 +13,14 @@ topics:
     keywords_ar: [كهرباء, الكهرباء, كهربائية, الطاقة الكهربائية, استهلاك الكهرباء,
                   مشتركي الكهرباء, الأحمال الكهربائية, توليد الكهرباء, شبكة الكهرباء]
     keywords_en: [electricity, power consumption, electric load, power generation]
-    preferred_sources: [gastat_cdata, kapsarc, wera, gastat_db, saudi_open_data, moenergy, gastat]
+    preferred_sources: [gastat_cdata, kapsarc, wera, gastat_db, saudi_open_data, moenergy, gastat, worldbank]
 
   - id: energy
     label_ar: الطاقة
     label_en: Energy
     keywords_ar: [الطاقة, النفط, الغاز, الطاقة المتجددة, البتروكيماويات, وقود]
     keywords_en: [energy, oil, gas, renewable energy, fuel]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, moenergy, saudi_open_data, gastat]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, moenergy, saudi_open_data, gastat, worldbank]
 
   - id: population
     label_ar: السكان
@@ -28,7 +28,7 @@ topics:
     keywords_ar: [السكان, سكان, التعداد, تعداد, الديموغرافيا, المواليد, الوفيات,
                   الخصوبة, معدل الخصوبة]
     keywords_en: [population, census, demography, births, deaths, fertility]
-    preferred_sources: [saudi_census, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data]
+    preferred_sources: [saudi_census, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, worldbank]
 
   - id: labour
     label_ar: سوق العمل
@@ -37,14 +37,14 @@ topics:
                   القوى العاملة, التوطين, المناصب الإدارية, المشتغلين, تعويضات المشتغلين,
                   العمالة]
     keywords_en: [labour, labor, unemployment, employment, wages, workforce, managerial positions]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, hrsd_live]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, hrsd_live, worldbank]
 
   - id: education
     label_ar: التعليم
     label_en: Education
     keywords_ar: [التعليم, المدارس, الطلاب, الجامعات, المعلمين, التعليم العالي]
     keywords_en: [education, schools, students, universities, teachers]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, worldbank]
 
   - id: health
     label_ar: الصحة
@@ -53,14 +53,14 @@ topics:
                   متوسط العمر المتوقع, العمر المتوقع, معدل الوفيات, الحالة الصحية, سوء التغذية, التغذية, الممارسين الصحيين]
     keywords_en: [health, hospitals, beds, physicians, clinics, diseases,
                   life expectancy, mortality, death rate, malnutrition, nutrition]
-    preferred_sources: [moh, gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat]
+    preferred_sources: [moh, gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, worldbank]
 
   - id: water
     label_ar: المياه
     label_en: Water
     keywords_ar: [المياه, مياه, التحلية, الصرف الصحي, استهلاك المياه, السدود]
     keywords_en: [water, desalination, wastewater, dams]
-    preferred_sources: [wera, gastat_cdata, kapsarc, mewa, gastat_db, saudi_open_data]
+    preferred_sources: [wera, gastat_cdata, kapsarc, mewa, gastat_db, saudi_open_data, worldbank]
 
   - id: housing
     label_ar: الإسكان
@@ -68,21 +68,21 @@ topics:
     keywords_ar: [الإسكان, المساكن, العقار, الوحدات السكنية, الملكية,
                   الصفقات العقارية, المؤشر العقاري, إيجارات]
     keywords_en: [housing, dwellings, real estate, residential units, real estate transactions]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, worldbank]
 
   - id: trade
     label_ar: التجارة الخارجية
     label_en: Foreign trade
     keywords_ar: [التجارة, الصادرات, الواردات, التجارة الخارجية, الميزان التجاري]
     keywords_en: [trade, exports, imports, trade balance]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, sama, saudi_open_data]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, sama, saudi_open_data, worldbank]
 
   - id: prices
     label_ar: الأسعار والتضخم
     label_en: Prices and inflation
     keywords_ar: [الأسعار, التضخم, الرقم القياسي, تكاليف المعيشة, أسعار المستهلك]
     keywords_en: [prices, inflation, cpi, consumer price index, cost of living]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, sama]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, sama, worldbank]
 
   - id: gdp
     label_ar: الحسابات القومية
@@ -91,21 +91,21 @@ topics:
                   الدخل القومي, الدخل القومي الإجمالي, نصيب الفرد]
     keywords_en: [gdp, national accounts, economic growth, national income, gni,
                   per capita income]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, sama]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, sama, worldbank]
 
   - id: tourism
     label_ar: السياحة
     label_en: Tourism
     keywords_ar: [السياحة, السياح, الزوار, الفنادق, الرحلات, الحج, العمرة, الحجاج, المعتمرين]
     keywords_en: [tourism, tourists, visitors, hotels, hajj, umrah, pilgrims]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, worldbank]
 
   - id: transport
     label_ar: النقل
     label_en: Transport
     keywords_ar: [النقل, الطيران, المطارات, الطرق, المرور, الحوادث, الموانئ, السكك]
     keywords_en: [transport, aviation, airports, roads, traffic, accidents, ports]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, worldbank]
 
   - id: environment
     label_ar: البيئة
@@ -114,14 +114,14 @@ topics:
                   الطقس, درجات الحرارة, درجة الحرارة, الأمطار, هطول الأمطار, الرطوبة]
     keywords_en: [environment, pollution, emissions, waste, climate, weather,
                   temperature, rainfall]
-    preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat]
+    preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, worldbank]
 
   - id: ict
     label_ar: تقنية المعلومات والاتصالات
     label_en: ICT
     keywords_ar: [الاتصالات, الإنترنت, تقنية المعلومات, الرقمية, النطاق العريض, الهاتف المحمول, الهواتف المحمولة]
     keywords_en: [ict, internet, telecom, digital, broadband, mobile phone]
-    preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat]
+    preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, worldbank]
 
   - id: agriculture
     label_ar: الزراعة
@@ -129,14 +129,14 @@ topics:
     keywords_ar: [الزراعة, المحاصيل, الثروة الحيوانية, الأسماك, النخيل, الإبل,
                   النحل, خلايا النحل, الصيد, رخص الصيد, الصيادين, المواشي]
     keywords_en: [agriculture, crops, livestock, fisheries, camels, bees, fishing]
-    preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, mewa_live]
+    preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, mewa_live, worldbank]
 
   - id: finance
     label_ar: المالية والنقد
     label_en: Finance and money
     keywords_ar: [البنوك, النقد, الائتمان, الميزانية, الاحتياطي, التمويل, التحويلات المالية, الحوالات, المبالغ المحولة]
     keywords_en: [banks, money supply, credit, budget, reserves, finance, remittances]
-    preferred_sources: [sama, gastat_cdata, kapsarc, gastat_db, gastat]
+    preferred_sources: [sama, gastat_cdata, kapsarc, gastat_db, gastat, worldbank]
 
   - id: business
     label_ar: إحصاءات الأعمال
@@ -147,14 +147,14 @@ topics:
                   السجلات التجارية, السجل التجاري, الأسماء التجارية]
     keywords_en: [business, enterprises, establishments, smes, operating revenue,
                   industrial production index]
-    preferred_sources: [gastat_cdata, gastat_db, saudi_open_data, gastat]
+    preferred_sources: [gastat_cdata, gastat_db, saudi_open_data, gastat, worldbank]
 
   - id: research
     label_ar: البحث والتطوير
     label_en: Research and development
     keywords_ar: [البحث والتطوير, الباحثين, الابتكار, براءات الاختراع]
     keywords_en: [research and development, researchers, innovation, patents]
-    preferred_sources: [gastat_cdata, saudi_open_data, gastat]
+    preferred_sources: [gastat_cdata, saudi_open_data, gastat, worldbank]
 
   - id: culture
     label_ar: الثقافة وأساليب الحياة
