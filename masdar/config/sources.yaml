@@ -131,6 +131,26 @@ sources:
            topics: [environment, water]}
         # Few and varied datasets: searched for every question.
         - {id: 195499dd-56d1-4003-b436-551ff3c5838e, name_ar: وزارة الداخلية, datasets: 19}
+        # Found by exact name on 2026-09-28; topics from their own dataset
+        # titles. Id and name are both kept, so either one finds them.
+        - {id: ce4b4b1f-e50e-40a0-82f3-44284cec9457, name_ar: الهيئة العامة للغذاء والدواء,
+           topics: [health, business]}
+        - {id: 86ca88f0-1c3a-4eb7-9274-178582a51a68, name_ar: مجلس الضمان الصحي,
+           topics: [health, finance]}
+        - {id: 8355d923-079a-4637-92f6-01af9c2b2ab2, name_ar: هيئة الهلال الأحمر السعودي,
+           topics: [health]}
+        - {id: 347e83d0-55b7-4ab7-b451-12683147173b, name_ar: الهيئة العامة للنقل,
+           topics: [transport]}
+        - {id: af311014-3f95-49fd-9220-9cb04e809dbc, name_ar: صندوق التنمية العقارية,
+           topics: [housing, finance]}
+        - {id: a1d3ee70-3479-4c5c-957e-138191417aa9, name_ar: هيئة تقويم التعليم والتدريب,
+           topics: [education]}
+        - {id: f1f21284-43a2-4280-a63a-e593ba510007, name_ar: صندوق تنمية الموارد البشرية,
+           topics: [labour, education]}
+        - {id: dd1fc6f5-cb7b-4f7a-b385-7c03fb524382, name_ar: هيئة التأمين,
+           topics: [finance]}
+        - {id: d0565549-b5be-4466-9e01-121a55c385bb, name_ar: الهيئة العامة للأوقاف,
+           topics: [finance]}
     topics: [electricity, energy, population, labour, education, health, water,
              housing, trade, prices, tourism, transport, environment, gdp, ict,
              agriculture, finance, business, research, culture, justice]

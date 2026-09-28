@@ -42,6 +42,9 @@ class PortalTransport:
         query = dict(parse_qsl(parts.query))
         if parts.path.endswith("/organizations"):
             org = query.get("organization")
+            # The platform accepts the exact Arabic name in place of the id.
+            if org == "وزارة الطاقة":
+                org = ENERGY
             if org != ENERGY or org in self.missing_orgs:
                 raise SourceError(source_id, "not found: Publisher Not Found")
             body = (FIXTURES / "organization_energy.json").read_bytes()
@@ -163,8 +166,45 @@ class TestSearch:
         transport = PortalTransport()
         adapter = registry(transport).adapter("saudi_open_data")
         adapter.search(parse("عدد الزرافات 2022"))
-        asked = [u for u in transport.urls if urlsplit(u).path.endswith("/organizations")]
-        assert len(asked) == len(adapter._organizations())
+        asked = {
+            dict(parse_qsl(urlsplit(u).query)).get("organization")
+            for u in transport.urls if urlsplit(u).path.endswith("/organizations")
+        }
+        assert {str(o["id"]) for o in adapter._organizations()} <= asked
+
+
+class TestPublisherIdentity:
+    """A publisher configured by id and name is found if either still holds."""
+
+    @staticmethod
+    def adapter_with(orgs, transport):
+        from dataclasses import replace
+
+        base = next(d for d in load_descriptors() if d.id == "saudi_open_data")
+        descriptor = replace(base, api={**base.api, "organizations": orgs})
+        http = HttpClient(use_cache=False, retries=1, transport=transport)
+        return Registry((descriptor,), http).adapter("saudi_open_data")
+
+    def test_a_stale_id_falls_back_to_the_exact_name(self):
+        adapter = self.adapter_with(
+            [{"id": "00000000-dead-beef-0000-000000000000", "name_ar": "وزارة الطاقة"}],
+            PortalTransport(),
+        )
+        entries, problems = adapter.catalogue()
+        assert len(entries) == 8 and problems == []
+
+    def test_a_name_alone_is_enough(self):
+        adapter = self.adapter_with([{"name_ar": "وزارة الطاقة"}], PortalTransport())
+        entries, _ = adapter.catalogue()
+        assert len(entries) == 8
+
+    def test_when_neither_holds_it_is_reported(self):
+        adapter = self.adapter_with(
+            [{"id": "00000000-dead-beef-0000-000000000000", "name_ar": "جهة لا وجود لها"}],
+            PortalTransport(),
+        )
+        entries, problems = adapter.catalogue()
+        assert entries == [] and len(problems) == 1
 
 
 class TestPeriods:

@@ -28,6 +28,7 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
+from pathlib import Path
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit
 
 from masdar.domain.models import (
@@ -42,11 +43,12 @@ from masdar.nlu.lexicon import load_lexicon
 from masdar.nlu.normalize import contains_phrase, fold_digits, normalize
 from masdar.nlu.parser import typed_phrase_score
 from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
+from masdar.sources.discover import DISCOVERED_FILE, load_discovered
 
 TABULAR = {"CSV", "XLSX", "XLS", "JSON", "TSV"}
 MAX_DETAIL_FETCHES = 5
 # Publishers fetched at once when the catalogue is not cached.
-CATALOGUE_WORKERS = 6
+CATALOGUE_WORKERS = 8
 _DATE = re.compile(r"(\d{4})-\d{2}-\d{2}")
 
 
@@ -159,6 +161,13 @@ class SaudiOpenDataAdapter(SourceAdapter):
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise SourceError(self.id, f"استجابة غير صالحة: {exc}") from exc
 
+    def _discovered_file(self) -> Path:
+        configured = self.descriptor.api.get("discovered_file")
+        if not configured:
+            return DISCOVERED_FILE
+        path = Path(configured)
+        return path if path.is_absolute() else DISCOVERED_FILE.parent / path
+
     def _organizations(self, topic_id: str | None = None) -> list[dict]:
         """Configured publishers, narrowed to those that publish the topic.
 
@@ -168,7 +177,13 @@ class SaudiOpenDataAdapter(SourceAdapter):
         list -- or a question with no topic -- is always searched.
         """
         configured = self.descriptor.api.get("organizations") or []
-        orgs = [o for o in configured if isinstance(o, dict) and o.get("id")]
+        orgs = [o for o in configured if isinstance(o, dict) and (o.get("id") or o.get("name_ar"))]
+        # Publishers found by `masdar publishers`, after the configured ones,
+        # which win on a clash.
+        known = {str(v) for o in orgs for v in (o.get("id"), o.get("name_ar")) if v}
+        for entry in load_discovered(self._discovered_file()):
+            if not ({str(v) for v in (entry.get("id"), entry.get("name_ar")) if v} & known):
+                orgs.append(entry)
         if topic_id is None:
             return orgs
         return [o for o in orgs if not o.get("topics") or topic_id in o["topics"]]
@@ -183,16 +198,27 @@ class SaudiOpenDataAdapter(SourceAdapter):
         """
         orgs = self._organizations(topic_id)
 
-        def load(org: dict):
-            url = self._api(
+        def request(key: str):
+            return self._get_json(self._api(
                 "organization",
                 "/data/api/organizations?version=-1&organization={id}",
-                id=str(org["id"]),
-            )
-            try:
-                return org, self._get_json(url), None
-            except (SourceError, SourceUnreachable) as exc:
-                return org, None, exc.reason
+                id=key,
+            ))
+
+        def load(org: dict):
+            # By id first: it survives a renaming. The API also accepts the
+            # exact Arabic name, which survives a mistyped or reissued id --
+            # so a publisher configured with both is found if either holds.
+            keys = [str(k) for k in (org.get("id"), org.get("name_ar")) if k]
+            problem = None
+            for key in keys:
+                try:
+                    return org, request(key), None
+                except SourceUnreachable as exc:
+                    return org, None, exc.reason  # the platform is down; a retry won't help
+                except SourceError as exc:
+                    problem = exc.reason
+            return org, None, problem
 
         with ThreadPoolExecutor(max_workers=CATALOGUE_WORKERS) as pool:
             results = list(pool.map(load, orgs))  # map keeps the configured order
@@ -201,7 +227,7 @@ class SaudiOpenDataAdapter(SourceAdapter):
         problems: list[str] = []
         for org, payload, problem in results:
             if problem is not None:
-                problems.append(f"{org.get('name_ar', org['id'])}: {problem}")
+                problems.append(f"{org.get('name_ar') or org.get('id')}: {problem}")
                 continue
             for item in payload.get("datasets") or [] if isinstance(payload, dict) else []:
                 if isinstance(item, dict) and item.get("id"):

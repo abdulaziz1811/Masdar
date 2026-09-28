@@ -427,6 +427,57 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_publishers(args: argparse.Namespace) -> int:
+    """List the national platform's publishers and classify the new ones.
+
+    Run from a machine that can reach the platform (inside the Kingdom).
+    """
+    from masdar.sources import discover
+
+    http = HttpClient(timeout=args.timeout)
+    registry = load_registry(http=http)
+    adapter = registry.adapter("saudi_open_data")
+
+    if args.names:
+        names = Path(args.names).read_text(encoding="utf-8").splitlines()
+        found = discover.resolve_names(adapter, names)
+    else:
+        try:
+            found = discover.list_publishers(adapter)
+        except (SourceUnreachable, SourceError) as exc:
+            print(f"تعذّر جلب قائمة الجهات من المنصة: {exc.reason}")
+            print("البديل: ملف بأسماء الجهات العربية الدقيقة، اسم في كل سطر:")
+            print("   masdar publishers --names names.txt")
+            return 3
+
+    known = discover.configured_keys(adapter)
+    new = [p for p in found if not ({p.id, p.name_ar} & known)]
+    print(f"وُجدت {len(found)} جهة، منها {len(new)} غير مُعدّة. تُصنَّف من عناوين مجموعاتها…")
+    discover.classify(adapter, new)
+
+    previous = {
+        str(e.get("id") or e.get("name_ar")): e for e in discover.load_discovered(Path(args.out))
+    }
+    for p in new:
+        mark = "✅" if not p.problems else "⚠️"
+        detail = "، ".join(p.topics) if not p.problems else "؛ ".join(p.problems)
+        print(f"  {mark} {p.name_ar or p.id} — {p.datasets if p.datasets is not None else '؟'}"
+              f" مجموعة — {detail}")
+        previous.pop(p.id or p.name_ar, None)
+    kept = [
+        discover.Publisher(
+            id=str(e.get("id") or ""), name_ar=str(e.get("name_ar") or ""),
+            datasets=e.get("datasets"), topics=tuple(e.get("topics") or ()),
+            found_by=str(e.get("found_by") or ""),
+        )
+        for e in previous.values()
+    ]
+    Path(args.out).write_text(discover.to_yaml(kept + new), encoding="utf-8")
+    usable = sum(1 for p in new if not p.problems)
+    print(f"\nكُتب {args.out}: {usable} جهة جديدة جاهزة للبحث (والسابقة محفوظة).")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="masdar",
@@ -476,6 +527,14 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--timeout", type=float, default=20.0)
     serve.add_argument("--today", help="تجاوز تاريخ اليوم (YYYY-MM-DD) للاختبار")
     serve.set_defaults(func=cmd_serve)
+
+    from masdar.sources.discover import DISCOVERED_FILE
+
+    pubs = sub.add_parser("publishers", help="اكتشف جهات المنصة الوطنية وصنّف مواضيعها")
+    pubs.add_argument("--names", help="ملف بأسماء جهات عربية دقيقة، اسم في كل سطر")
+    pubs.add_argument("--out", default=str(DISCOVERED_FILE), help="ملف النتيجة")
+    pubs.add_argument("--timeout", type=float, default=30.0)
+    pubs.set_defaults(func=cmd_publishers)
 
     importer = sub.add_parser("import-spec", help="استورد ملفات مواصفات OpenAPI")
     importer.add_argument("files", nargs="+", help="ملفات JSON/YAML من بوابة المطوّرين")
