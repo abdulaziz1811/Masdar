@@ -48,3 +48,20 @@ def load_env_file(path: str | Path = ".env") -> list[str]:
         os.environ[name] = value
         loaded.append(name)
     return loaded
+
+
+# Hosting forms sometimes insist on a value for an optional secret, and
+# people type "-" or "none". Such a value is no credential: sending it would
+# turn requests that need no key into refused ones.
+_PLACEHOLDERS = frozenset({
+    "-", "--", "none", "null", "no", "n/a", "na", "x", "0", "لا", "لايوجد", "لا يوجد",
+})
+MIN_SECRET_CHARS = 8
+
+
+def secret_from_env(name: str) -> str:
+    """The value of a credential variable, or "" when unset or a placeholder."""
+    value = os.environ.get(name, "").strip()
+    if value.lower() in _PLACEHOLDERS or len(value) < MIN_SECRET_CHARS:
+        return ""
+    return value

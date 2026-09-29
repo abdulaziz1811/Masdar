@@ -213,8 +213,10 @@ class LlmUnderstanding:
         switch = os.environ.get("MASDAR_LLM", "").strip().lower()
         if switch in ("0", "off", "false", "no"):
             return None, "معطّل (MASDAR_LLM=off)"
+        from masdar.envfile import secret_from_env
+
         has_credential = bool(
-            os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+            secret_from_env("ANTHROPIC_API_KEY") or secret_from_env("ANTHROPIC_AUTH_TOKEN")
         )
         if not has_credential and switch not in ("1", "on", "true", "yes"):
             return None, "غير مفعّل — أضف ANTHROPIC_API_KEY في ملف .env لتفعيله"

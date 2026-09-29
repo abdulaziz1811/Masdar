@@ -1,6 +1,6 @@
 import os
 
-from masdar.envfile import load_env_file
+from masdar.envfile import load_env_file, secret_from_env
 
 
 def test_sets_only_unset_names_and_reports_names_not_values(tmp_path, monkeypatch):
@@ -45,3 +45,11 @@ def test_a_file_notepad_saved_as_env_txt_is_read(tmp_path, monkeypatch):
     monkeypatch.delenv("MASDAR_TEST_KEY", raising=False)
     (tmp_path / ".env.txt").write_text("MASDAR_TEST_KEY=xyz\n", encoding="utf-8")
     assert load_env_file(tmp_path / ".env") == ["MASDAR_TEST_KEY"]
+
+
+def test_a_placeholder_is_no_credential(monkeypatch):
+    for placeholder in ("-", "none", "لا", "x", "  "):
+        monkeypatch.setenv("MASDAR_TEST_SECRET", placeholder)
+        assert secret_from_env("MASDAR_TEST_SECRET") == ""
+    monkeypatch.setenv("MASDAR_TEST_SECRET", "sk-ant-api03-realistic-looking")
+    assert secret_from_env("MASDAR_TEST_SECRET") == "sk-ant-api03-realistic-looking"

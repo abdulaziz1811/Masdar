@@ -204,6 +204,17 @@ class TestCredentialHygiene:
         )
         assert adapter.request_headers() == {"apikey": "test-value-not-a-real-key"}
 
+    def test_a_placeholder_typed_into_a_hosting_form_sends_no_key(self, monkeypatch):
+        from masdar.sources.http import HttpClient
+        from masdar.sources.registry import Registry, load_descriptors
+
+        monkeypatch.setenv("GASTAT_API_KEY", "-")
+        descriptors = tuple(d for d in load_descriptors() if d.id == "gastat_cdata")
+        adapter = Registry(descriptors, HttpClient(offline=True, retries=1)).adapter(
+            "gastat_cdata"
+        )
+        assert adapter.request_headers() == {}
+
     def test_config_contains_no_long_opaque_tokens(self):
         """Guards against a key being pasted into the repo by accident."""
         import re

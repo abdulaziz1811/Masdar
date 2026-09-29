@@ -119,13 +119,13 @@ class SourceAdapter(abc.ABC):
         which header carries it; the value itself is never in the repository.
         No variable set means no header -- public endpoints need none.
         """
-        import os
+        from masdar.envfile import secret_from_env
 
         auth = self.descriptor.auth or {}
         key_env = auth.get("key_env")
         if not key_env:
             return {}
-        key = os.environ.get(key_env, "").strip()
+        key = secret_from_env(key_env)
         if not key:
             return {}
         return {auth.get("header", "apikey"): key}
