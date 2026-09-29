@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -22,6 +23,11 @@ from masdar.domain.models import Verdict
 
 # An honest "not published" is a good demonstration; a failure is not.
 GOOD = (Verdict.AVAILABLE, Verdict.PARTIAL, Verdict.NOT_AVAILABLE)
+
+# A source that was slow at start-up is often back minutes later, so the
+# questions it failed are asked again; one it answers is offered again.
+RETRY_ROUNDS = 3
+RETRY_DELAY_SECONDS = 120.0
 
 
 def enabled() -> bool:
@@ -35,6 +41,8 @@ class Warmup:
     questions: list[str]
     results: dict[str, bool] = field(default_factory=dict)
     running: bool = False
+    retry_rounds: int = RETRY_ROUNDS
+    retry_delay: float = RETRY_DELAY_SECONDS
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def status(self) -> dict:
@@ -52,18 +60,33 @@ class Warmup:
         try:
             agent = make_agent()
             for question in self.questions:
-                try:
-                    ok = agent.answer(question).verdict in GOOD
-                except Exception:  # one broken question must not stop the rest
-                    ok = False
+                ok = _answered(agent, question)
                 with self._lock:
                     self.results[question] = ok
         finally:
             with self._lock:
                 self.running = False
+        # The page shows the first pass as done; these only turn failures
+        # into successes, never the other way.
+        for _ in range(self.retry_rounds):
+            failed = self.status()["failed"]
+            if not failed:
+                return
+            time.sleep(self.retry_delay)
+            for question in failed:
+                if _answered(agent, question):
+                    with self._lock:
+                        self.results[question] = True
 
     def start(self, make_agent: Callable[[], object]) -> threading.Thread:
         thread = threading.Thread(target=self.run, args=(make_agent,), daemon=True,
                                   name="masdar-warmup")
         thread.start()
         return thread
+
+
+def _answered(agent, question: str) -> bool:
+    try:
+        return agent.answer(question).verdict in GOOD
+    except Exception:  # one broken question must not stop the rest
+        return False

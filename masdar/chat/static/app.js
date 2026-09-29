@@ -231,6 +231,9 @@
           : good ? "جاهز (" + good + " من " + w.total + ")"
           : "المصادر لا تستجيب";
         badge.title = w.failed.length ? "لم تُجب المصادر عند التجهيز: " + w.failed.join("، ") : "";
+        // The server asks those again a few minutes later; one it answers
+        // comes back without a reload.
+        if (w.failed.length) window.setTimeout(pollStatus, 60 * 1000);
       })
       .catch(function () { window.setTimeout(pollStatus, 5000); });
   }

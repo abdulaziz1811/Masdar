@@ -167,12 +167,28 @@ class TestWarmup:
             questions[2]: Verdict.SOURCE_UNREACHABLE,
             questions[3]: RuntimeError("bug"),
         }
-        warm = Warmup(questions)
+        warm = Warmup(questions, retry_rounds=0)
         assert warm.status() == {"total": 4, "done": 0, "running": False, "failed": []}
         warm.start(lambda: self.agent(verdicts)).join(timeout=10)
         status = warm.status()
         assert status["done"] == 4 and not status["running"]
         assert status["failed"] == [questions[2], questions[3]]
+
+    def test_a_source_back_later_brings_its_question_back(self):
+        questions = ["عدد الحجاج 2023", "معدل البطالة 2023"]
+        replies = {questions[0]: [Verdict.SOURCE_UNREACHABLE, Verdict.AVAILABLE],
+                   questions[1]: [Verdict.SOURCE_UNREACHABLE] * 3}
+        asked = []
+
+        def answer(question):
+            asked.append(question)
+            return SimpleNamespace(verdict=replies[question].pop(0))
+
+        warm = Warmup(questions, retry_rounds=2, retry_delay=0)
+        warm.start(lambda: SimpleNamespace(answer=answer)).join(timeout=10)
+        assert warm.status()["failed"] == [questions[1]]
+        # Asked once, then only while it still failed.
+        assert asked.count(questions[0]) == 2 and asked.count(questions[1]) == 3
 
 
 class TestPort:
