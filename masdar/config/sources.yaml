@@ -445,35 +445,45 @@ sources:
     # and farms counters answered IsSuccess=false and are left out.
     api_verified: true
     access_checked: "2026-09-28"
+    # Titles follow the ministry's own labels on www.mewa.gov.sa/ar, checked
+    # 2026-09-29: the counters count tagged camels, licensed hives and
+    # licensed fishermen, not every camel, hive or fisherman.
     access_notes_ar: >-
-      عدّادات لحظية: عدد الإبل وخلايا النحل ورخص الصيد. عدّادا الآبار
-      والمزارع الموثقان في دليل الوزارة لا يُرجعان قيمة حالياً فلم يُضافا.
+      عدّادات لحظية: الإبل المرقّمة، وخلايا النحل المرخّصة، والصيادون المرخّصون.
+      عدّادا الآبار والمزارع الموثقان في دليل الوزارة لا يُرجعان قيمة حالياً فلم يُضافا.
     api:
       indicators:
         - id: camels
-          title_ar: عدد الإبل في المملكة (عدّاد لحظي)
-          title_en: Camels in the Kingdom (live counter)
+          title_ar: عدد الإبل المرقّمة في المملكة (عدّاد لحظي)
+          title_en: Tagged camels in the Kingdom (live counter)
+          description: عدد الإبل المرقّمة في المملكة حالياً، كما تعرضه الوزارة لحظياً.
+          note_ar: >-
+            يعدّ الإبل المرقّمة (المسجّلة بأرقام تعريف) كما تسمّيه الوزارة، لا كل الإبل في
+            المملكة؛ للتعداد الكامل تُرجع إلى إحصاءات الثروة الحيوانية.
           keywords: الإبل عدد الإبل الثروة الحيوانية camels livestock
           url: https://www.mewa.gov.sa/_layouts/MEWAHandler/MEWAHandler.ashx?type=getCamelsCount
           shape: counter
-          value_label_ar: عدد الإبل
+          value_label_ar: عدد الإبل المرقّمة
           topics: [agriculture]
         - id: bee-colonies
-          title_ar: عدد خلايا النحل في المملكة (عدّاد لحظي)
-          title_en: Bee colonies in the Kingdom (live counter)
+          title_ar: عدد خلايا النحل المرخّصة في المملكة (عدّاد لحظي)
+          title_en: Licensed bee colonies in the Kingdom (live counter)
+          description: عدد خلايا النحل المرخّصة في المملكة حالياً، كما تعرضه الوزارة لحظياً.
+          note_ar: يعدّ الخلايا المرخّصة كما تسمّيه الوزارة، لا كل خلايا النحل.
           keywords: النحل خلايا النحل المناحل العسل bees beehives
           url: https://www.mewa.gov.sa/_layouts/MEWAHandler/MEWAHandler.ashx?type=getBeesCellsCount
           shape: counter
-          value_label_ar: عدد خلايا النحل
+          value_label_ar: عدد خلايا النحل المرخّصة
           topics: [agriculture]
         - id: fishing-licences
-          title_ar: عدد رخص الصيد (عدّاد لحظي)
-          title_en: Fishing licences (live counter)
-          description: عدد رخص الصيد النظامية كما تعرضه الوزارة لحظياً.
+          title_ar: عدد الصيادين المرخّصين في المملكة (عدّاد لحظي)
+          title_en: Licensed fishermen in the Kingdom (live counter)
+          description: عدد الصيادين المرخّصين بالمملكة، كما تعرضه الوزارة لحظياً.
+          note_ar: يعدّ الصيادين المرخّصين كما تسمّيه الوزارة، لا كل من يمارس الصيد.
           keywords: الصيد رخص الصيد الصيادين الثروة السمكية الأسماك fishing licences
           url: https://www.mewa.gov.sa/_layouts/MEWAHandler/MEWAHandler.ashx?type=getFishingLicensesCount
           shape: counter
-          value_label_ar: عدد رخص الصيد
+          value_label_ar: عدد الصيادين المرخّصين
           topics: [agriculture]
     topics: [agriculture]
 

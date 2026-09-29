@@ -87,13 +87,20 @@ class TestReshaping:
         original = (FIXTURES / "hrsd_labour.json").read_bytes()
         assert fetched.sha256 == hashlib.sha256(original).hexdigest()
 
+    def test_the_title_says_what_the_ministry_counts(self):
+        # The ministry's own label is «عدد الإبل المرقمة في المملكة حالياً»:
+        # tagged camels, which a reader must not take for every camel.
+        (found,) = registry().adapter("mewa_live").search(parse("كم عدد الإبل في المملكة"))
+        assert "المرقّمة" in found.title_ar
+        assert "لا كل الإبل" in found.caveats[0]
+
     def test_a_counter_becomes_one_labelled_row(self):
         adapter = registry().adapter("mewa_live")
         camels = next(i for i in adapter._indicators() if i["id"] == "camels")
         rows = json.loads(adapter.fetch(camels["url"]).content)
         assert rows == [{
             "السنة": rows[0]["السنة"], "تاريخ الاستخراج": rows[0]["تاريخ الاستخراج"],
-            "المؤشر": "عدد الإبل", "القيمة": 1924572,
+            "المؤشر": "عدد الإبل المرقّمة", "القيمة": 1924572,
         }]
 
     def test_an_empty_counter_is_an_error_not_a_zero(self):

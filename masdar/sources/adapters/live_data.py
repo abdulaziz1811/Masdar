@@ -107,7 +107,12 @@ class LiveDataAdapter(SourceAdapter):
             # the retrieval year, which is the whole of this source's coverage.
             claimed_coverage=Coverage.unknown(),
             provided_dimensions=tuple(dimensions),
-            caveats=(SNAPSHOT_CAVEAT,),
+            # What exactly is counted, in the publisher's words, comes first:
+            # a reader must not take "tagged camels" for "all camels".
+            caveats=tuple(
+                note for note in (str(indicator.get("note_ar") or "").strip(), SNAPSHOT_CAVEAT)
+                if note
+            ),
         )
 
     # -- fetch ---------------------------------------------------------
