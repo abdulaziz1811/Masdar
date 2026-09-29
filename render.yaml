@@ -23,7 +23,10 @@ services:
       # practice: without it anyone with the link can use the service.
       - key: MASDAR_ACCESS_CODE
         sync: false
-      # Optional: Claude reads questions the rules cannot (nlu/llm.py).
+      # Optional, one of the two: a language model reads questions the rules
+      # cannot (nlu/llm.py, nlu/gemini.py). Gemini has a free tier.
+      - key: GEMINI_API_KEY
+        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
       # Optional: the GASTAT developer-portal key, for the datasets that need it.

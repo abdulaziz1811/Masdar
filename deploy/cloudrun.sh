@@ -34,16 +34,17 @@ if [ -z "$ACCESS_CODE" ]; then
   echo "رمز الدخول مطلوب: بدونه يستطيع أي أحد لديه الرابط استخدام الخدمة."
   exit 1
 fi
-read -rsp "مفتاح Anthropic للفهم الذكي (اختياري، Enter للتخطي): " ANTHROPIC_API_KEY; echo
+read -rsp "مفتاح Gemini للفهم الذكي (اختياري، Enter للتخطي): " GEMINI_API_KEY; echo
+read -rsp "أو مفتاح Anthropic بدلاً منه (اختياري، Enter للتخطي): " ANTHROPIC_API_KEY; echo
 read -rsp "مفتاح بوابة مطوّري الهيئة العامة للإحصاء (اختياري): " GASTAT_API_KEY; echo
 
 ENV_FILE="$(mktemp)"
 trap 'rm -f "$ENV_FILE"' EXIT
-ACCESS_CODE="$ACCESS_CODE" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+ACCESS_CODE="$ACCESS_CODE" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" GEMINI_API_KEY="$GEMINI_API_KEY" \
 GASTAT_API_KEY="$GASTAT_API_KEY" python3 - "$ENV_FILE" <<'PY'
 import json, os, sys
 env = {"MASDAR_ACCESS_CODE": os.environ["ACCESS_CODE"], "MASDAR_WARMUP_ON_START": "1"}
-for key in ("ANTHROPIC_API_KEY", "GASTAT_API_KEY"):
+for key in ("GEMINI_API_KEY", "ANTHROPIC_API_KEY", "GASTAT_API_KEY"):
     if os.environ.get(key):
         env[key] = os.environ[key]
 # JSON is valid YAML, and quotes every value safely.

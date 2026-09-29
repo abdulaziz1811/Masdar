@@ -49,6 +49,20 @@ EARLIEST_YEAR = 1900
 _PERIOD_KINDS = ("single", "range", "latest", "unspecified")
 
 
+# Values of MASDAR_LLM_PROVIDER that choose Claude.
+CLAUDE_NAMES = ("claude", "anthropic")
+
+
+def model_from_env(family: str) -> str:
+    """MASDAR_LLM_MODEL, if it names a model of this family («claude», «gemini»).
+
+    A model left over from the other provider is ignored rather than sent
+    where it cannot exist.
+    """
+    model = os.environ.get("MASDAR_LLM_MODEL", "").strip()
+    return model if model.lower().startswith(family) else ""
+
+
 class LlmUnavailable(Exception):
     """The model could not help with this message; `reason` says why, in Arabic."""
 
@@ -230,27 +244,33 @@ class LlmUnderstanding:
     def from_environment(cls, lexicon: Lexicon) -> tuple[LlmUnderstanding | None, str]:
         """The configured instance, or None with the reason in Arabic.
 
-        Enabled by an Anthropic credential in the environment (or `.env`), or
-        explicitly with MASDAR_LLM=on; disabled with MASDAR_LLM=off. The key
-        itself is read by the SDK and never passes through this code.
+        Claude or Gemini, whichever key is set; with both, MASDAR_LLM_PROVIDER
+        (claude or gemini) chooses, and otherwise Gemini, which has a free
+        tier. MASDAR_LLM=off disables both. Keys are read from the
+        environment (or `.env`) and never appear in any message.
         """
         switch = os.environ.get("MASDAR_LLM", "").strip().lower()
         if switch in ("0", "off", "false", "no"):
             return None, "معطّل (MASDAR_LLM=off)"
         from masdar.envfile import secret_from_env
+        from masdar.nlu import gemini
+
+        provider = os.environ.get("MASDAR_LLM_PROVIDER", "").strip().lower()
+        if provider == "gemini" or (provider not in CLAUDE_NAMES and gemini.api_key()):
+            return gemini.GeminiUnderstanding.from_environment(lexicon)
 
         has_credential = bool(
             secret_from_env("ANTHROPIC_API_KEY") or secret_from_env("ANTHROPIC_AUTH_TOKEN")
         )
         if not has_credential and switch not in ("1", "on", "true", "yes"):
-            return None, "غير مفعّل — أضف ANTHROPIC_API_KEY في ملف .env لتفعيله"
+            return None, "غير مفعّل — أضف GEMINI_API_KEY أو ANTHROPIC_API_KEY لتفعيله"
         try:
             import anthropic
         except ImportError:
             return None, "مكتبة anthropic غير مثبتة — pip install -e '.[ai]'"
-        model = os.environ.get("MASDAR_LLM_MODEL", "").strip() or DEFAULT_MODEL
+        model = model_from_env("claude") or DEFAULT_MODEL
         client = anthropic.Anthropic(timeout=TIMEOUT_SECONDS, max_retries=1)
-        return cls(client, lexicon, model=model), f"مفعّل ({model})"
+        return cls(client, lexicon, model=model), f"مفعّل (Claude · {model})"
 
     def verify(self) -> tuple[bool, str]:
         """Whether the key works for this model, without generating anything.
@@ -278,6 +298,17 @@ class LlmUnderstanding:
             f"الطلب السابق في المحادثة: {_describe_previous(previous)}\n"
             f"الرسالة: {message}"
         )
+        text = self._ask(user)
+        try:
+            data = json.loads(text)
+        except (json.JSONDecodeError, TypeError) as exc:
+            raise LlmUnavailable("رد النموذج ليس JSON صالحاً") from exc
+        if not isinstance(data, dict):
+            raise LlmUnavailable("رد النموذج ليس كائناً")
+        return self._to_reading(message, data, today)
+
+    def _ask(self, user: str) -> str:
+        """The model's JSON reply to one message, or LlmUnavailable with the reason."""
         try:
             response = self._client.beta.messages.create(
                 model=self.model,
@@ -298,17 +329,10 @@ class LlmUnderstanding:
             raise LlmUnavailable("رفض النموذج الطلب")
         if getattr(response, "stop_reason", None) == "max_tokens":
             raise LlmUnavailable("انقطع رد النموذج قبل اكتماله")
-        text = next(
+        return next(
             (b.text for b in getattr(response, "content", ()) if getattr(b, "type", "") == "text"),
             "",
         )
-        try:
-            data = json.loads(text)
-        except (json.JSONDecodeError, TypeError) as exc:
-            raise LlmUnavailable("رد النموذج ليس JSON صالحاً") from exc
-        if not isinstance(data, dict):
-            raise LlmUnavailable("رد النموذج ليس كائناً")
-        return self._to_reading(message, data, today)
 
     def _to_reading(self, message: str, data: dict, today: date) -> LlmReading:
         restatement = str(data.get("restatement_ar") or "").strip()[:300]

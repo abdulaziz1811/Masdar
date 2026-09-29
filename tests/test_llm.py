@@ -204,6 +204,11 @@ class TestFailuresFallBackToTheRules:
 
 
 class TestConfiguration:
+    @pytest.fixture(autouse=True)
+    def no_gemini(self, monkeypatch):
+        for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "MASDAR_LLM_PROVIDER"):
+            monkeypatch.delenv(name, raising=False)
+
     def test_off_without_a_key(self, lexicon, monkeypatch):
         for name in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "MASDAR_LLM"):
             monkeypatch.delenv(name, raising=False)
