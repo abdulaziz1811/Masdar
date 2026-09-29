@@ -15,10 +15,20 @@ _LINE = re.compile(r"^\s*(?:export\s+)?([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$")
 
 
 def load_env_file(path: str | Path = ".env") -> list[str]:
-    """Set unset variables from `path`; return the names set (never values)."""
+    """Set unset variables from `path`; return the names set (never values).
+
+    Forgiving about the two things Windows Notepad does to a file named
+    `.env`: it may save it as `.env.txt` (with the extension hidden), and it
+    may start it with a byte-order mark, which would otherwise hide the first
+    line -- usually the only one, the key.
+    """
     file = Path(path)
+    if not file.exists() and file.name == ".env":
+        notepad = file.with_name(".env.txt")
+        if notepad.exists():
+            file = notepad
     try:
-        text = file.read_text(encoding="utf-8")
+        text = file.read_text(encoding="utf-8-sig")
     except (OSError, UnicodeDecodeError):
         return []
     loaded: list[str] = []

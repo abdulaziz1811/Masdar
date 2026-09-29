@@ -436,6 +436,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
     url = f"http://{'127.0.0.1' if host in ('0.0.0.0', '::') else host}:{port}/"
     print(f"مصدر يعمل على {url}")
     print(f"ملفات الإكسل تُحفظ في: {Path(args.out).resolve()}")
+    loaded = getattr(args, "env_loaded", None) or []
+    if loaded:
+        # Names only: a value read from .env is never printed.
+        print(f"قُرئ من ملف .env: {'، '.join(loaded)}")
     print(f"الفهم بالذكاء الاصطناعي: {llm_status}")
     if outside_ksa():
         print("الخادم خارج المملكة (MASDAR_OUTSIDE_KSA): المصادر المقيَّدة جغرافياً لن تُسأل.")
@@ -676,7 +680,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    load_env_file()
+    args.env_loaded = load_env_file()
     return args.func(args)
 
 
