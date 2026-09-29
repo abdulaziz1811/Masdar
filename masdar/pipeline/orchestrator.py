@@ -7,6 +7,9 @@ hand rather than from an intention formed earlier.
 
 from __future__ import annotations
 
+import time
+from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -48,6 +51,22 @@ class AgentConfig:
     out_dir: Path = field(default_factory=lambda: Path("out"))
     export: bool = True
     today: date | None = None
+    # A time limit for one answer, in seconds, for interactive use. Sources
+    # are then asked in parallel; one still silent when its share of the
+    # time is up is reported as not answering, and keeps working in the
+    # background so its reply is cached for the next question. None: no
+    # limit, sources asked one after another (the command line, the tests).
+    answer_seconds: float | None = None
+
+
+# Of an answer's time limit, the share the search may use; the rest is for
+# opening files.
+SEARCH_SHARE = 0.6
+# However late it is, a file gets at least this long to arrive.
+MIN_FETCH_SECONDS = 8.0
+# A source that ran out of time is not asked again for this long, unless its
+# late reply arrives first: the next question should not wait on it again.
+SLOW_COOLDOWN_SECONDS = 120.0
 
 
 @dataclass
@@ -69,13 +88,18 @@ class Agent:
         lexicon: Lexicon | None = None,
         config: AgentConfig | None = None,
         llm=None,
+        slow: dict[str, float] | None = None,
     ):
         self.config = config or AgentConfig()
         self.http = http or HttpClient()
         self.registry = registry or Registry.load(http=self.http)
         self.lexicon = lexicon or load_lexicon()
-        # Optional: Claude reads questions the rules cannot (see nlu/llm.py).
+        # Optional: a language model reads questions the rules cannot (see
+        # nlu/llm.py).
         self.llm = llm
+        # Sources that ran out of time recently: id -> when to ask again.
+        # May be shared between agents serving the same page.
+        self._slow: dict[str, float] = {} if slow is None else slow
 
     # -- public --------------------------------------------------------
     def answer(self, query: str) -> Answer:
@@ -100,7 +124,12 @@ class Agent:
                 Answer(request=request, verdict=Verdict.NO_SOURCE)
             ))
 
-        search = self._search(request)
+        deadline = (
+            time.monotonic() + self.config.answer_seconds
+            if self.config.answer_seconds
+            else None
+        )
+        search = self._search(request, deadline)
         candidates, errors, audit = search.candidates, search.errors, search.audit
         descriptors = {d.id: d for d in self.registry.descriptors}
         ranked = resolve.rank(request, candidates, descriptors, self.lexicon, today)
@@ -129,7 +158,7 @@ class Agent:
             )
             return answer.with_message(compose_message(answer))
 
-        findings = self._evaluate(request, ranked, descriptors, today, audit)
+        findings = self._evaluate(request, ranked, descriptors, today, audit, deadline)
         international = frozenset(d.id for d in descriptors.values() if d.international)
         findings.sort(key=lambda f: _finding_sort_key(f, international))
 
@@ -166,7 +195,7 @@ class Agent:
         return answer.with_message(compose_message(answer))
 
     # -- search --------------------------------------------------------
-    def _search(self, request: DataRequest) -> SearchOutcome:
+    def _search(self, request: DataRequest, deadline: float | None = None) -> SearchOutcome:
         topic_id = request.topic.id if request.topic else None
         preferred = request.topic.preferred_sources if request.topic else ()
         full_plan = self.registry.plan(topic_id, preferred)
@@ -184,20 +213,12 @@ class Agent:
         errors: list[tuple[str, str]] = []
         consulted: list[Consulted] = []
 
-        for descriptor in plan:
-            found: list[DatasetCandidate] | None = None
-            try:
-                adapter = self.registry.adapter(descriptor.id)
-                found = adapter.search(request, limit=self.config.per_source_limit)
-            except SourceUnreachable as exc:
-                errors.append((descriptor.id, f"تعذّر الوصول: {exc.reason}"))
-                audit.append(f"{descriptor.name_ar}: تعذّر الوصول ({exc.reason})")
-            except SourceError as exc:
-                errors.append((descriptor.id, exc.reason))
-                audit.append(f"{descriptor.name_ar}: خطأ ({exc.reason})")
-            except Exception as exc:  # an adapter bug must not sink the run
-                errors.append((descriptor.id, f"خطأ غير متوقع: {exc}"))
-                audit.append(f"{descriptor.name_ar}: خطأ غير متوقع ({exc})")
+        for descriptor, (found, error, note) in zip(
+            plan, self._run_searches(plan, request, deadline), strict=True
+        ):
+            if error is not None:
+                errors.append((descriptor.id, error))
+                audit.append(f"{descriptor.name_ar}: {note}")
             consulted.append(Consulted(
                 descriptor.id, descriptor.name_ar,
                 None if found is None else len(found), descriptor.international,
@@ -213,6 +234,64 @@ class Agent:
             consulted=consulted,
         )
 
+    def _search_one(
+        self, descriptor: SourceDescriptor, request: DataRequest
+    ) -> tuple[list[DatasetCandidate] | None, str | None, str | None]:
+        """(results, error, audit note) for one source. Never raises."""
+        try:
+            adapter = self.registry.adapter(descriptor.id)
+            found = adapter.search(request, limit=self.config.per_source_limit)
+        except SourceUnreachable as exc:
+            return None, f"تعذّر الوصول: {exc.reason}", f"تعذّر الوصول ({exc.reason})"
+        except SourceError as exc:
+            return None, exc.reason, f"خطأ ({exc.reason})"
+        except Exception as exc:  # an adapter bug must not sink the run
+            return None, f"خطأ غير متوقع: {exc}", f"خطأ غير متوقع ({exc})"
+        # A late reply means the source is back: ask it again at once.
+        self._slow.pop(descriptor.id, None)
+        return found, None, None
+
+    def _run_searches(
+        self, plan: list[SourceDescriptor], request: DataRequest, deadline: float | None
+    ) -> list[tuple[list[DatasetCandidate] | None, str | None, str | None]]:
+        """Every source's search, in plan order.
+
+        Without a deadline one after another. With one, in parallel, waiting
+        at most the search's share of the time; a source still busy then is
+        reported as not answering and left to finish in the background.
+        """
+        if deadline is None:
+            return [self._search_one(d, request) for d in plan]
+
+        now = time.monotonic()
+        resting = {
+            d.id for d in plan if self._slow.get(d.id, 0.0) > now
+        }
+        asked = [d for d in plan if d.id not in resting]
+        pool = ThreadPoolExecutor(max_workers=max(1, len(asked)), thread_name_prefix="search")
+        futures = {d.id: pool.submit(self._search_one, d, request) for d in asked}
+        budget = max(1.0, (deadline - now) * SEARCH_SHARE)
+        wait(futures.values(), timeout=budget)
+        pool.shutdown(wait=False)
+
+        results = []
+        for descriptor in plan:
+            future = futures.get(descriptor.id)
+            if future is None:
+                results.append((
+                    None, "لم يُجب في سؤال سابق قبل قليل؛ يُسأل مجدداً بعد دقيقتين",
+                    "مستبعد مؤقتاً لبطئه في سؤال سابق",
+                ))
+            elif future.done():
+                results.append(future.result())
+            else:
+                self._slow[descriptor.id] = time.monotonic() + SLOW_COOLDOWN_SECONDS
+                seconds = round(budget)
+                results.append((
+                    None, f"لم يُجب خلال {seconds} ثانية", f"لم يُجب خلال {seconds} ثانية",
+                ))
+        return results
+
     # -- verify and export ---------------------------------------------
     def _evaluate(
         self,
@@ -221,6 +300,7 @@ class Agent:
         descriptors: dict[str, SourceDescriptor],
         today: date,
         audit: list[str],
+        deadline: float | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
         downloads = 0
@@ -261,7 +341,9 @@ class Agent:
             if may_download:
                 downloads += 1
                 try:
-                    observed, table, fetched, problem = self._observe(candidate)
+                    observed, table, fetched, problem = self._observe_within(
+                        candidate, deadline
+                    )
                 except _Unreachable as exc:
                     down.setdefault(candidate.source_id, exc.reason)
                     known = candidate.claimed_coverage
@@ -381,6 +463,27 @@ class Agent:
                 break
 
         return findings
+
+    def _observe_within(
+        self, candidate: DatasetCandidate, deadline: float | None
+    ) -> tuple[Coverage | None, Table | None, object | None, str | None]:
+        """`_observe`, bounded by what is left of the answer's time.
+
+        A file that has not arrived in time is treated like one that could
+        not be reached; the download carries on in the background and is
+        cached, so asking again shortly after finds it at once.
+        """
+        if deadline is None:
+            return self._observe(candidate)
+        seconds = max(MIN_FETCH_SECONDS, deadline - time.monotonic())
+        pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fetch")
+        future = pool.submit(self._observe, candidate)
+        try:
+            return future.result(timeout=seconds)
+        except FutureTimeout:
+            raise _Unreachable(f"لم يصل الملف خلال {round(seconds)} ثانية") from None
+        finally:
+            pool.shutdown(wait=False)
 
     def _observe(
         self, candidate: DatasetCandidate

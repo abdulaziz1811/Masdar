@@ -50,7 +50,8 @@ class Period:
 
     def label(self) -> str:
         if not self.years:
-            return "أحدث سنة متاحة" if self.kind is PeriodKind.LATEST else "غير محددة"
+            # Without a period the agent answers with the newest data it finds.
+            return "أحدث سنة متاحة" if self.kind is PeriodKind.LATEST else "الأحدث المتاح"
         if len(self.years) == 1:
             return str(self.years[0])
         return f"{self.years[0]}–{self.years[-1]}"

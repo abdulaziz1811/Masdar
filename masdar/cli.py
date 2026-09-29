@@ -402,15 +402,22 @@ def cmd_serve(args: argparse.Namespace) -> int:
         max_downloads=args.max_downloads,
         out_dir=Path(args.out),
         today=date.fromisoformat(args.today) if args.today else None,
+        # An audience waits on every answer: past this, a silent source is
+        # reported as such instead of holding the answer up.
+        answer_seconds=args.answer_seconds or None,
     )
     lexicon = load_lexicon()
 
+    # Shared by the warm-up and the page, so what one learns about a down or
+    # slow source spares the other the wait.
     down_hosts: dict = {}
+    slow_sources: dict = {}
 
     def make_agent(llm=None) -> Agent:
         http = HttpClient(timeout=args.timeout, offline=args.offline, down_hosts=down_hosts)
         registry = load_registry(demo=args.demo, http=http)
-        return Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
+        return Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm,
+                     slow=slow_sources)
 
     llm, llm_status = LlmUnderstanding.from_environment(lexicon)
     llm_state = "off"
@@ -639,6 +646,8 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--max-sources", type=int, default=6)
     serve.add_argument("--max-downloads", type=int, default=3)
     serve.add_argument("--timeout", type=float, default=20.0)
+    serve.add_argument("--answer-seconds", type=float, default=25.0,
+                       help="أقصى مدة للجواب الواحد بالثواني (0 = بلا حد)")
     serve.add_argument("--today", help="تجاوز تاريخ اليوم (YYYY-MM-DD) للاختبار")
     serve.set_defaults(func=cmd_serve)
 

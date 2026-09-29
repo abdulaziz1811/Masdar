@@ -99,6 +99,9 @@ def compose_message(answer: Answer) -> str:
         return "\n".join(lines)
 
     if answer.verdict is Verdict.AVAILABLE and best is not None:
+        if not request.period.years and best.matched_years:
+            # "the newest available" says which year that turned out to be.
+            period = f"{period} ({_years(best.matched_years)})"
         lines.append(f"✅ البيانات متوفرة: {topic} — {period}")
         lines.append("")
         lines.extend(_finding_block(best))
