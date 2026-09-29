@@ -48,7 +48,7 @@ from masdar.domain.models import (
 from masdar.export.tabular import read_json
 from masdar.nlu.lexicon import CONFIG_DIR
 from masdar.nlu.normalize import contains_phrase
-from masdar.nlu.parser import typed_phrase_score
+from masdar.nlu.parser import shared_measures, typed_phrase_score
 from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 from masdar.sources.openapi import datasets_from_dir
 
@@ -315,6 +315,9 @@ class GastatCdataAdapter(SourceAdapter):
             if score <= 0:
                 continue
             score += typed_phrase_score(request, haystack)[0]
+            # Before the cut to `limit`: «عدد المنشآت» must keep the count
+            # tables in, ahead of the revenue tables that also name firms.
+            score += 2.0 * len(shared_measures(request.raw_query, str(entry.get("title_ar", ""))))
             available = [str(d) for d in (entry.get("dimensions") or [])]
             if self._requested_dimensions(request, available):
                 score += 2.0

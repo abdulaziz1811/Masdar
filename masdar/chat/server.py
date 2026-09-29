@@ -180,6 +180,7 @@ def answer_payload(
             "topic": request.topic.label_ar if request.topic else None,
             "period": request.period.label(),
             "dimensions": [d.label_ar for d in request.dimensions],
+            "places": list(request.places),
             "follow_up": follow_up,
             # "llm" when Claude read the question; `note` is its restatement,
             # or why it could not help.

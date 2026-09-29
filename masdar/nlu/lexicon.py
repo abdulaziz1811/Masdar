@@ -23,11 +23,14 @@ class Lexicon:
         dimension_words: dict[Dimension, tuple[str, ...]],
         stopwords: frozenset[str] = frozenset(),
         qualifiers: tuple[str, ...] = (),
+        places: dict[str, tuple[str, ...]] | None = None,
     ):
         self.topics = topics
         self.dimension_words = dimension_words
         self.stopwords = stopwords
         self.qualifiers = qualifiers
+        # Region name -> the ways a question or a table may write it.
+        self.places = places or {}
         self._by_id = {t.id: t for t in topics}
 
     def get(self, topic_id: str) -> Topic | None:
@@ -68,11 +71,17 @@ def _load(path: Path) -> Lexicon:
 
     qualifiers = tuple(str(q) for q in (raw.get("qualifiers") or []) if q)
 
+    places = {
+        str(name): tuple(str(v) for v in variants)
+        for name, variants in (raw.get("places") or {}).items()
+    }
+
     return Lexicon(
         topics=topics,
         dimension_words=dimension_words,
         stopwords=stopwords,
         qualifiers=qualifiers,
+        places=places,
     )
 
 

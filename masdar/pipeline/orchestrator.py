@@ -133,6 +133,7 @@ class Agent:
         candidates, errors, audit = search.candidates, search.errors, search.audit
         descriptors = {d.id: d for d in self.registry.descriptors}
         ranked = resolve.rank(request, candidates, descriptors, self.lexicon, today)
+        ranked = resolve.prefer_specific(request, ranked)
         off_subject = [c for c in ranked if not resolve.on_subject(request, c)]
         if off_subject:
             ranked = [c for c in ranked if resolve.on_subject(request, c)]
@@ -158,7 +159,9 @@ class Agent:
             )
             return answer.with_message(compose_message(answer))
 
-        findings = self._evaluate(request, ranked, descriptors, today, audit, deadline)
+        findings = self._evaluate(
+            request, _each_source_first(ranked), descriptors, today, audit, deadline
+        )
         international = frozenset(d.id for d in descriptors.values() if d.international)
         findings.sort(key=lambda f: _finding_sort_key(f, international))
 
@@ -315,6 +318,13 @@ class Agent:
             table: Table | None = None
             fetched = None
             notes: list[str] = list(candidate.caveats)
+            # Said up front when the result is broader than the question.
+            missing = resolve.unmatched_terms(request, candidate)
+            if missing:
+                notes.insert(0, "لا تذكر هذه البيانات «" + "، ".join(missing)
+                             + "» تحديداً؛ قد تكون أعم من المطلوب.")
+            if resolve.measure_mismatch(request, candidate):
+                notes.insert(0, "طُلب عدد، وهذه البيانات نسبة أو معدل.")
 
             if candidate.source_id in down and (
                 coverage.is_empty or not coverage.origin.can_support_availability
@@ -412,6 +422,15 @@ class Agent:
                 and verification.verdict.is_positive
             ):
                 sliced = table.filter_years(frozenset(verification.matched_years))
+                if request.places:
+                    places = self.lexicon.places
+                    wanted = {p: places.get(p, (p,)) for p in request.places}
+                    sliced, narrowed = sliced.filter_places(wanted, places)
+                    named = "، ".join(request.places)
+                    notes.append(
+                        f"اقتصر الملف على: {named}." if narrowed else
+                        f"لم يُعثر في الملف على صفوف خاصة بـ{named}، فأُرفق كما نشرته الجهة."
+                    )
                 sliced, dropped = sliced.without_inapplicable_columns()
                 if dropped:
                     notes.append(
@@ -637,6 +656,24 @@ _VERDICT_RANK = {
     Verdict.SOURCE_UNREACHABLE: 4,
     Verdict.NO_SOURCE: 5,
 }
+
+
+def _each_source_first(ranked: list[DatasetCandidate]) -> list[DatasetCandidate]:
+    """Each source's best result first, then the rest, in rank order.
+
+    Only a few files are opened per question. Without this, one source with
+    many near-identical entries (the World Bank lists population total,
+    female, male, female share...) takes every download, and the Saudi
+    publisher's own table is never opened, so its evidence never counts.
+    The answer is still chosen by verdict and rank afterwards.
+    """
+    seen: set[str] = set()
+    first: list[DatasetCandidate] = []
+    rest: list[DatasetCandidate] = []
+    for candidate in ranked:
+        (rest if candidate.source_id in seen else first).append(candidate)
+        seen.add(candidate.source_id)
+    return first + rest
 
 
 def _finding_sort_key(finding: Finding, international: frozenset[str] = frozenset()) -> tuple:

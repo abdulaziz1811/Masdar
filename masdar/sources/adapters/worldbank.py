@@ -19,6 +19,7 @@ and each indicator names the organisation it came from; the answer says so.
 
 from __future__ import annotations
 
+import functools
 import json
 import os
 import re
@@ -99,6 +100,15 @@ def _parse_date(text: object) -> date | None:
         return None
 
 
+@functools.lru_cache(maxsize=1)
+def _not_measured() -> frozenset[str]:
+    from masdar.nlu.parser import LATEST_MARKERS
+
+    lexicon = load_lexicon()
+    words = [*LATEST_MARKERS, *(w for ws in lexicon.dimension_words.values() for w in ws)]
+    return frozenset(_content_stems(" ".join(words), lexicon.stopwords, keep=()))
+
+
 class WorldBankAdapter(SourceAdapter):
     def __init__(self, descriptor, http=None):
         super().__init__(descriptor, http)
@@ -141,6 +151,10 @@ class WorldBankAdapter(SourceAdapter):
         asked = _content_stems(
             " ".join((request.raw_query, *request.free_terms)), stopwords, keep=_GENERIC
         )
+        # Words about the period («أحدث») or a breakdown («الجنس», «المناطق»)
+        # are not part of what is measured; counting them made «أحدث بيانات
+        # البطالة» miss the unemployment indicator altogether.
+        asked = [w for w in asked if w not in _not_measured()]
         if not asked:
             return 0.0
         name_ar, name_en = indicator.get("ar") or "", indicator.get("en") or ""

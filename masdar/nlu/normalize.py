@@ -97,6 +97,40 @@ def contains_phrase(haystack: str, phrase: str) -> bool:
             haystacks.append(" " + " ".join(variant) + " ")
     return any(f" {needle} " in hay for needle in needles for hay in haystacks)
 
+# Endings that turn a noun into its adjective or plural: «الكهرباء» and
+# «الكهربائية», «مستشفى» and «المستشفيات», «السكان» and «السكانية». Longest
+# first; one is removed at most, and never below three letters.
+_ENDINGS = ("ييه", "يات", "يه", "ات", "ين", "ون", "ي")
+
+
+def root(token: str) -> str:
+    """A token reduced to what its word family shares, for loose matching."""
+    stem = strip_article(token)
+    for ending in _ENDINGS:
+        if stem.endswith(ending) and len(stem) - len(ending) >= 3:
+            stem = stem[: -len(ending)]
+            break
+    if len(stem) > 4 and stem.endswith("ء"):
+        stem = stem[:-1]
+    if len(stem) > 4 and stem.endswith("ا"):
+        stem = stem[:-1]
+    return stem
+
+
+def mentions(haystack: str, phrase: str) -> bool:
+    """Whether every word of `phrase` occurs in `haystack`, in any form.
+
+    Looser than `contains_phrase`: a title says «استهلاك الطاقة الكهربائية»
+    where the question says «استهلاك الكهرباء». Used to judge whether a
+    result is about what was asked, not to rank it.
+    """
+    wanted = {root(t) for t in tokens(phrase)}
+    if not wanted:
+        return False
+    present = {root(t) for t in tokens(haystack)}
+    return wanted <= present
+
+
 def normalize_light(text: str) -> str:
     """Like `normalize` but keeps punctuation.
 

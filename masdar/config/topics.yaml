@@ -186,13 +186,32 @@ dimensions:
   sector: [القطاع, قطاع, القطاعات, حسب القطاع, النشاط الاقتصادي, sector, sectors, by sector, economic activity]
   gender: [الجنس, ذكور, إناث, حسب الجنس, رجال, نساء, gender, sex, male, female, by gender]
   nationality: [الجنسية, غير سعودي, غير السعوديين, سعودي وغير سعودي, حسب الجنسية,
-                الوافدين, nationality, saudi, non-saudi, expatriates, by nationality]
+                الوافدين, السعوديين, nationality, saudi, non-saudi, expatriates,
+                by nationality]
   age: [العمر, الفئات العمرية, حسب العمر, فئة عمرية, age, age group, age groups, by age]
   month: [شهري, الشهور, حسب الشهر, شهرياً, الأشهر, month, monthly, months, by month]
   quarter: [ربعي, الربع, ربع سنوي, الأرباع, حسب الربع, quarter, quarterly, quarters, by quarter]
   season: [الفصل, فصل, الفصول, حسب الفصل, الشتاء, شتاء, الصيف, صيف,
            موسمي, موسم, season, seasonal, winter, summer]
   activity: [النشاط, الأنشطة, حسب النشاط, activity, activities, by activity]
+
+# The thirteen administrative regions, as a question or a table may name
+# them. Naming one («في الرياض») asks for the region breakdown, narrowed to
+# that region. «المدينة» alone is left out: it usually means "the city".
+places:
+  الرياض: [الرياض, منطقة الرياض, riyadh]
+  مكة المكرمة: [مكة المكرمة, مكة, makkah, mecca]
+  المدينة المنورة: [المدينة المنورة, madinah, medina]
+  القصيم: [القصيم, qassim, al-qassim]
+  المنطقة الشرقية: [المنطقة الشرقية, الشرقية, eastern province, eastern region]
+  عسير: [عسير, asir, aseer]
+  تبوك: [تبوك, tabuk]
+  حائل: [حائل, hail]
+  الحدود الشمالية: [الحدود الشمالية, northern borders]
+  جازان: [جازان, جيزان, jazan, jizan]
+  نجران: [نجران, najran]
+  الباحة: [الباحة, al-baha, baha]
+  الجوف: [الجوف, al-jouf, jouf]
 
 # Words that carry no subject meaning: request verbs, time nouns, generic
 # data words, politeness. Matched after normalisation, so plain spelling is
@@ -206,6 +225,8 @@ stopwords: >
   بيانات البيانات احصاءات الاحصاءات احصائيات الاحصائيات ارقام الارقام
   معلومات المعلومات تقرير التقرير نشره النشره جدول الجدول ملف الملف اكسل
   هل ما ماهي ماهو كم وش ايش هو هي انا لو سمحت ممكن الرجاء رجاء شكرا
+  السلام عليكم مرحبا هلا اهلا صباح مساء الخير النور اعرف ابغا
+  احصائيه احصائية لعدد بعدد
   data statistics numbers report file give me show find want need please
   the of for by in and a an is are latest table dataset excel csv
   saudi arabia ksa kingdom

@@ -577,6 +577,7 @@
     if (u.topic) chip("الموضوع", u.topic);
     chip("الفترة", u.period);
     if (u.dimensions && u.dimensions.length) chip("التفصيل", u.dimensions.join("، "));
+    if (u.places && u.places.length) chip("المنطقة", u.places.join("، "));
     if (u.method === "llm") row.appendChild(el("span", "chip chip-ai", "فُهم بالذكاء الاصطناعي"));
     return row;
   }

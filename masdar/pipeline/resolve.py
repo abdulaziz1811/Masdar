@@ -11,8 +11,8 @@ from datetime import date
 
 from masdar.domain.models import DataRequest, DatasetCandidate, Dimension
 from masdar.nlu.lexicon import Lexicon, load_lexicon
-from masdar.nlu.normalize import contains_phrase
-from masdar.nlu.parser import typed_phrase_score
+from masdar.nlu.normalize import contains_phrase, mentions, normalize, stems, strip_article
+from masdar.nlu.parser import MEASURES, shared_measures, typed_phrase_score
 from masdar.sources.base import SourceDescriptor
 
 W_TERM = 2.0
@@ -31,6 +31,20 @@ W_SOURCE_RELEVANCE = 4.0
 # A source's own relevance at or above this counts as being on the subject
 # (see `on_subject`); the World Bank adapter already drops anything below it.
 SUBJECT_RELEVANCE = 0.5
+# The quantity asked for (see `shared_measures`).
+W_MEASURE = 2.0
+# A count asked, a rate found: «عدد المستشفيات» is not «أسرّة المستشفيات لكل
+# 1000 شخص». Worth the measure bonus in reverse, and said in the answer.
+W_MEASURE_MISMATCH = -2.0
+_RATE_MARKERS = ("%", "لكل", "per", "نسبه", "معدل")
+# Words the publishers use for the same thing, normalised.
+SYNONYMS = {
+    "نفطيه": ("بتروليه",),
+    "نفط": ("بترول",),
+    "بتروليه": ("نفطيه",),
+}
+# Free terms too plain to say what a result must be about.
+_PLAIN = frozenset({"غير", "حسب", "لعدد", "بعدد"})
 
 
 def _freshness(last_updated: date | None, today: date) -> float:
@@ -67,6 +81,14 @@ def score_candidate(
                 score += W_TOPIC_LABEL
                 reasons.append(f"العنوان يذكر الموضوع: {label}")
                 break
+
+    shared = shared_measures(request.raw_query, candidate.title_ar or candidate.title_en)
+    if shared:
+        score += W_MEASURE * len(shared)
+        reasons.append(f"يطابق ما يُقاس في السؤال: {', '.join(shared)}")
+    elif measure_mismatch(request, candidate):
+        score += W_MEASURE_MISMATCH
+        reasons.append("السؤال يطلب عدداً، والنتيجة نسبة أو معدل")
 
     typed, typed_hits = typed_phrase_score(request, haystack)
     if typed:
@@ -154,15 +176,15 @@ def rank(
 def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:
     """Whether a candidate is about what was asked, not merely returned by a search.
 
-    With a topic the sources were chosen and searched by that topic, so what
-    they return is on it. Without one, the search ran on the question's own
-    words, and a source may return anything sharing a single word with it:
-    «عدد الخيول بالسعودية» once came back as a pension table because both
-    mention Saudi Arabia. Such a result must name one of the words the user
-    typed, or be the source's own confident reading of the question.
+    A search returns anything that shares a word or a topic with the
+    question, and a topic is broad: «أحدث بيانات البطالة» is a labour-market
+    question, and so is a table of the workforce serving pilgrims. A result
+    must name what the user actually typed: the topic phrases found in the
+    question («البطالة»), or, when no topic was recognised, one of its other
+    words («عدد الخيول بالسعودية» once came back as a pension table because
+    both mention Saudi Arabia). A source's own confident reading of the
+    question also counts.
     """
-    if request.topic is not None:
-        return True
     if candidate.relevance >= SUBJECT_RELEVANCE:
         return True
     haystack = " ".join(
@@ -171,7 +193,57 @@ def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:
             (candidate.title_ar, candidate.title_en, candidate.description, candidate.keywords),
         )
     )
-    return any(contains_phrase(haystack, term) for term in request.free_terms)
+    if request.topic is not None:
+        if not request.typed_phrases:
+            # The topic came from elsewhere (a language model's reading):
+            # the sources were searched for it, and that is all there is.
+            return True
+        return any(mentions(haystack, phrase) for phrase in request.typed_phrases)
+    return any(mentions(haystack, term) for term in request.free_terms)
+
+
+def specific_terms(request: DataRequest) -> tuple[str, ...]:
+    """The question's own words beyond the recognised topic («تملك», «النفطية»)."""
+    return tuple(t for t in request.free_terms if t not in _PLAIN and len(t) >= 3)
+
+
+def mentions_term(candidate: DatasetCandidate, term: str) -> bool:
+    haystack = " ".join(filter(None, (
+        candidate.title_ar, candidate.title_en, candidate.description, candidate.keywords,
+        candidate.publisher_ar, candidate.publisher_en,
+    )))
+    words = (term, *SYNONYMS.get(strip_article(term), ()))
+    return any(mentions(haystack, w) for w in words)
+
+
+def prefer_specific(request: DataRequest, ranked: list[DatasetCandidate]) -> list[DatasetCandidate]:
+    """Those naming one of the question's specific words, if any do; else all.
+
+    A soft rule: «نسبة تملك المساكن» should prefer a table about ownership to
+    one about electricity in dwellings. When no result names the word, all
+    are kept and the answer says what it could not match (`unmatched_terms`).
+    """
+    terms = specific_terms(request)
+    if not terms:
+        return ranked
+    naming = [c for c in ranked if any(mentions_term(c, t) for t in terms)]
+    return naming or ranked
+
+
+def unmatched_terms(request: DataRequest, candidate: DatasetCandidate) -> tuple[str, ...]:
+    return tuple(t for t in specific_terms(request) if not mentions_term(candidate, t))
+
+
+def measure_mismatch(request: DataRequest, candidate: DatasetCandidate) -> bool:
+    """The question asks for a count, and the result is a rate or a share."""
+    asked = set(stems(request.raw_query))
+    if not asked & set(MEASURES[0]):
+        return False
+    title = normalize(candidate.title_ar or candidate.title_en)
+    return any(marker in title for marker in _RATE_MARKERS)
+
+
+
 
 
 def missing_dimensions(

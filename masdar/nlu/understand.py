@@ -74,6 +74,7 @@ def continue_request(previous: DataRequest, current: DataRequest, root: str) -> 
         raw_query=f"{current.raw_query} (متابعة لـ «{root}»)",
         period=period,
         dimensions=dimensions,
+        places=current.places or previous.places,
     )
 
 

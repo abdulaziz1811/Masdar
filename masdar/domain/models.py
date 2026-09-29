@@ -121,6 +121,9 @@ class DataRequest:
     # health dataset, whereas the health keywords match them all.
     typed_phrases: tuple[str, ...] = ()
     language: str = "ar"
+    # Regions named in the question («في الرياض»): the answer is narrowed to
+    # them where the data has a column of regions.
+    places: tuple[str, ...] = ()
     # Parts of the question the parser could not resolve; surfaced to the
     # user instead of being silently dropped.
     unresolved: tuple[str, ...] = ()

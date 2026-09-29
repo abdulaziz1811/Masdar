@@ -47,6 +47,9 @@ _LATEST_MARKERS = (
     "latest", "newest", "most recent", "last",
 )
 
+# Public name for other modules: words about the period, not the subject.
+LATEST_MARKERS = _LATEST_MARKERS
+
 
 # Phrases that mean "give me the file" rather than naming a subject.
 _FORMAT_HINTS = ("اكسل", "excel", "xlsx", "csv", "ملف", "جدول")
@@ -187,6 +190,24 @@ def typed_phrase_score(request: DataRequest, text: str) -> tuple[float, tuple[st
     return score, tuple(hits)
 
 
+# The quantity asked for: «عدد الحجاج» wants a count of pilgrims, not the
+# workforce serving them, though both titles name the pilgrims. Normalised,
+# grouped where they mean the same quantity.
+MEASURES = (
+    ("عدد", "اعداد", "تعداد"),
+    ("نسبه",),
+    ("معدل",),
+    ("متوسط",),
+)
+
+
+def shared_measures(question: str, title: str) -> list[str]:
+    """Measure words («عدد», «نسبة», «معدل», «متوسط») in both texts."""
+    asked = set(stems(question))
+    named = set(stems(title))
+    return [group[0] for group in MEASURES if asked & set(group) and named & set(group)]
+
+
 def detect_dimensions(text: str, lexicon: Lexicon) -> tuple[tuple[Dimension, ...], tuple[str, ...]]:
     found: list[Dimension] = []
     matched_words: list[str] = []
@@ -202,6 +223,19 @@ def detect_dimensions(text: str, lexicon: Lexicon) -> tuple[tuple[Dimension, ...
 _YEARISH = re.compile(r"^\d{3,4}\D{0,3}$")
 
 
+def detect_places(text: str, lexicon: Lexicon) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """(regions named in the text, the words that named them)."""
+    found: list[str] = []
+    words: list[str] = []
+    for name, variants in lexicon.places.items():
+        for variant in sorted(variants, key=len, reverse=True):
+            if contains_phrase(text, variant):
+                found.append(name)
+                words.extend(normalize(variant).split())
+                break
+    return tuple(found), tuple(words)
+
+
 def _free_terms(text: str, consumed: set[str], stopwords: frozenset[str]) -> tuple[str, ...]:
     result: list[str] = []
     for token in tokens(text):
@@ -209,6 +243,9 @@ def _free_terms(text: str, consumed: set[str], stopwords: frozenset[str]) -> tup
         if token.isdigit() or _YEARISH.match(token):
             continue
         if token in stopwords or stem in stopwords:
+            continue
+        # «وفي», «وكم», «وعن»: a joined «و» before a word that carries nothing.
+        if token.startswith("و") and token[1:] in stopwords:
             continue
         if token in consumed or stem in consumed:
             continue
@@ -247,7 +284,14 @@ def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
         _without_phrases(query, topic_hits), lexicon
     )
 
-    consumed: set[str] = set(dimension_words)
+    places, place_words = detect_places(query, lexicon)
+    if places and Dimension.REGION not in dimensions:
+        # A named region is answered from the regional breakdown.
+        dimensions = (*dimensions, Dimension.REGION)
+
+    consumed: set[str] = set(dimension_words) | set(place_words)
+    # «للسعوديين» named the breakdown as surely as «السعوديين».
+    consumed.update(strip_article(w) for w in (*dimension_words, *place_words))
     for hit in topic_hits:
         consumed.update(normalize(hit).split())
     # "حسب"/"بحسب" only ever introduce a dimension, and the words that
@@ -273,6 +317,7 @@ def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
         free_terms=free,
         typed_phrases=tuple(sorted(set(topic_hits), key=lambda h: (-len(h), h))),
         language=detect_language(query),
+        places=places,
         unresolved=tuple(unresolved),
     )
 

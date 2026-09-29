@@ -154,6 +154,35 @@ class Table:
         return Table(columns, rows, self.sheet_name, list(self.preamble)), dropped
 
     # -- slicing -------------------------------------------------------
+    def filter_places(
+        self, wanted: dict[str, tuple[str, ...]], known: dict[str, tuple[str, ...]]
+    ) -> tuple[Table, bool]:
+        """Rows for the wanted regions, and whether the table could be narrowed.
+
+        Only a column that actually lists regions is used -- at least three
+        rows naming a known region -- so «الرياض» cannot match «رياض الأطفال»
+        in a column about school stages. A table without such a column, or
+        without a row for the region, is returned whole.
+        """
+        from masdar.nlu.normalize import contains_phrase
+
+        def names(cell: object, places: dict[str, tuple[str, ...]]) -> bool:
+            text = str(cell or "")
+            return bool(text) and any(
+                contains_phrase(text, v) for variants in places.values() for v in variants
+            )
+
+        width = max((len(r) for r in self.rows), default=0)
+        for index in range(width):
+            cells = [row[index] if index < len(row) else None for row in self.rows]
+            if sum(1 for c in cells if names(c, known)) < 3:
+                continue
+            kept = [row for row, cell in zip(self.rows, cells, strict=True) if names(cell, wanted)]
+            if kept:
+                return Table(list(self.columns), kept, self.sheet_name, list(self.preamble)), True
+            return self, False
+        return self, False
+
     def filter_years(self, years: frozenset[int]) -> Table:
         """Narrow the table to the requested years, whatever the layout."""
         if not years:
