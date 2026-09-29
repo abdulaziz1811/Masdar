@@ -162,10 +162,11 @@ def _write_source_sheet(
     _autosize(sheet, {1: 28, 2: 70})
 
 
+# Each starts with the level's name as the chat answer shows it.
 COVERAGE_ORIGIN_LABELS = {
-    "observed_data": "تم فتح الملف والتحقق من السنوات داخله",
-    "metadata_claim": "بيانات وصفية معلنة من المصدر",
-    "inferred_title": "مستنتج من العنوان (غير مؤكد)",
+    "observed_data": "من داخل الملف: تم فتح الملف والتحقق من السنوات داخله",
+    "metadata_claim": "من وصف المصدر: الفترة كما تعلنها الجهة، ولم يُفتح الملف",
+    "inferred_title": "من العنوان فقط: غير مؤكد",
 }
 
 

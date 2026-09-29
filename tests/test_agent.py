@@ -95,6 +95,13 @@ class TestAvailableYear:
         assert "2025-06-30" in text
         assert "آخر تحديث معلن من المصدر" in text
 
+    def test_source_sheet_names_the_evidence_level(self, agent):
+        # The same words the chat answer shows, so the two can be matched.
+        answer = agent.answer("الكهرباء 2024 حسب المناطق")
+        sheet = load_workbook(answer.primary.export_path)["المصدر"]
+        rows = {row[0]: row[1] for row in sheet.iter_rows(values_only=True) if row[0]}
+        assert rows["أساس التحقق"].startswith("من داخل الملف")
+
     def test_synthetic_data_is_labelled_in_the_workbook(self, agent):
         answer = agent.answer("الكهرباء 2024 حسب المناطق")
         sheet = load_workbook(answer.primary.export_path)["المصدر"]

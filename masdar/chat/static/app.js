@@ -509,7 +509,7 @@
       f.last_updated ? null : "استُخرج من المصدر: " + (f.retrieved_at || "").slice(0, 10));
     fact(dl, "أحدث سنة في البيانات", f.latest_year);
     fact(dl, "السنوات المطابقة للطلب", f.matched_years.length ? yearsText(f.matched_years) : "لا يوجد");
-    fact(dl, "مصدر التحقق", EVIDENCE[f.evidence] || f.evidence, true);
+    fact(dl, "أساس التحقق", EVIDENCE[f.evidence] || f.evidence, true);
     sec.appendChild(dl);
 
     if (f.stale) sec.appendChild(banner("notice", "archive",
