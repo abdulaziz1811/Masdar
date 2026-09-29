@@ -267,6 +267,71 @@ class TestKeyCheck:
         assert not ok and "النموذج غير متاح" in why
 
 
+    def test_an_unfunded_key_is_named(self, lexicon):
+        # A key with no credit passes the free start-up check, then every
+        # question is refused with a 400 that says so.
+        from masdar.nlu.llm import LlmUnavailable
+
+        error = {"type": "error", "error": {
+            "type": "invalid_request_error",
+            "message": "Your credit balance is too low to access the Anthropic API. "
+                       "Please go to Plans & Billing to upgrade or purchase credits.",
+        }}
+        client, _ = self.client(400, error)
+        with pytest.raises(LlmUnavailable) as caught:
+            LlmUnderstanding(client, lexicon, today=TODAY).read("كم عدد الخيول")
+        assert "رصيد" in caught.value.reason
+
+    def test_any_other_refusal_carries_the_api_explanation(self, lexicon):
+        from masdar.nlu.llm import LlmUnavailable
+
+        error = {"type": "error", "error": {"type": "invalid_request_error",
+                                            "message": "something about the request"}}
+        client, _ = self.client(400, error)
+        with pytest.raises(LlmUnavailable) as caught:
+            LlmUnderstanding(client, lexicon, today=TODAY).read("كم عدد الخيول")
+        assert "(400)" in caught.value.reason
+        assert "something about the request" in caught.value.reason
+
+    def test_the_request_the_real_sdk_sends(self, lexicon):
+        anthropic = pytest.importorskip("anthropic")
+        import httpx2
+
+        sent: list = []
+        reading = {
+            "is_data_request": True, "follow_up": False, "topic": "agriculture",
+            "keywords_ar": ["الخيول"], "keywords_en": ["horses"], "period_kind": "latest",
+            "years": [], "dimensions": [], "restatement_ar": "عدد الخيول في المملكة",
+        }
+
+        def handler(request):
+            sent.append(request)
+            return httpx2.Response(200, json={
+                "id": "msg_test", "type": "message", "role": "assistant",
+                "model": DEFAULT_MODEL, "stop_reason": "end_turn", "stop_sequence": None,
+                "content": [{"type": "text", "text": json.dumps(reading, ensure_ascii=False)}],
+                "usage": {"input_tokens": 1, "output_tokens": 1},
+            })
+
+        client = anthropic.Anthropic(
+            api_key="sk-ant-test-not-a-real-key", max_retries=0,
+            http_client=anthropic.DefaultHttpxClient(transport=httpx2.MockTransport(handler)),
+        )
+        result = LlmUnderstanding(client, lexicon, today=TODAY).read("كم عدد الخيول")
+        assert result.request.topic.id == "agriculture"
+
+        (request,) = sent
+        body = json.loads(request.content)
+        assert request.url.path == "/v1/messages"
+        assert "server-side-fallback-2026-07-01" in request.headers["anthropic-beta"]
+        assert body["model"] == DEFAULT_MODEL
+        assert body["fallbacks"] == "default"
+        assert body["output_config"]["effort"] == "low"
+        assert body["output_config"]["format"]["type"] == "json_schema"
+        # Opus 5.5 rejects both; thinking is controlled by effort alone.
+        assert "thinking" not in body and "temperature" not in body
+
+
 class TestEndToEnd:
     def test_the_agent_answers_a_question_only_the_model_could_place(self, lexicon, tmp_path):
         http = HttpClient(offline=True, use_cache=False, retries=1)

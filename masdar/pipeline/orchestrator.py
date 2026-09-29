@@ -104,6 +104,12 @@ class Agent:
         candidates, errors, audit = search.candidates, search.errors, search.audit
         descriptors = {d.id: d for d in self.registry.descriptors}
         ranked = resolve.rank(request, candidates, descriptors, self.lexicon, today)
+        off_subject = [c for c in ranked if not resolve.on_subject(request, c)]
+        if off_subject:
+            ranked = [c for c in ranked if resolve.on_subject(request, c)]
+            audit.append(
+                f"استُبعدت {len(off_subject)} نتيجة لا تذكر أياً من كلمات السؤال"
+            )
         audit.append(f"عدد النتائج المرشحة بعد الترتيب: {len(ranked)}")
 
         if not ranked:

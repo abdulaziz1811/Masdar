@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from masdar.domain.models import Dimension, Topic
-from masdar.nlu.normalize import normalize
+from masdar.nlu.normalize import normalize, strip_article
 
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 TOPICS_FILE = CONFIG_DIR / "topics.yaml"
@@ -61,9 +61,10 @@ def _load(path: Path) -> Lexicon:
             continue
         dimension_words[dimension] = tuple(words)
 
-    stopwords = frozenset(
-        word for word in normalize(raw.get("stopwords") or "").split() if word
-    )
+    words = [word for word in normalize(raw.get("stopwords") or "").split() if word]
+    # "بالسعودية" and "بالمملكة" are the listed words with a fused preposition;
+    # free terms are compared without their article, so the list is too.
+    stopwords = frozenset(words) | frozenset(strip_article(word) for word in words)
 
     qualifiers = tuple(str(q) for q in (raw.get("qualifiers") or []) if q)
 

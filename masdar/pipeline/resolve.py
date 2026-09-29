@@ -28,6 +28,9 @@ W_INTERNATIONAL = -3.0
 # A source's own reading of how well a result fits (see
 # DatasetCandidate.relevance), worth up to this much.
 W_SOURCE_RELEVANCE = 4.0
+# A source's own relevance at or above this counts as being on the subject
+# (see `on_subject`); the World Bank adapter already drops anything below it.
+SUBJECT_RELEVANCE = 0.5
 
 
 def _freshness(last_updated: date | None, today: date) -> float:
@@ -139,6 +142,29 @@ def rank(
         )
     )
     return scored
+
+
+def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:
+    """Whether a candidate is about what was asked, not merely returned by a search.
+
+    With a topic the sources were chosen and searched by that topic, so what
+    they return is on it. Without one, the search ran on the question's own
+    words, and a source may return anything sharing a single word with it:
+    «عدد الخيول بالسعودية» once came back as a pension table because both
+    mention Saudi Arabia. Such a result must name one of the words the user
+    typed, or be the source's own confident reading of the question.
+    """
+    if request.topic is not None:
+        return True
+    if candidate.relevance >= SUBJECT_RELEVANCE:
+        return True
+    haystack = " ".join(
+        filter(
+            None,
+            (candidate.title_ar, candidate.title_en, candidate.description, candidate.keywords),
+        )
+    )
+    return any(contains_phrase(haystack, term) for term in request.free_terms)
 
 
 def missing_dimensions(

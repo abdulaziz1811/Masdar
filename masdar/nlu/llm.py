@@ -42,6 +42,7 @@ MAX_TOKENS = 4096
 TIMEOUT_SECONDS = 30.0
 
 MAX_PHRASES = 5
+API_MESSAGE_CHARS = 160
 MAX_PHRASE_CHARS = 60
 EARLIEST_YEAR = 1900
 
@@ -180,8 +181,31 @@ def _describe_error(exc: BaseException) -> str:
     if isinstance(exc, anthropic.APIConnectionError):
         return "تعذّر الاتصال بـ Anthropic"
     if isinstance(exc, anthropic.APIStatusError):
-        return f"خطأ من Anthropic ({exc.status_code})"
+        detail = _api_message(exc)
+        # The commonest 400 for a new key: looking the model up is free, so
+        # the start-up check passes, and every paid request is then refused.
+        if "credit balance" in detail.lower():
+            return "رصيد حساب Anthropic لا يكفي — اشحنه من صفحة Billing في حسابك"
+        suffix = f": {detail}" if detail else ""
+        return f"خطأ من Anthropic ({exc.status_code}){suffix}"
     return type(exc).__name__
+
+
+def _api_message(exc: BaseException) -> str:
+    """The API's own one-line explanation of an error, shortened for display.
+
+    Error bodies describe the request, never the credential, so they are safe
+    to show; the length cap keeps a long one from flooding the answer.
+    """
+    body = getattr(exc, "body", None)
+    message = ""
+    if isinstance(body, dict):
+        error = body.get("error")
+        if isinstance(error, dict):
+            message = str(error.get("message") or "")
+    if not message:
+        message = str(getattr(exc, "message", "") or "")
+    return " ".join(message.split())[:API_MESSAGE_CHARS]
 
 
 class LlmUnderstanding:

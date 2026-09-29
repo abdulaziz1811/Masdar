@@ -189,3 +189,44 @@ class TestSourceIsolation:
 
     def test_no_default_source_is_marked_synthetic(self):
         assert all(not d.synthetic for d in load_descriptors())
+
+
+class TestOffSubject:
+    """Without a known topic the search runs on the question's own words; a
+    result sharing only «السعودية» with the question is not an answer."""
+
+    QUESTION = "عطني عدد الخيول بالسعودية"
+
+    def test_the_country_name_is_not_a_search_word(self):
+        from masdar.nlu.parser import parse
+
+        assert parse(self.QUESTION).free_terms == ("الخيول",)
+
+    def test_a_result_about_something_else_is_dropped(self):
+        from masdar.domain.models import DatasetCandidate
+        from masdar.nlu.parser import parse
+        from masdar.pipeline.resolve import on_subject
+
+        request = parse(self.QUESTION)
+        pensions = DatasetCandidate(
+            "gastat_db", "x",
+            "إجمالي عدد المشمولين من مواطني دول المجلس في التقاعد بالمملكة العربية السعودية",
+        )
+        horses = DatasetCandidate("gastat_db", "y", "أعداد الخيول حسب المنطقة")
+        assert not on_subject(request, pensions)
+        assert on_subject(request, horses)
+
+    def test_a_confident_source_reading_is_kept(self):
+        from masdar.domain.models import DatasetCandidate
+        from masdar.nlu.parser import parse
+        from masdar.pipeline.resolve import on_subject
+
+        indicator = DatasetCandidate("worldbank", "z", "Livestock production index")
+        indicator.relevance = 0.8
+        assert on_subject(parse(self.QUESTION), indicator)
+
+    def test_nothing_on_the_subject_means_not_found(self, agent):
+        answer = agent.answer(self.QUESTION)
+        assert answer.verdict is Verdict.NO_SOURCE
+        assert answer.primary is None
+
