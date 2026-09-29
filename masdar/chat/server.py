@@ -103,9 +103,22 @@ def _http_link(url: str | None) -> str | None:
     return url if urlparse(url).scheme in ("http", "https") else None
 
 
+# Files a reader can open. An API's JSON reply is for programs: it stays in
+# the workbook's source sheet, as evidence, and is not offered as a link.
+READABLE_FORMATS = frozenset({"CSV", "XLSX", "XLS", "TSV"})
+
+
+def _original_file(finding: Finding) -> str | None:
+    cited = finding.provenance.resource_url
+    for resource in finding.candidate.resources:
+        if resource.url == cited and resource.format in READABLE_FORMATS:
+            return _http_link(cited)
+    return None
+
+
 def _finding_payload(
     finding: Finding, downloads: Downloads, international: frozenset[str] = frozenset(),
-    preview: bool = False,
+    preview: bool = False, sites: dict[str, str] | None = None,
 ) -> dict:
     provenance = finding.provenance
     coverage = finding.coverage
@@ -129,7 +142,13 @@ def _finding_payload(
         "matched_years": list(finding.matched_years),
         "missing_years": list(finding.missing_years),
         "landing_url": _http_link(provenance.landing_url),
-        "resource_url": _http_link(provenance.resource_url),
+        # "site" when the link is the publisher's website rather than a page
+        # for this dataset, so the button can say which it is.
+        "landing_kind": (
+            "site" if (sites or {}).get(finding.candidate.source_id) == provenance.landing_url
+            else "dataset"
+        ),
+        "resource_url": _original_file(finding),
         "retrieved_at": provenance.retrieved_at.isoformat(),
         "sha256": provenance.sha256,
         "download": (
@@ -149,6 +168,7 @@ def answer_payload(
     method: str = "rules",
     note: str = "",
     international: frozenset[str] = frozenset(),
+    sites: dict[str, str] | None = None,
 ) -> dict:
     request = answer.request
     return {
@@ -167,7 +187,7 @@ def answer_payload(
             "note": note,
         },
         "findings": [
-            _finding_payload(f, downloads, international, preview=(i == 0))
+            _finding_payload(f, downloads, international, preview=(i == 0), sites=sites)
             for i, f in enumerate(answer.findings[:4])
         ],
         "consulted": [
@@ -232,6 +252,10 @@ class ChatApp:
     def international(self) -> frozenset[str]:
         return frozenset(d.id for d in self.agent.registry.descriptors if d.international)
 
+    @property
+    def sites(self) -> dict[str, str]:
+        return {d.id: d.site_url for d in self.agent.registry.descriptors if d.site_url}
+
     # -- access --------------------------------------------------------
     def unlock(self, code: str) -> str | None:
         """A grant for the right code, or None."""
@@ -261,7 +285,8 @@ class ChatApp:
             with self.answer_lock:
                 answer = self.agent.answer_request(turn.request)
         payload = answer_payload(
-            answer, self.downloads, turn.follow_up, turn.method, turn.note, self.international
+            answer, self.downloads, turn.follow_up, turn.method, turn.note, self.international,
+            self.sites,
         )
         payload["session"] = session_id
         payload["seconds"] = round(time.monotonic() - started, 1)

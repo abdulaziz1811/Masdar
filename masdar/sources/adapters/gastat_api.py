@@ -141,8 +141,8 @@ class GastatApiAdapter(SourceAdapter):
                         + (f" — التكرار: {periodicity}" if periodicity else "")
                     ),
                     landing_url=self.descriptor.base_url,
-                    publisher_ar=self.descriptor.name_ar,
-                    publisher_en=self.descriptor.name_en,
+                    publisher_ar=self.descriptor.operator_ar or self.descriptor.name_ar,
+                    publisher_en=self.descriptor.operator_en or self.descriptor.name_en,
                     resources=(
                         Resource(url=resource_url, format="JSON", title=title_ar or title_en),
                     ),

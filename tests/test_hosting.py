@@ -109,6 +109,37 @@ class TestHostCooldown:
             presenter.get(URL)
         assert down.calls == 1
 
+    def _expire(self, client):
+        from datetime import UTC, datetime, timedelta
+
+        host, (_, reason, failures) = next(iter(client._down.items()))
+        client._down[host] = (datetime.now(UTC) - timedelta(seconds=1), reason, failures)
+
+    def test_a_host_that_keeps_failing_waits_longer_each_time(self):
+        from datetime import UTC, datetime, timedelta
+
+        down = Counting(SourceUnreachable)
+        client = HttpClient(transport=down, retries=1, use_cache=False)
+        waits = []
+        for _ in range(3):
+            with pytest.raises(SourceUnreachable):
+                client.get(URL)
+            until = next(iter(client._down.values()))[0]
+            waits.append(until - datetime.now(UTC))
+            self._expire(client)
+        assert down.calls == 3
+        assert waits[0] < waits[1] < waits[2] <= timedelta(minutes=30)
+
+    def test_a_host_that_answers_again_is_forgiven(self):
+        flaky = Counting(SourceUnreachable)
+        client = HttpClient(transport=flaky, retries=1, use_cache=False)
+        with pytest.raises(SourceUnreachable):
+            client.get(URL)
+        self._expire(client)
+        flaky.error = None  # back up
+        client.get(URL)
+        assert client._down == {}
+
     def test_zero_turns_it_off(self, monkeypatch):
         monkeypatch.setenv("MASDAR_HOST_COOLDOWN_SECONDS", "0")
         down = Counting(SourceUnreachable)

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>مصدر — البيانات الرسمية المفتوحة</title>
-<meta name="description" content="وكيل ذكي يبحث في مصادر البيانات الرسمية السعودية ويجيب بالملف ومصدره وتاريخ تحديثه.">
+<title>مصدر — منصة البيانات الإحصائية الرسمية</title>
+<meta name="description" content="البحث في البيانات الإحصائية الرسمية للمملكة العربية السعودية.">
 <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/app.css">
 <script src="/static/app.js" defer></script>
@@ -21,7 +21,7 @@
     </svg>
     <div class="brand-text">
       <strong>مصدر</strong>
-      <span>البيانات الرسمية بمصدرها وتاريخ تحديثها</span>
+      <span>منصة البيانات الإحصائية الرسمية</span>
     </div>
   </div>
   <div class="topbar-actions">
@@ -41,32 +41,10 @@
 <main id="scroller" tabindex="-1">
   <div class="page">
     <section class="hero" id="landing" aria-labelledby="hero-title">
-      <p class="eyebrow">وكيل بحث في البيانات المفتوحة الحكومية</p>
-      <h1 id="hero-title">اسأل عن أي إحصاء رسمي،<br>وخذ الملف ومصدره وتاريخ تحديثه.</h1>
-      <p class="lede" id="lede">يبحث في الهيئة العامة للإحصاء ومنصة البيانات المفتوحة الوطنية والوزارات، ويتحقق من السنة داخل الملف نفسه — وإذا السنة غير منشورة يقولها بوضوح ويقترح أحدث المتاح.</p>
+      <h1 id="hero-title">البحث في البيانات الإحصائية الرسمية</h1>
       <div class="hero-composer" id="hero-slot"></div>
-      <ul class="stats" id="stats" aria-label="نطاق البحث"></ul>
-
-      <div class="section-head">
-        <h2>جرّب سؤالاً</h2>
-        <span class="section-note">كل مثال يعرض جانباً مختلفاً من عمل الوكيل</span>
-      </div>
-      <div class="examples" id="examples"></div>
-
-      <div class="section-head">
-        <h2>كيف يعمل</h2>
-      </div>
-      <ol class="steps">
-        <li><span class="step-num">١</span><div><strong>يفهم سؤالك</strong><p>الموضوع والسنة (ميلادية أو هجرية) والتفصيل المطلوب، بالفصحى أو العامية.</p></div></li>
-        <li><span class="step-num">٢</span><div><strong>يبحث في المصادر الرسمية</strong><p>واجهات برمجية مباشرة، لا نسخ قديمة: السنة الجديدة تظهر بمجرد نشرها.</p></div></li>
-        <li><span class="step-num">٣</span><div><strong>يتحقق ويجهّز الملف</strong><p>يفتح الملف ويتأكد من السنوات فيه، ثم يعطيك إكسل فيه ورقة بالمصدر وتاريخ التحديث.</p></div></li>
-      </ol>
-
-      <div class="section-head">
-        <h2>المصادر</h2>
-        <span class="section-note">مصادر تحقّقنا من واجهاتها فعلياً</span>
-      </div>
-      <div class="sources" id="sources"></div>
+      <div class="examples" id="examples" aria-label="أسئلة مقترحة"></div>
+      <p class="source-line" id="source-line" hidden></p>
     </section>
 
     <div class="thread" id="thread" aria-live="polite"></div>
@@ -77,18 +55,17 @@
   <form class="composer" id="form" autocomplete="off">
     <label class="visually-hidden" for="input">اكتب سؤالك</label>
     <textarea id="input" rows="1" maxlength="500"
-      placeholder="مثال: احصاءات الطاقة الكهربائية لسنة 2026 حسب المناطق"></textarea>
+      placeholder="اكتب الموضوع والسنة والتفصيل المطلوب"></textarea>
     <button class="send" id="send" type="submit" aria-label="إرسال">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>
     </button>
   </form>
-  <p class="dock-hint">تقدر تكمل على نفس السؤال: «طيب 2021» أو «وحسب الجنس». كل ملف إكسل فيه ورقة «المصدر».</p>
 </footer>
 
 <dialog class="unlock" id="unlock" aria-labelledby="unlock-title">
   <form id="unlock-form" method="dialog">
     <h2 id="unlock-title">رمز الدخول</h2>
-    <p>هذا العرض محمي. أدخل الرمز الذي أُعطي لك.</p>
+    <p>يلزم رمز للدخول إلى المنصة.</p>
     <input id="unlock-code" type="password" autocomplete="current-password" required aria-label="رمز الدخول">
     <p class="unlock-error" id="unlock-error" hidden>الرمز غير صحيح.</p>
     <button class="btn btn-primary" type="submit">دخول</button>

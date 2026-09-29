@@ -200,7 +200,7 @@ class TestServer:
         status, data = post(server + "/api/ask", {"message": FIRST})
         assert status == 200
         assert data["verdict"] == "not_available"
-        assert "ما لقيت بيانات" in data["headline"]
+        assert "لا تتوفر بيانات" in data["headline"]
         assert [s["year"] for s in data["suggestions"]] == [2024]
         assert data["findings"][0]["download"] is None
 
@@ -261,3 +261,28 @@ class TestAccessCode:
     def test_a_forged_grant_is_refused(self, protected):
         forged = "masdar_access=not-a-grant"
         assert post(protected + "/api/ask", {"message": FIRST}, cookie=forged)[0] == 401
+
+
+class TestSourceLinks:
+    """Links are for people: an API's JSON reply is not offered as a file."""
+
+    def finding(self, fmt, url="https://api.example.sa/v1/stats/X?format=JSON"):
+        from types import SimpleNamespace
+
+        from masdar.domain.models import Resource
+
+        return SimpleNamespace(
+            provenance=SimpleNamespace(resource_url=url),
+            candidate=SimpleNamespace(resources=(Resource(url=url, format=fmt),)),
+        )
+
+    def test_an_api_reply_is_not_a_file_to_open(self):
+        from masdar.chat.server import _original_file
+
+        assert _original_file(self.finding("JSON")) is None
+
+    def test_a_published_file_is(self):
+        from masdar.chat.server import _original_file
+
+        url = "https://open.data.gov.sa/odp-public/x/y/v2/data.xlsx"
+        assert _original_file(self.finding("XLSX", url)) == url

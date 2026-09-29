@@ -85,6 +85,7 @@
     return s;
   }
   function safeHref(url) {
+    if (typeof url !== "string" || !url) return null;  // new URL(null) is ".../null"
     try {
       var parsed = new URL(url, window.location.href);
       return (parsed.protocol === "http:" || parsed.protocol === "https:") ? parsed.href : null;
@@ -141,88 +142,47 @@
   }
   placeComposer(true);
   if (window.matchMedia && window.matchMedia("(max-width: 560px)").matches) {
-    input.placeholder = "اسأل عن إحصاء… مثلاً: عدد السكان 2024";
-  }
-
-  function stat(list, value, text) {
-    var li = el("li");
-    var strong = el("strong");
-    var number = el("bdi", null, value);
-    number.setAttribute("dir", "ltr");
-    strong.appendChild(number);
-    li.appendChild(strong);
-    li.appendChild(el("span", null, text));
-    list.appendChild(li);
+    input.placeholder = "الموضوع والسنة والتفصيل";
   }
 
   function renderOverview(data) {
-    var stats = document.getElementById("stats");
-    var s = data.stats || {};
-    stat(stats, fmt(s.sources || 0), "مصادر بواجهات مؤكَّدة");
-    stat(stats, fmt(s.publishers || 0), "جهة حكومية ومصدراً");
-    stat(stats, fmt(Math.floor((s.datasets || 0) / 100) * 100) + "+", "مجموعة بيانات ومؤشر");
-    stat(stats, fmt(s.topics || 0), "موضوعاً إحصائياً");
-
     var examples = document.getElementById("examples");
     (data.examples || []).forEach(function (e) {
-      var b = el("button", "example");
+      var b = el("button", "example", e.q);
       b.type = "button";
-      b.appendChild(el("strong", null, e.q));
-      if (e.shows) b.appendChild(el("span", null, e.shows));
       b.addEventListener("click", function () { ask(e.q); });
       examples.appendChild(b);
     });
 
-    var sources = document.getElementById("sources");
+    // One line naming the publishers this server searches, nothing more.
+    var names = [];
     (data.sources || []).forEach(function (src) {
       sourceKinds[src.id] = src.kind;
-      var card = el("div", "source" + (src.kind === "دولي" ? " kind-intl" : src.kind === "لحظي" ? " kind-live" : ""));
-      var ic = el("span", "source-icon");
-      ic.appendChild(icon(src.kind === "دولي" ? "globe" : src.kind === "لحظي" ? "bolt" : "database"));
-      card.appendChild(ic);
-      var b = el("div", "source-body");
-      b.appendChild(el("strong", null, src.name));
-      var meta = el("div", "source-meta");
-      meta.appendChild(el("span", "tag " + (KIND_TAG[src.kind] || ""), src.kind));
-      if (src.count) meta.appendChild(el("span", null, fmt(src.count) + " " + src.unit));
-      if (src.operator && src.operator !== src.name) meta.appendChild(el("span", null, src.operator));
-      b.appendChild(meta);
-      card.appendChild(b);
-      sources.appendChild(card);
+      var name = src.id === "saudi_open_data" ? src.name : (src.operator || src.name);
+      name = name.replace(/\s*\([^)]*\)\s*$/, "");
+      if (names.indexOf(name) === -1) names.push(name);
     });
-
-    if ((data.unavailable || []).length) {
-      // This server cannot see every source; the intro must not promise it.
-      document.getElementById("lede").textContent =
-        "يبحث في الهيئة العامة للإحصاء والوزارات ومصادر رسمية أخرى، ويتحقق من السنة داخل الملف نفسه — وإذا السنة غير منشورة يقولها بوضوح ويقترح أحدث المتاح.";
+    if (names.length) {
+      var line = document.getElementById("source-line");
+      line.textContent = "المصادر: " + names.join(" · ");
+      line.hidden = false;
     }
-    (data.unavailable || []).forEach(function (src) {
-      var card = el("div", "source source-off");
-      var ic = el("span", "source-icon");
-      ic.appendChild(icon("database"));
-      card.appendChild(ic);
-      var b = el("div", "source-body");
-      b.appendChild(el("strong", null, src.name));
-      var meta = el("div", "source-meta");
-      meta.appendChild(el("span", "tag", "غير متاح هنا"));
-      meta.appendChild(el("span", null, src.reason));
-      b.appendChild(meta);
-      card.appendChild(b);
-      sources.appendChild(card);
-    });
 
     var ai = document.getElementById("ai-badge");
-    if (data.llm) {
-      var state = data.llm_state || "off";
-      ai.textContent = state === "on" ? "الفهم الذكي مفعّل"
-        : state === "error" ? "مفتاح الذكاء الاصطناعي لا يعمل" : "الفهم بالقواعد";
-      ai.title = "الذكاء الاصطناعي: " + data.llm;
-      ai.className = "badge" + (state === "on" ? "" : state === "error" ? " badge-gold" : " badge-muted");
+    var state = data.llm_state || "off";
+    if (state === "on") {
+      ai.textContent = "الذكاء الاصطناعي مفعّل";
+      ai.className = "badge badge-muted";
+      ai.hidden = false;
+    } else if (state === "error") {
+      ai.textContent = "مفتاح الذكاء الاصطناعي لا يعمل";
+      ai.className = "badge badge-gold";
       ai.hidden = false;
     }
+    ai.title = data.llm ? "الذكاء الاصطناعي: " + data.llm : "";
     if (data.demo) {
       var mode = document.getElementById("mode-badge");
-      mode.textContent = "مصادر تجريبية مضافة";
+      mode.textContent = "بيانات تجريبية";
       mode.className = "badge badge-gold";
       mode.hidden = false;
     }
@@ -242,14 +202,12 @@
   }, 4 * 60 * 1000);
 
   // -- warm-up progress (hosted demos ask the examples at start-up) ------
-  function markExamples(failed) {
+  // A suggested question no source answered at start-up is not offered: a
+  // presenter should not click into a failure. If none answered, all stay.
+  function markExamples(failed, total) {
+    var hideFailed = failed.length < total;
     Array.prototype.forEach.call(document.querySelectorAll(".example"), function (b) {
-      var q = b.firstChild ? b.firstChild.textContent : "";
-      var weak = failed.indexOf(q) !== -1;
-      b.classList.toggle("example-weak", weak);
-      if (weak && !b.querySelector(".weak-note")) {
-        b.appendChild(el("span", "weak-note", "لم تُجب المصادر عند التجهيز — قد يتأخر أو لا يُجاب"));
-      }
+      b.hidden = hideFailed && failed.indexOf(b.textContent) !== -1;
     });
   }
   function pollStatus() {
@@ -260,18 +218,19 @@
         var w = s.warmup;
         if (!w) return;
         badge.hidden = false;
-        markExamples(w.failed || []);
         if (w.running || w.done < w.total) {
           badge.className = "badge badge-gold";
-          badge.textContent = "يجهّز أسئلة العرض " + w.done + "/" + w.total;
+          badge.textContent = "جارٍ التجهيز " + w.done + "/" + w.total;
           window.setTimeout(pollStatus, 3000);
-        } else {
-          var good = w.total - w.failed.length;
-          badge.className = good ? "badge" : "badge badge-gold";
-          badge.textContent = good === w.total ? "جاهز للعرض"
-            : good ? "جاهز: " + good + " من " + w.total
-            : "المصادر لا تُجيب الآن";
+          return;
         }
+        markExamples(w.failed || [], w.total);
+        var good = w.total - w.failed.length;
+        badge.className = good ? "badge" : "badge badge-gold";
+        badge.textContent = good === w.total ? "جاهز"
+          : good ? "جاهز (" + good + " من " + w.total + ")"
+          : "المصادر لا تستجيب";
+        badge.title = w.failed.length ? "لم تُجب المصادر عند التجهيز: " + w.failed.join("، ") : "";
       })
       .catch(function () { window.setTimeout(pollStatus, 5000); });
   }
@@ -462,9 +421,16 @@
     box.appendChild(scroll);
     var shown = preview.rows.length;
     box.appendChild(el("p", "table-note", shown < preview.total_rows
-      ? "أول " + fmt(shown) + " صفوف من أصل " + fmt(preview.total_rows) + " — الملف الكامل في الإكسل."
-      : fmt(preview.total_rows) + " صفوف — كلها في ملف الإكسل."));
+      ? "يُعرض " + rows(shown) + " من " + rows(preview.total_rows) + "؛ الملف الكامل في Excel."
+      : rows(preview.total_rows) + "."));
     return box;
+  }
+
+  // Arabic counts agree with the number: 1 صف، 2 صفّان، 3-10 صفوف، 11+ صفاً.
+  function rows(n) {
+    if (n === 1) return "صف واحد";
+    if (n === 2) return "صفّان";
+    return fmt(n) + (n % 100 >= 3 && n % 100 <= 10 ? " صفوف" : " صفاً");
   }
 
   function tabs(items) {
@@ -542,30 +508,31 @@
     fact(dl, "آخر تحديث معلن", f.last_updated || "لا تعلنه الجهة", false,
       f.last_updated ? null : "استُخرج من المصدر: " + (f.retrieved_at || "").slice(0, 10));
     fact(dl, "أحدث سنة في البيانات", f.latest_year);
-    fact(dl, "السنوات المطابقة لطلبك", f.matched_years.length ? yearsText(f.matched_years) : "لا شيء");
-    fact(dl, "التحقق من السنوات", EVIDENCE[f.evidence] || f.evidence, true);
+    fact(dl, "السنوات المطابقة للطلب", f.matched_years.length ? yearsText(f.matched_years) : "لا يوجد");
+    fact(dl, "مصدر التحقق", EVIDENCE[f.evidence] || f.evidence, true);
     sec.appendChild(dl);
 
     if (f.stale) sec.appendChild(banner("notice", "archive",
-      "تعذّر الوصول إلى المصدر الآن، فهذه آخر نسخة محفوظة منه. قد تكون نُشرت بيانات أحدث."));
+      "نسخة محفوظة؛ تعذّر الوصول إلى المصدر وقت الطلب."));
     if (f.international) sec.appendChild(banner("info", "globe",
-      "مصدر دولي: يُعرض لأن الجهات السعودية لم تُرجع هذه السنة أو هذا المؤشر، وقد يختلف عن رقمها الرسمي."));
+      "مصدر دولي؛ قد يختلف عن الرقم الرسمي المنشور محلياً."));
 
     var actions = el("div", "actions");
     if (f.download) {
-      var d = linkButton(f.download, "تنزيل ملف الإكسل", "download", "btn-primary");
+      var d = linkButton(f.download, "تنزيل Excel", "download", "btn-primary");
       if (d) { d.setAttribute("download", ""); actions.appendChild(d); }
     }
-    var page = linkButton(f.landing_url, "صفحة المصدر", "external");
+    var page = linkButton(f.landing_url,
+      f.landing_kind === "site" ? "موقع الجهة" : "صفحة البيانات لدى المصدر", "external");
     if (page) actions.appendChild(page);
-    var raw = linkButton(f.resource_url, "البيانات الأصلية", "file");
+    var raw = linkButton(f.resource_url, "الملف الأصلي", "file");
     if (raw) actions.appendChild(raw);
     if (actions.childNodes.length) sec.appendChild(actions);
 
     var items = [];
     var p = f.preview;
-    if (p && p.charts && p.charts.length) items.push({ label: "رسم بياني", render: function () { return renderCharts(p.charts, highlight); } });
-    if (p && p.columns && p.columns.length) items.push({ label: "معاينة البيانات", render: function () { return renderTable(p); } });
+    if (p && p.charts && p.charts.length) items.push({ label: "الرسم البياني", render: function () { return renderCharts(p.charts, highlight); } });
+    if (p && p.columns && p.columns.length) items.push({ label: "البيانات", render: function () { return renderTable(p); } });
     if (f.notes && f.notes.length) {
       items.push({ label: "ملاحظات (" + f.notes.length + ")", render: function () {
         var ul = el("ul", "notes");
@@ -589,10 +556,10 @@
     box.appendChild(meta);
     var actions = el("div", "actions");
     if (f.download) {
-      var d = linkButton(f.download, "الإكسل", "download");
+      var d = linkButton(f.download, "Excel", "download");
       if (d) { d.setAttribute("download", ""); actions.appendChild(d); }
     }
-    var page = linkButton(f.landing_url, "المصدر", "external");
+    var page = linkButton(f.landing_url, f.landing_kind === "site" ? "موقع الجهة" : "المصدر", "external");
     if (page) actions.appendChild(page);
     if (actions.childNodes.length) box.appendChild(actions);
     return box;
@@ -600,7 +567,7 @@
 
   function understoodChips(u) {
     var row = el("div", "understood");
-    row.appendChild(el("span", "label", u.follow_up ? "متابعة للسؤال السابق:" : "فهمت طلبك:"));
+    row.appendChild(el("span", "label", u.follow_up ? "متابعة للطلب السابق:" : "نطاق الطلب:"));
     function chip(label, value) {
       var c = el("span", "chip");
       c.appendChild(document.createTextNode(label + " "));
@@ -610,7 +577,7 @@
     if (u.topic) chip("الموضوع", u.topic);
     chip("الفترة", u.period);
     if (u.dimensions && u.dimensions.length) chip("التفصيل", u.dimensions.join("، "));
-    if (u.method === "llm") row.appendChild(el("span", "chip chip-ai", "بمساعدة الذكاء الاصطناعي"));
+    if (u.method === "llm") row.appendChild(el("span", "chip chip-ai", "فُهم بالذكاء الاصطناعي"));
     return row;
   }
 
@@ -642,7 +609,7 @@
 
     if (data.suggestions.length) {
       var sug = el("div", "suggest");
-      sug.appendChild(el("div", "label", "المتاح بدلاً من ذلك — اضغط لتجهيز الملف:"));
+      sug.appendChild(el("div", "label", "المتاح:"));
       var row = el("div", "suggest-row");
       data.suggestions.forEach(function (s) {
         var b = el("button", "suggestion");
@@ -660,8 +627,8 @@
     if (data.consulted && data.consulted.length) {
       var answered = data.consulted.filter(function (c) { return c.found !== null; }).length;
       var det = el("details");
-      det.appendChild(el("summary", null, "أين بحثت: " + data.consulted.length + " مصادر"
-        + (answered < data.consulted.length ? " (" + (data.consulted.length - answered) + " لم تُجب)" : "")));
+      det.appendChild(el("summary", null, "المصادر التي بُحث فيها: " + data.consulted.length
+        + (answered < data.consulted.length ? " (لم يُجب " + (data.consulted.length - answered) + ")" : "")));
       var inner = el("div");
       var chips = el("div", "consulted");
       data.consulted.forEach(function (c) {
@@ -681,7 +648,7 @@
     }
     if (data.findings.length > 1) {
       var others = el("details");
-      others.appendChild(el("summary", null, "نتائج أخرى ذات صلة (" + (data.findings.length - 1) + ")"));
+      others.appendChild(el("summary", null, "نتائج أخرى (" + (data.findings.length - 1) + ")"));
       var list = el("div");
       data.findings.slice(1).forEach(function (f) { list.appendChild(renderOther(f)); });
       others.appendChild(list);
@@ -689,7 +656,7 @@
     }
     if (typeof data.seconds === "number") {
       var meta = el("div", "meta-line");
-      meta.appendChild(el("span", null, "استغرق " + data.seconds.toFixed(1) + " ث"));
+      meta.appendChild(el("span", null, "مدة البحث " + data.seconds.toFixed(1) + " ث"));
       if (primary && primary.retrieved_at) meta.appendChild(el("span", null, "وقت الاستخراج: " + primary.retrieved_at.slice(0, 16).replace("T", " ") + " UTC"));
       foot.appendChild(meta);
     }
@@ -714,7 +681,7 @@
     var t = el("div", "thinking");
     var line = el("div", "thinking-line");
     line.appendChild(el("span", "spinner"));
-    var label = el("span", null, "أبحث في المصادر الرسمية وأتحقق من الملفات…");
+    var label = el("span", null, "جارٍ البحث في المصادر الرسمية…");
     line.appendChild(label);
     t.appendChild(line);
     t.appendChild(el("div", "skeleton w70"));
@@ -724,7 +691,7 @@
     var started = Date.now();
     var timer = window.setInterval(function () {
       var s = Math.round((Date.now() - started) / 1000);
-      label.textContent = "أبحث في المصادر الرسمية وأتحقق من الملفات… " + s + " ث";
+      label.textContent = "جارٍ البحث في المصادر الرسمية… " + s + " ث";
     }, 1000);
     box.stop = function () { window.clearInterval(timer); };
     return box;
@@ -774,7 +741,7 @@
       .catch(function () {
         waiting.stop();
         waiting.remove();
-        thread.appendChild(renderError("تعذّر الاتصال بالخادم. تأكد أن نافذة «مصدر» ما زالت تعمل."));
+        thread.appendChild(renderError("تعذّر الاتصال بالخادم. أعد المحاولة بعد قليل."));
       })
       .then(function () { setBusy(false); input.focus({ preventScroll: true }); });
   }

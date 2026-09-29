@@ -48,6 +48,7 @@ def load_descriptors(path: Path | None = None) -> tuple[SourceDescriptor, ...]:
             topics=tuple(entry.get("topics", ())),
             synthetic=bool(entry.get("synthetic", False)),
             international=bool(entry.get("international", False)),
+            site_url=str(entry.get("site_url", "") or ""),
             rendering=entry.get("rendering", "server"),
             geo_restricted=bool(entry.get("geo_restricted", False)),
             waf=bool(entry.get("waf", False)),

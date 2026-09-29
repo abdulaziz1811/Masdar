@@ -33,7 +33,7 @@ class TestUnavailableYear:
     def test_reports_not_available_without_guessing(self, agent):
         answer = agent.answer("ابي احصاءات الطاقه الكهربائيه لسنه 2026 حسب المناطق")
         assert answer.verdict is Verdict.NOT_AVAILABLE
-        assert "ما لقيت بيانات" in answer.message_ar
+        assert "لا تتوفر بيانات" in answer.message_ar
 
     def test_verdict_rests_on_the_file_not_the_title(self, agent):
         answer = agent.answer("الكهرباء 2026 حسب المناطق")
@@ -179,7 +179,7 @@ class TestUnparseableRequest:
     def test_asks_for_clarification_instead_of_searching(self, agent):
         answer = agent.answer("ابي شي")
         assert answer.verdict is Verdict.NO_SOURCE
-        assert "ما وصلني موضوع واضح" in answer.message_ar
+        assert "لم يتضمن الطلب موضوعاً" in answer.message_ar
 
 
 class TestSourceIsolation:

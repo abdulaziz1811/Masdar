@@ -136,8 +136,8 @@ class HtmlIndexAdapter(SourceAdapter):
                 title_ar=label,
                 description=f"مستخرج من صفحة النشرات: {index_url}",
                 landing_url=index_url,
-                publisher_ar=self.descriptor.name_ar,
-                publisher_en=self.descriptor.name_en,
+                publisher_ar=self.descriptor.operator_ar or self.descriptor.name_ar,
+                publisher_en=self.descriptor.operator_en or self.descriptor.name_en,
                 resources=(
                     Resource(url=absolute, format=suffix.upper(), title=label),
                 ),

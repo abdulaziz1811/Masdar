@@ -354,9 +354,10 @@ class GastatCdataAdapter(SourceAdapter):
                     title_en=str(entry.get("title_en") or ""),
                     description=str(entry.get("description") or ""),
                     keywords=str(entry.get("keywords") or ""),
-                    landing_url=self._path(entry),
-                    publisher_ar=self.descriptor.name_ar,
-                    publisher_en=self.descriptor.name_en,
+                    # The API answers in JSON; readers go to GASTAT's site.
+                    landing_url=self.descriptor.site_url or self._path(entry),
+                    publisher_ar=self.descriptor.operator_ar or self.descriptor.name_ar,
+                    publisher_en=self.descriptor.operator_en or self.descriptor.name_en,
                     resources=(
                         Resource(
                             url=self._query_url(entry, params),

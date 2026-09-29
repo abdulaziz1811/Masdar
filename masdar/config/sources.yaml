@@ -305,6 +305,7 @@ sources:
     operator_ar: الهيئة العامة للإحصاء
     operator_en: GASTAT
     base_url: https://api.stats.gov.sa
+    site_url: https://www.stats.gov.sa/ar
     adapter: gastat_cdata
     authority: 100
     # VERIFIED by direct call on 2026-09-27: HTTP 200, application/json, and
@@ -375,6 +376,7 @@ sources:
     operator_ar: وزارة الموارد البشرية والتنمية الاجتماعية
     operator_en: Ministry of Human Resources and Social Development
     base_url: https://www.hrsd.gov.sa
+    site_url: https://www.hrsd.gov.sa
     adapter: live_data
     authority: 90
     # VERIFIED 2026-09-28 (Saudi exit): each file answers anonymously as a
@@ -434,6 +436,7 @@ sources:
     operator_ar: وزارة البيئة والمياه والزراعة
     operator_en: Ministry of Environment, Water and Agriculture
     base_url: https://www.mewa.gov.sa
+    site_url: https://www.mewa.gov.sa/ar
     adapter: live_data
     authority: 90
     # VERIFIED 2026-09-28 (Saudi exit), from the ministry's own API guide

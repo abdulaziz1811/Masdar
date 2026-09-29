@@ -36,6 +36,7 @@ from masdar.sources.base import (
 )
 
 DEFAULT_TIMEOUT = 20.0
+CONNECT_TIMEOUT = 8.0
 
 # Identifies the agent while presenting the header set a normal browser sends.
 # The portals are public and unauthenticated; the extra headers are there
@@ -166,7 +167,9 @@ class DirectTransport(Transport):
                 url,
                 params=params,
                 headers=headers or None,
-                timeout=self.timeout,
+                # A host that does not accept the connection within a few
+                # seconds is not going to; a slow download is another matter.
+                timeout=(min(CONNECT_TIMEOUT, self.timeout), self.timeout),
                 stream=True,
                 allow_redirects=True,
             )

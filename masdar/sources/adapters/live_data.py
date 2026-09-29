@@ -97,7 +97,9 @@ class LiveDataAdapter(SourceAdapter):
             title_en=str(indicator.get("title_en") or ""),
             description=str(indicator.get("description") or ""),
             keywords=str(indicator.get("keywords") or ""),
-            landing_url=str(indicator.get("landing") or indicator["url"]),
+            landing_url=str(
+                indicator.get("landing") or self.descriptor.site_url or indicator["url"]
+            ),
             publisher_ar=self.descriptor.operator_ar or self.descriptor.name_ar,
             publisher_en=self.descriptor.operator_en or self.descriptor.name_en,
             resources=(Resource(url=indicator["url"], format="JSON", title="live"),),

@@ -69,7 +69,7 @@ def _suggestions_block(answer: Answer) -> list[str]:
                 f" («{suggestion.title_ar}»)" if suggestion.title_ar else ""
             )
         lines.append(line)
-    lines.append("   اطلب أي سنة منها وسأجهّز الملف.")
+    lines.append("   يمكن طلب أي من هذه السنوات لتجهيز ملفها.")
     return lines
 
 
@@ -91,15 +91,15 @@ def compose_message(answer: Answer) -> str:
 
     if answer.verdict is Verdict.NO_SOURCE and not request.is_answerable:
         lines = [
-            "❓ ما وصلني موضوع واضح أبحث عنه.",
+            "❓ لم يتضمن الطلب موضوعاً محدداً للبحث.",
             "",
-            "اكتب الطلب بالشكل التالي: الموضوع + السنة + التفصيل المطلوب.",
+            "يُرجى كتابة الطلب بالصيغة: الموضوع + السنة + التفصيل المطلوب.",
             "مثال: إحصاءات الطاقة الكهربائية لسنة 2024 حسب المناطق.",
         ]
         return "\n".join(lines)
 
     if answer.verdict is Verdict.AVAILABLE and best is not None:
-        lines.append(f"✅ لقيت البيانات المطلوبة: {topic} — {period}")
+        lines.append(f"✅ البيانات متوفرة: {topic} — {period}")
         lines.append("")
         lines.extend(_finding_block(best))
         lines.extend(_notes_block(best))
@@ -113,15 +113,15 @@ def compose_message(answer: Answer) -> str:
         lines.extend(_notes_block(best))
 
     elif answer.verdict is Verdict.NOT_AVAILABLE and best is not None:
-        lines.append(f"❌ ما لقيت بيانات «{topic}» للفترة {period}.")
+        lines.append(f"❌ لا تتوفر بيانات «{topic}» للفترة {period}.")
         lines.append("")
-        lines.append("بحثت ووجدت مجموعة البيانات، لكن السنة المطلوبة غير موجودة فيها:")
+        lines.append("عُثر على مجموعة البيانات، لكن الفترة المطلوبة غير موجودة فيها:")
         lines.extend(_finding_block(best))
         lines.extend(_notes_block(best))
 
     elif answer.verdict is Verdict.UNVERIFIED and best is not None:
-        lines.append(f"🔶 لقيت نتائج محتملة عن «{topic}»، لكن ما أقدر أأكد توفر {period}.")
-        lines.append("   ما أعطيك تأكيداً بدون دليل من الملف نفسه.")
+        lines.append(f"🔶 عُثر على نتائج محتملة عن «{topic}»، ولم يتسنَّ التحقق من توفر {period}.")
+        lines.append("   لا يُؤكَّد التوفر دون دليل من الملف نفسه.")
         lines.append("")
         lines.extend(_finding_block(best))
         lines.extend(_notes_block(best))
@@ -130,12 +130,12 @@ def compose_message(answer: Answer) -> str:
         lines.append("🚫 تعذّر الوصول إلى المصادر الرسمية في هذه المحاولة.")
         lines.append("")
         lines.append("مهم: هذا لا يعني أن البيانات غير موجودة — يعني أن الاتصال")
-        lines.append("بالمصادر فشل، ولا أستطيع الحكم على التوفر بدون الوصول إليها.")
+        lines.append("بالمصادر فشل، ولا يمكن الحكم على التوفر دون الوصول إليها.")
 
     else:
-        lines.append(f"❌ ما لقيت أي مجموعة بيانات تطابق: {topic} — {period}")
+        lines.append(f"❌ لم يُعثر على مجموعة بيانات مطابقة: {topic} — {period}")
         lines.append("")
-        lines.append("جرّب صياغة أوسع، أو حدد الجهة التي تتوقع نشرها للبيانات.")
+        lines.append("يُقترح استخدام صياغة أوسع، أو تحديد الجهة المتوقع نشرها للبيانات.")
 
     lines.extend(_suggestions_block(answer))
     lines.extend(_errors_block(answer))

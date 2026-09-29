@@ -76,6 +76,10 @@ class SourceDescriptor:
     # True for fixture/demo sources. Anything derived from one is labelled
     # as sample data so it can never be mistaken for an official figure.
     synthetic: bool = False
+    # The publisher's own website, for people: where "the source" links when
+    # a dataset has no page of its own (an API answers in JSON, which is for
+    # programs, not readers).
+    site_url: str = ""
     # True for an international organisation's data about the Kingdom (the
     # World Bank, say): reliable, but second to the Saudi publisher of the
     # same figure, so it ranks below Saudi sources and every answer says so.
