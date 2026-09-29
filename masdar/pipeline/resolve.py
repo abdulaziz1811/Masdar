@@ -73,7 +73,14 @@ def score_candidate(
         score += typed
         reasons.append(f"يطابق عبارة السؤال: {', '.join(typed_hits)}")
 
-    hits = [t for t in request.free_terms if contains_phrase(haystack, t)]
+    # Naming the publisher («... من وزارة الموارد البشرية») asks for that
+    # publisher's data, so its name counts as matching words; it only adds
+    # to the ranking, never lets an off-subject result through (`on_subject`).
+    publisher = " ".join(filter(None, (candidate.publisher_ar, candidate.publisher_en)))
+    hits = [
+        t for t in request.free_terms
+        if contains_phrase(haystack, t) or (publisher and contains_phrase(publisher, t))
+    ]
     if hits:
         score += W_TERM * len(hits)
         reasons.append(f"تطابق مصطلحات: {', '.join(hits)}")

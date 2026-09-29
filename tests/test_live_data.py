@@ -26,6 +26,8 @@ from masdar.sources.transport import Response, Transport
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "live"
 ROUTES = {
     "node/5557175": "hrsd_labour.json",
+    # Recorded 2026-09-29 from outside the Kingdom, as the hosted server sees it.
+    "node/5556738": "hrsd_social.json",
     "getCamelsCount": "mewa_camels.json",
 }
 
@@ -127,3 +129,44 @@ class TestAnswers:
         answer = agent(tmp_path).answer("عدد الإبل 2022")
         assert answer.verdict is Verdict.NOT_AVAILABLE
         assert [s.year for s in answer.suggestions] == [date.today().year]
+
+
+class TestTheMinistryDemoQuestion:
+    """The live demo's ministry question: understood by the rules alone (no
+    language model needed), answered from the ministry's own file, and ranked
+    above a statistics table on the same subject because it names the ministry."""
+
+    QUESTION = "مؤشرات سوق العمل من وزارة الموارد البشرية"
+
+    def test_the_rules_understand_it(self):
+        request = parse(self.QUESTION)
+        assert request.topic is not None and request.topic.id == "labour"
+
+    def test_it_is_answered_from_the_ministry(self, tmp_path):
+        answer = agent(tmp_path).answer(self.QUESTION)
+        assert answer.verdict is Verdict.AVAILABLE
+        assert answer.primary.candidate.source_id == "hrsd_live"
+        sheet = load_workbook(answer.primary.export_path)["البيانات"]
+        values = [c for row in sheet.iter_rows(values_only=True) for c in row]
+        assert 12618765 in values and 2453976 in values
+
+    def test_naming_the_ministry_outranks_a_statistics_table_on_the_subject(self):
+        from masdar.domain.models import DatasetCandidate, Resource
+        from masdar.pipeline.resolve import score_candidate
+
+        request = parse(self.QUESTION)
+        descriptors = {d.id: d for d in load_descriptors()}
+        ministry = next(
+            c for c in registry().adapter("hrsd_live").search(request)
+            if c.dataset_id == "labour-market-indicators"
+        )
+        # The strongest plausible rival: the statistics office's own table
+        # with the question's words in its title.
+        rival = DatasetCandidate(
+            "gastat_cdata", "rival", "مؤشرات سوق العمل",
+            publisher_ar="الهيئة العامة للإحصاء",
+            resources=(Resource(url="https://example.invalid/t.csv", format="CSV"),),
+        )
+        ours = score_candidate(request, ministry, descriptors["hrsd_live"]).score
+        theirs = score_candidate(request, rival, descriptors["gastat_cdata"]).score
+        assert ours > theirs
