@@ -99,7 +99,7 @@ class TestWhatIsSent:
         llm, client = llm_with(lexicon)
         llm.read(UNPLACED)
         call = client.calls[0]
-        assert call["model"] == DEFAULT_MODEL == "claude-opus-5"
+        assert call["model"] == DEFAULT_MODEL == "claude-opus-5-5"
         assert call["betas"] == BETAS and call["fallbacks"] == "default"
         assert call["output_config"]["effort"] == "low"
         schema = call["output_config"]["format"]["schema"]
@@ -224,6 +224,47 @@ class TestConfiguration:
         llm, status = LlmUnderstanding.from_environment(lexicon)
         assert llm is not None and llm.model == "claude-sonnet-5"
         assert "sk-ant" not in status
+
+
+class TestKeyCheck:
+    """The key is checked once at start-up, with the real SDK, so a wrong or
+    unfunded key shows on the page instead of failing quietly per question."""
+
+    def client(self, status, body):
+        anthropic = pytest.importorskip("anthropic")
+        import httpx2
+
+        seen: list[str] = []
+
+        def handler(request):
+            seen.append(f"{request.method} {request.url.path}")
+            return httpx2.Response(status, json=body)
+
+        client = anthropic.Anthropic(
+            api_key="sk-ant-test-not-a-real-key", max_retries=0,
+            http_client=anthropic.DefaultHttpxClient(transport=httpx2.MockTransport(handler)),
+        )
+        return client, seen
+
+    def test_a_working_key_passes_without_generating_anything(self, lexicon):
+        model = {"type": "model", "id": DEFAULT_MODEL, "display_name": "Claude",
+                 "created_at": "2026-01-01T00:00:00Z"}
+        client, seen = self.client(200, model)
+        assert LlmUnderstanding(client, lexicon).verify() == (True, "")
+        assert seen == [f"GET /v1/models/{DEFAULT_MODEL}"]
+
+    def test_a_wrong_key_is_named(self, lexicon):
+        error = {"type": "error", "error": {"type": "authentication_error",
+                                            "message": "invalid x-api-key"}}
+        client, _ = self.client(401, error)
+        ok, why = LlmUnderstanding(client, lexicon).verify()
+        assert not ok and "غير صالح" in why
+
+    def test_a_model_the_key_cannot_use_is_named(self, lexicon):
+        error = {"type": "error", "error": {"type": "not_found_error", "message": "model"}}
+        client, _ = self.client(404, error)
+        ok, why = LlmUnderstanding(client, lexicon).verify()
+        assert not ok and "النموذج غير متاح" in why
 
 
 class TestEndToEnd:

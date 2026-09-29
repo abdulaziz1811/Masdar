@@ -213,10 +213,11 @@
 
     var ai = document.getElementById("ai-badge");
     if (data.llm) {
-      var on = data.llm.indexOf("مفعّل") === 0;
-      ai.textContent = on ? "الفهم الذكي مفعّل" : "الفهم بالقواعد";
+      var state = data.llm_state || "off";
+      ai.textContent = state === "on" ? "الفهم الذكي مفعّل"
+        : state === "error" ? "مفتاح الذكاء الاصطناعي لا يعمل" : "الفهم بالقواعد";
       ai.title = "الذكاء الاصطناعي: " + data.llm;
-      ai.className = "badge" + (on ? "" : " badge-muted");
+      ai.className = "badge" + (state === "on" ? "" : state === "error" ? " badge-gold" : " badge-muted");
       ai.hidden = false;
     }
     if (data.demo) {
@@ -624,6 +625,10 @@
     head.appendChild(understoodChips(data.understood));
     if (data.understood.method === "llm" && data.understood.note) {
       head.appendChild(el("p", "restatement", "«" + data.understood.note + "»"));
+    } else if (data.understood.note) {
+      // The model was asked and could not help (the rules answered instead):
+      // say why, so a key problem is visible while testing.
+      head.appendChild(el("p", "restatement", data.understood.note));
     }
     box.appendChild(head);
 

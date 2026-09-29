@@ -82,7 +82,9 @@ def _portal_datasets(registry: Registry) -> int:
     return total
 
 
-def overview(registry: Registry, lexicon: Lexicon, llm_status: str = "") -> dict:
+def overview(
+    registry: Registry, lexicon: Lexicon, llm_status: str = "", llm_state: str = "off"
+) -> dict:
     sources, elsewhere = [], []
     for d in registry.descriptors:
         if not d.enabled or d.synthetic or not d.api_verified:
@@ -126,5 +128,7 @@ def overview(registry: Registry, lexicon: Lexicon, llm_status: str = "") -> dict
         "topics": [t.label_ar for t in lexicon.topics],
         "examples": [dict(e) for e in SHOWCASE],
         "llm": llm_status,
+        # "on", "off", or "error" (a key is set but does not work).
+        "llm_state": llm_state,
         "demo": any(d.synthetic for d in registry.descriptors),
     }

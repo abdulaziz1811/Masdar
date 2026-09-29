@@ -32,7 +32,7 @@ from datetime import date
 from masdar.domain.models import DataRequest, Dimension, Period, PeriodKind
 from masdar.nlu.lexicon import Lexicon
 
-DEFAULT_MODEL = "claude-opus-5"
+DEFAULT_MODEL = "claude-opus-5-5"
 # Server-side fallback: if a request is declined, the API re-runs it on the
 # model Anthropic recommends for that case instead of returning a refusal.
 BETAS = ["server-side-fallback-2026-07-01"]
@@ -171,6 +171,8 @@ def _describe_error(exc: BaseException) -> str:
         return "مفتاح Anthropic غير صالح أو منتهي"
     if isinstance(exc, anthropic.PermissionDeniedError):
         return "المفتاح لا يملك صلاحية هذا النموذج"
+    if isinstance(exc, anthropic.NotFoundError):
+        return "النموذج غير متاح لهذا المفتاح"
     if isinstance(exc, anthropic.RateLimitError):
         return "تجاوز حد الطلبات لدى Anthropic"
     if isinstance(exc, anthropic.APITimeoutError):
@@ -223,6 +225,20 @@ class LlmUnderstanding:
         model = os.environ.get("MASDAR_LLM_MODEL", "").strip() or DEFAULT_MODEL
         client = anthropic.Anthropic(timeout=TIMEOUT_SECONDS, max_retries=1)
         return cls(client, lexicon, model=model), f"مفعّل ({model})"
+
+    def verify(self) -> tuple[bool, str]:
+        """Whether the key works for this model, without generating anything.
+
+        Asked once when the server starts, so a wrong or unfunded key shows on
+        the page at once instead of every question quietly falling back to
+        the rules. Looking the model up is free and checks both the key and
+        the model name.
+        """
+        try:
+            self._client.models.retrieve(self.model)
+        except _api_errors() as exc:
+            return False, _describe_error(exc)
+        return True, ""
 
     # -- reading -------------------------------------------------------
     def read(self, message: str, previous: DataRequest | None = None) -> LlmReading:

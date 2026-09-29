@@ -178,6 +178,7 @@ class TestServer:
         assert data["examples"] and all(e["q"] for e in data["examples"])
         assert data["stats"]["topics"] > 10
         assert data["locked"] is False and data["demo"] is True
+        assert data["llm_state"] == "off"  # no model in the test agent
 
     def test_status_reports_no_warmup_unless_asked(self, server):
         _, _, body = get(server + "/api/status")

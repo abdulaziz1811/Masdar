@@ -159,7 +159,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     registry = load_registry(demo=args.demo, http=http)
 
     print(f"منفذ الجلب: {http.describe_transport()}")
-    print(f"الفهم بالذكاء الاصطناعي: {LlmUnderstanding.from_environment(load_lexicon())[1]}")
+    llm, llm_status = LlmUnderstanding.from_environment(load_lexicon())
+    if llm is not None:
+        ok, why = llm.verify()
+        llm_status = f"{llm_status} — المفتاح يعمل" if ok else f"لا يعمل: {why}"
+    print(f"الفهم بالذكاء الاصطناعي: {llm_status}")
     if http.transport.name == "direct":
         print(
             "ملاحظة: بعض نطاقات gov.sa مقيَّدة جغرافياً (تم التحقق من\n"
@@ -409,13 +413,22 @@ def cmd_serve(args: argparse.Namespace) -> int:
         return Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
 
     llm, llm_status = LlmUnderstanding.from_environment(lexicon)
+    llm_state = "off"
+    if llm is not None:
+        ok, why = llm.verify()
+        if ok:
+            llm_state = "on"
+        else:
+            # A key that does not work is not used: each question would
+            # otherwise wait on a failing call before falling back.
+            llm, llm_state, llm_status = None, "error", f"لا يعمل: {why}"
     agent = make_agent(llm)
     warm = None
     if warmup_module.enabled():
         warm = warmup_module.Warmup([e["q"] for e in SHOWCASE])
     try:
         server = make_server(agent, host=args.host, port=args.port, llm_status=llm_status,
-                             warmup=warm)
+                             llm_state=llm_state, warmup=warm)
     except OSError as exc:
         print(f"تعذّر تشغيل الخادم على {args.host}:{args.port} — {exc}", file=sys.stderr)
         return 1

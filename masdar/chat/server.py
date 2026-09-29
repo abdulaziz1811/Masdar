@@ -211,6 +211,7 @@ class ChatApp:
         llm_status: str = "",
         access_code: str | None = None,
         warmup: Warmup | None = None,
+        llm_state: str = "",
     ) -> ChatApp:
         if access_code is None:
             access_code = os.environ.get("MASDAR_ACCESS_CODE", "").strip() or None
@@ -219,7 +220,10 @@ class ChatApp:
             sessions=Sessions(agent.lexicon, llm=agent.llm),
             downloads=Downloads(),
             answer_lock=threading.Lock(),
-            overview=overview(agent.registry, agent.lexicon, llm_status),
+            overview=overview(
+                agent.registry, agent.lexicon, llm_status,
+                llm_state or ("on" if agent.llm is not None else "off"),
+            ),
             access_code=access_code,
             warmup=warmup,
         )
@@ -426,8 +430,10 @@ def make_server(
     llm_status: str = "",
     access_code: str | None = None,
     warmup: Warmup | None = None,
+    llm_state: str = "",
 ) -> ThreadingHTTPServer:
-    app = ChatApp.build(agent, llm_status=llm_status, access_code=access_code, warmup=warmup)
+    app = ChatApp.build(agent, llm_status=llm_status, access_code=access_code, warmup=warmup,
+                        llm_state=llm_state)
     server = ThreadingHTTPServer((host, port), make_handler(app))
     server.daemon_threads = True
     return server
