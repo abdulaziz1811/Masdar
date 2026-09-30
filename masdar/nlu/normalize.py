@@ -111,7 +111,23 @@ _ENDINGS = ("ييه", "يات", "يه", "ات", "ين", "ون", "ي")
 
 def root(token: str) -> str:
     """A token reduced to what its word family shares, for loose matching."""
-    stem = strip_article(token)
+    return _reduce(strip_article(token))
+
+
+def _roots(token: str) -> set[str]:
+    """A token's family, read with and without a leading «و».
+
+    «و» is sometimes "and" («والسكان») and sometimes the word's own first
+    letter («وفيات», «وحدات»): stripped, «وفيات» would never meet «الوفيات».
+    """
+    found = {root(token)}
+    bare = token[2:] if token.startswith("ال") else token
+    if bare.startswith("و") and len(bare) >= 4:
+        found.add(_reduce(bare))
+    return found
+
+
+def _reduce(stem: str) -> str:
     for ending in _ENDINGS:
         if stem.endswith(ending) and len(stem) - len(ending) >= 3:
             stem = stem[: -len(ending)]
@@ -130,11 +146,11 @@ def mentions(haystack: str, phrase: str) -> bool:
     where the question says «استهلاك الكهرباء». Used to judge whether a
     result is about what was asked, not to rank it.
     """
-    wanted = {root(t) for t in tokens(phrase)}
+    wanted = [_roots(t) for t in tokens(phrase)]
     if not wanted:
         return False
-    present = {root(t) for t in tokens(haystack)}
-    return wanted <= present
+    present = set().union(*(_roots(t) for t in tokens(haystack)))
+    return all(family & present for family in wanted)
 
 
 def normalize_light(text: str) -> str:
@@ -151,3 +167,66 @@ def normalize_light(text: str) -> str:
     text = _AND_CATEGORIES.sub("و ", text)
     text = text.translate(_LETTER_TABLE)
     return _WS.sub(" ", text).strip()
+
+
+_DIGITS_APART = re.compile(r"\d+|[^\W\d_]+")
+# Which quarter or month a release covers is its period, not its subject.
+_PERIOD_WORDS = frozenset(normalize(w) for w in (
+    "ربع", "للربع", "سنوي", "اول", "أول", "ثاني", "ثالث", "رابع",
+    "يناير", "فبراير", "مارس", "أبريل", "ابريل", "مايو", "يونيو", "يوليو",
+    "أغسطس", "اغسطس", "سبتمبر", "أكتوبر", "اكتوبر", "نوفمبر", "ديسمبر",
+))
+
+
+def word_fit(question: str, title: str, stopwords: frozenset[str] = frozenset()) -> float:
+    """How closely a title is worded like the question, from 0 to 1.
+
+    The share of the question's words the title has, and of the title's words
+    the question has: asked by its exact name, a dataset scores 1, and a
+    longer title that merely shares the topic («تعداد 2022 السكان» for
+    «تعداد 2022 الحالة الاجتماعية») scores less. Years and filler are not
+    counted.
+    """
+    def content(text: str) -> list[str]:
+        # «لسنة 2026حسب»: a year glued to the next word is still two words.
+        words = _DIGITS_APART.findall(normalize(text))
+        return [
+            w for w in words
+            if not w.isdigit() and w not in stopwords
+            and strip_article(w) not in stopwords and strip_article(w) not in _PERIOD_WORDS
+        ]
+
+    asked, named = content(question), content(title)
+    if not asked or not named:
+        return 0.0
+    recall = sum(1 for w in asked if mentions(title, w)) / len(asked)
+    precision = sum(1 for w in named if mentions(question, w)) / len(named)
+    return (2 * recall + precision) / 3
+
+
+_TITLE_YEAR = re.compile(r"(?<!\d)(19[5-9]\d|20\d\d)(?!\d)")
+# «الربع الرابع», «للربع الثاني», «الربع السنوي الاول», «Q3» -- after normalize().
+_QUARTER = re.compile(r"ربع\s+(?:السنوي\s+)?(الاول|الثاني|الثانيه|الثالث|الرابع)|\bq([1-4])\b")
+_QUARTERS = {"الاول": 1, "الثاني": 2, "الثانيه": 2, "الثالث": 3, "الرابع": 4}
+_MONTHS = {normalize(name): number for number, names in enumerate((
+    ("يناير", "january"), ("فبراير", "february"), ("مارس", "march"), ("أبريل", "ابريل", "april"),
+    ("مايو", "may"), ("يونيو", "june"), ("يوليو", "july"), ("أغسطس", "اغسطس", "august"),
+    ("سبتمبر", "september"), ("أكتوبر", "اكتوبر", "october"), ("نوفمبر", "november"),
+    ("ديسمبر", "december"),
+), start=1) for name in names}
+
+
+def title_period(text: str) -> float | None:
+    """The latest point in time a title names, as a year with a fraction.
+
+    «لشهر أغسطس 2026» is 2026 and eight twelfths, «للربع الثاني 2026» 2026
+    and a half, «لعام 2025» the end of 2025. None when no year is named.
+    """
+    folded = normalize(fold_digits(text))
+    years = [int(y) for y in _TITLE_YEAR.findall(folded)]
+    if not years:
+        return None
+    months = [_MONTHS[w] for w in tokens(folded) if w in _MONTHS]
+    quarters = [_QUARTERS[w] if w else int(d) for w, d in _QUARTER.findall(folded.lower())]
+    month = max(months) if months else 3 * max(quarters) if quarters else 12
+    return max(years) + month / 12

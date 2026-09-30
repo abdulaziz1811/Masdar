@@ -11,7 +11,15 @@ from datetime import date
 
 from masdar.domain.models import DataRequest, DatasetCandidate, Dimension
 from masdar.nlu.lexicon import Lexicon, load_lexicon
-from masdar.nlu.normalize import contains_phrase, mentions, normalize, stems, strip_article
+from masdar.nlu.normalize import (
+    contains_phrase,
+    mentions,
+    normalize,
+    stems,
+    strip_article,
+    strip_phrase_articles,
+    title_period,
+)
 from masdar.nlu.parser import MEASURES, shared_measures, typed_phrase_score
 from masdar.sources.base import SourceDescriptor
 
@@ -22,6 +30,8 @@ W_TABULAR = 5.0
 W_DIMENSION = 3.0
 W_AUTHORITY = 0.06      # 0-100 authority contributes up to 6 points
 W_FRESHNESS = 2.0
+# Per year of how recent a period a title names, for "the latest" (10 years).
+W_LATEST_PERIOD = 0.4
 # An international compiler's copy of a figure ranks below the Saudi
 # publisher's own, even when both match the question equally.
 W_INTERNATIONAL = -3.0
@@ -144,6 +154,15 @@ def score_candidate(
         score += fresh
         reasons.append(f"محدَّث في {candidate.last_updated}")
 
+    # "The latest" with no year asked: of a series published per month or
+    # quarter, the newest release -- «للربع الثاني 2026» before «للربع الأول».
+    if not request.period.years:
+        period = title_period(candidate.title_ar or candidate.title_en)
+        if period is None and candidate.claimed_coverage.latest():
+            period = candidate.claimed_coverage.latest() + 1.0
+        if period is not None:
+            score += W_LATEST_PERIOD * max(0.0, min(10.0, period - (today.year - 9)))
+
     candidate.score = round(score, 3)
     candidate.match_reasons = tuple(reasons)
     return candidate
@@ -173,6 +192,31 @@ def rank(
     return scored
 
 
+# What GASTAT publishes a concept under, when the title does not name it:
+# non-oil exports are in «التجارة الدولية السلعية غير البترولية», the
+# unemployment rate in «إحصاءات سوق العمل», inflation in the consumer price
+# index. A result naming the publication is on the subject of the concept.
+SUBJECT_ALIASES = {
+    "صادرات": ("التجارة الدولية", "التجارة الخارجية"),
+    "واردات": ("التجارة الدولية", "التجارة الخارجية"),
+    "ميزان تجاري": ("التجارة الدولية", "التجارة الخارجية"),
+    # Not «القوى العاملة»: «القوى العاملة في خدمة الحجاج» is not unemployment.
+    "بطاله": ("سوق العمل",),
+    "توظيف": ("سوق العمل",),
+    "مشتغلين": ("سوق العمل",),
+    "عاطلين": ("سوق العمل",),
+    "تضخم": ("اسعار المستهلك",),
+    "حجاج": ("الحج",),
+    "معتمرين": ("العمره",),
+    "سياح": ("السياحه",),
+    "ناتج محلي": ("الحسابات القوميه",),
+}
+
+
+def _aliases(phrase: str) -> tuple[str, ...]:
+    return SUBJECT_ALIASES.get(strip_phrase_articles(normalize(phrase)), ())
+
+
 def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:
     """Whether a candidate is about what was asked, not merely returned by a search.
 
@@ -198,7 +242,11 @@ def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:
             # The topic came from elsewhere (a language model's reading):
             # the sources were searched for it, and that is all there is.
             return True
-        return any(mentions(haystack, phrase) for phrase in request.typed_phrases)
+        return any(
+            mentions(haystack, name)
+            for phrase in request.typed_phrases
+            for name in (phrase, *_aliases(phrase))
+        )
     return any(mentions(haystack, term) for term in request.free_terms)
 
 

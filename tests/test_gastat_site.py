@@ -39,6 +39,10 @@ RECORDED = {
     ("التقديرات", "السكانية"): "search_population_estimates.html",
     ("الرقم", "القياسي", "لأسعار", "المستهلك"): "search_cpi.html",
     ("الحجاج",): "search_pilgrims.html",
+    ("مؤشرات", "سوق", "العمل"): "search_labour_indicators.html",
+    ("الصادرات", "السلعية", "غير", "البترولية"): "search_non_oil_exports.html",
+    ("الرقم", "القياسي", "لأسعار", "العقارات"): "search_real_estate_index.html",
+    ("المعتمرين", "الخارج"): "search_umrah_abroad.html",
 }
 CPI_AUGUST = "/ar/w/consumer-price-index-august-2026"
 
@@ -72,8 +76,10 @@ class SiteTransport:
         parts = urlsplit(url)
         if parts.path == "/ar/search":
             asked = set(dict(parse_qsl(parts.query)).get("q", "").split())
-            body = next((_page(name) for words, name in RECORDED.items()
-                         if set(words) <= asked), "")
+            # The recording whose words best cover the question's.
+            matching = [(len(words), name) for words, name in RECORDED.items()
+                        if set(words) <= asked]
+            body = _page(max(matching)[1]) if matching else ""
             return Response(url, url, 200, body.encode(), "text/html", {})
         if unquote(parts.path) == CPI_AUGUST:
             return Response(url, url, 200, _page("bulletin_cpi_august_2026.html").encode(),
@@ -164,8 +170,17 @@ class TestAnswers:
         answer = agent(tmp_path).answer("المعتمرين من الخارج حسب منفذ الدخول")
         entry = [f for f in answer.findings if "منفذ الدخول" in f.candidate.title_ar]
         years = [f.coverage.years for f in entry]
-        assert len(entry) == 2 and len(set(years)) == 2
+        # One per survey, told apart by the workbook's name («umrah_2017»).
+        assert len(entry) >= 2 and len(set(years)) == len(entry)
+        assert all(y and min(y) >= 2015 and max(y) <= 2026 for y in years)
         assert all(f.coverage.origin is CoverageOrigin.INFERRED_TITLE for f in entry)
+
+    def test_umrah_in_a_workbook_name_is_not_a_hijri_marker(self):
+        from masdar.nlu.parser import extract_years
+
+        # «ah» inside «umrah» once made 2018 a Hijri year: 2579.
+        assert extract_years("umrah survey 2018 0 AR") == (2018,)
+        assert extract_years("1445 AH") == (2023, 2024)
 
     def test_the_site_order_never_stands_in_for_the_subject(self):
         from masdar.pipeline.resolve import SUBJECT_RELEVANCE
@@ -186,3 +201,27 @@ class TestAnswers:
         may = next(f for f in answer.findings if "مايو 2026" in f.candidate.title_ar)
         assert PAGE_NOTE in may.notes
         assert may.provenance.landing_url.endswith("consumer-price-index-may-2026-1")
+
+
+class TestWhatTheTesterMet:
+    """Questions that once came back «لم يُعثر» though GASTAT publishes the data."""
+
+    def test_an_off_subject_result_does_not_crowd_out_the_answer(self, tmp_path):
+        # «المؤشرات الرئيسية» was the only result naming «مؤشرات»; it was kept
+        # alone, then dropped as off-subject, and the labour bulletins lost.
+        answer = agent(tmp_path).answer("مؤشرات سوق العمل")
+        assert answer.verdict is not Verdict.NO_SOURCE
+        assert "إحصاءات سوق العمل" in answer.primary.candidate.title_ar
+
+    def test_exports_are_found_under_the_name_gastat_publishes_them(self, tmp_path):
+        answer = agent(tmp_path).answer("الصادرات السلعية غير البترولية")
+        assert answer.verdict is not Verdict.NO_SOURCE
+        assert "التجارة الدولية السلعية غير البترولية" in answer.primary.candidate.title_ar
+
+    def test_the_latest_quarter_comes_first(self, tmp_path):
+        answer = agent(tmp_path).answer("الرقم القياسي لأسعار العقارات")
+        assert "الربع الثاني 2026" in answer.primary.candidate.title_ar
+
+    def test_the_year_asked_steers_among_surveys(self, tmp_path):
+        answer = agent(tmp_path).answer("عدد المعتمرين من الخارج 2018")
+        assert 2018 in answer.primary.coverage.years

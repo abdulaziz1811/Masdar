@@ -46,7 +46,7 @@ def ranked_for(registry, question: str) -> list[DatasetCandidate]:
             continue  # sources that need the network
     descriptors = {d.id: d for d in registry.descriptors}
     ranked = resolve.rank(request, found, descriptors, load_lexicon(), TODAY)
-    return [c for c in resolve.prefer_specific(request, ranked) if resolve.on_subject(request, c)]
+    return resolve.prefer_specific(request, [c for c in ranked if resolve.on_subject(request, c)])
 
 
 @pytest.fixture

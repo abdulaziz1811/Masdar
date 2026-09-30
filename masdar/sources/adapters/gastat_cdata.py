@@ -46,8 +46,8 @@ from masdar.domain.models import (
     Resource,
 )
 from masdar.export.tabular import read_json
-from masdar.nlu.lexicon import CONFIG_DIR
-from masdar.nlu.normalize import contains_phrase
+from masdar.nlu.lexicon import CONFIG_DIR, load_lexicon
+from masdar.nlu.normalize import contains_phrase, word_fit
 from masdar.nlu.parser import shared_measures, typed_phrase_score
 from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 from masdar.sources.openapi import datasets_from_dir
@@ -71,6 +71,7 @@ DIMENSION_NAMES: dict[Dimension, tuple[str, ...]] = {
 TIME_DIMENSION = "YEAR"
 DEFAULT_FORMAT = "JSON"
 MAX_COVERAGE_PROBES = 5
+W_WORD_FIT = 3.0
 
 # Paging. Requesting every dimension can mean thousands of rows, and nothing
 # verified whether or where the server caps a response, so rows are fetched
@@ -301,6 +302,7 @@ class GastatCdataAdapter(SourceAdapter):
 
         terms = request.search_terms()
         topic_id = request.topic.id if request.topic else None
+        stopwords = load_lexicon().stopwords
 
         matched: list[tuple[float, dict]] = []
         for entry in self._datasets():
@@ -318,6 +320,9 @@ class GastatCdataAdapter(SourceAdapter):
             # Before the cut to `limit`: «عدد المنشآت» must keep the count
             # tables in, ahead of the revenue tables that also name firms.
             score += 2.0 * len(shared_measures(request.raw_query, str(entry.get("title_ar", ""))))
+            # Asked by its name, a dataset comes before its siblings.
+            score += W_WORD_FIT * word_fit(
+                request.raw_query, str(entry.get("title_ar", "")), stopwords)
             available = [str(d) for d in (entry.get("dimensions") or [])]
             if self._requested_dimensions(request, available):
                 score += 2.0

@@ -55,15 +55,28 @@ LATEST_MARKERS = _LATEST_MARKERS
 _FORMAT_HINTS = ("اكسل", "excel", "xlsx", "csv", "ملف", "جدول")
 
 
+def _marked(context: str, markers: tuple[str, ...]) -> bool:
+    for marker in markers:
+        if marker.isascii():
+            if re.search(rf"(?<![a-z]){re.escape(marker)}(?![a-z])", context):
+                return True
+        elif marker in context:
+            return True
+    return False
+
+
 def _classify_year(year: int, light_text: str, position: int) -> Calendar | None:
     """Decide which calendar a bare 4-digit number belongs to."""
     window = light_text[position: position + 24].lower()
     before = light_text[max(0, position - 12): position].lower()
     context = window + " " + before
 
-    if any(marker in context for marker in _HIJRI_MARKERS):
+    # A marker settles the calendar only for a number that could be in it,
+    # and a Latin marker only as a word of its own: «umrah 2018» is not the
+    # Hijri year 2018 (it once read as 2579), nor «price 1445» a Gregorian one.
+    if hijri.looks_hijri(year) and _marked(context, _HIJRI_MARKERS):
         return Calendar.HIJRI
-    if any(marker in context for marker in _GREGORIAN_MARKERS):
+    if hijri.looks_gregorian(year) and _marked(context, _GREGORIAN_MARKERS):
         return Calendar.GREGORIAN
     # The plausible Hijri and Gregorian ranges do not overlap, so an
     # unmarked number is unambiguous on its own.

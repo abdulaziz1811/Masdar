@@ -139,13 +139,17 @@ class Agent:
         )
         descriptors = {d.id: d for d in self.registry.descriptors}
         ranked = resolve.rank(request, candidates, descriptors, self.lexicon, today)
-        ranked = resolve.prefer_specific(request, ranked)
+        # Off-subject results go first: preferring the ones that name a word
+        # of the question («مؤشرات») among results that include an off-subject
+        # «المؤشرات الرئيسية» would keep only that one, then drop it -- and
+        # lose the labour-market bulletins that were the answer.
         off_subject = [c for c in ranked if not resolve.on_subject(request, c)]
         if off_subject:
             ranked = [c for c in ranked if resolve.on_subject(request, c)]
             audit.append(
                 f"استُبعدت {len(off_subject)} نتيجة لا تذكر أياً من كلمات السؤال"
             )
+        ranked = resolve.prefer_specific(request, ranked)
         audit.append(f"عدد النتائج المرشحة بعد الترتيب: {len(ranked)}")
 
         if not ranked:

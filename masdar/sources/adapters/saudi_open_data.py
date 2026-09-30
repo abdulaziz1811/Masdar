@@ -40,7 +40,7 @@ from masdar.domain.models import (
     Resource,
 )
 from masdar.nlu.lexicon import load_lexicon
-from masdar.nlu.normalize import contains_phrase, fold_digits, normalize
+from masdar.nlu.normalize import contains_phrase, fold_digits, normalize, word_fit
 from masdar.nlu.parser import typed_phrase_score
 from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 from masdar.sources.discover import DISCOVERED_FILE, load_discovered
@@ -70,6 +70,7 @@ _TITLE_YEAR = re.compile(r"(?<!\d)(19[5-9]\d|20\d\d)(?!\d)")
 # «الربع الرابع»، «للربع الثاني»، «الربع السنوي الاول»، «Q3» -- after normalize().
 _QUARTER = re.compile(r"ربع\s+(?:السنوي\s+)?(الاول|الثاني|الثانيه|الثالث|الرابع)|\bq([1-4])\b")
 _QUARTER_NUMBERS = {"الاول": 1, "الثاني": 2, "الثانيه": 2, "الثالث": 3, "الرابع": 4}
+W_WORD_FIT = 6.0
 W_TITLE_YEAR_MATCH = 4.0
 W_TITLE_YEAR_OTHER = -3.0
 W_PER_YEAR = 0.05
@@ -260,10 +261,16 @@ class SaudiOpenDataAdapter(SourceAdapter):
         if request.topic:
             keywords = (*request.topic.keywords_ar, *request.topic.keywords_en,
                         request.topic.label_ar, request.topic.label_en)
-            score += sum(1.0 for k in keywords if k and contains_phrase(text, k))
+            # Being on the topic, not how many of its words a title repeats:
+            # «GDP and National Accounts» must not outrank the growth rate
+            # asked for by name.
+            score += min(2.0, sum(1.0 for k in keywords if k and contains_phrase(text, k)))
         score += sum(2.0 for t in request.free_terms if contains_phrase(text, t))
         if score <= 0:
             return 0.0  # a breakdown word alone is not a match
+        # Worded like the question: a publisher's catalogue holds dozens of
+        # titles sharing a topic, and the one asked by name must come first.
+        score += W_WORD_FIT * word_fit(request.raw_query, entry["title_ar"], lexicon.stopwords)
         for dimension in request.dimensions:
             if any(contains_phrase(text, w) for w in lexicon.dimension_words.get(dimension, ())):
                 score += 2.0

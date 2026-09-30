@@ -43,6 +43,7 @@ from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 
 DEFAULT_SEARCH = "/ar/search?q={query}&delta=40"
 MAX_QUERY_WORDS = 8
+MAX_RESULTS = 20
 # Bulletin pages opened per question to find their spreadsheets.
 MAX_PAGES = 3
 DATA_SUFFIXES = ("xlsx", "xls", "csv")
@@ -75,7 +76,7 @@ _WORKBOOK = re.compile(r"/views/([^/\s'\"]+)/")
 # The site's search is loose (any word matches), so its order is a hint for
 # ties, kept below the level at which a source's reading of the question
 # would stand in for the result naming the subject (resolve.on_subject).
-MAX_RELEVANCE = 0.4
+MAX_RELEVANCE = 0.1
 _LATEST = frozenset(normalize(m) for m in LATEST_MARKERS)
 
 
@@ -223,7 +224,9 @@ class GastatSiteAdapter(SourceAdapter):
                 continue
             seen.add((result["title"], years))
             results.append((result, kind, years))
-        results = results[:limit]
+        # More than the usual cut: the site ranks loosely (a 2024 table can
+        # come before the 2018 one asked for), and a table costs no request.
+        results = results[:max(limit, MAX_RESULTS)]
 
         # Bulletins are opened for their spreadsheets, the likeliest first:
         # «لشهر أغسطس 2026» among a year of monthly releases.
