@@ -202,6 +202,7 @@
   }, 4 * 60 * 1000);
 
   // -- warm-up progress (hosted demos ask the examples at start-up) ------
+  var READY_SHOWN_MS = 4000;
   // A suggested question no source answered at start-up is not offered: a
   // presenter should not click into a failure. If none answered, all stay.
   function markExamples(failed, total) {
@@ -231,9 +232,15 @@
           : good ? "جاهز (" + good + " من " + w.total + ")"
           : "المصادر لا تستجيب";
         badge.title = w.failed.length ? "لم تُجب المصادر عند التجهيز: " + w.failed.join("، ") : "";
+        // All ready: «جاهز» is shown a moment, then leaves the header to
+        // the audience. Short of that it stays, for the presenter.
+        if (!w.failed.length) {
+          window.setTimeout(function () { badge.hidden = true; }, READY_SHOWN_MS);
+          return;
+        }
         // The server asks those again a few minutes later; one it answers
         // comes back without a reload.
-        if (w.failed.length) window.setTimeout(pollStatus, 60 * 1000);
+        window.setTimeout(pollStatus, 60 * 1000);
       })
       .catch(function () { window.setTimeout(pollStatus, 5000); });
   }
