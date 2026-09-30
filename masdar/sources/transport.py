@@ -291,10 +291,21 @@ class FirecrawlTransport(Transport):
         except requests.exceptions.RequestException as exc:
             raise SourceUnreachable(source_id, f"تعذّر الوصول إلى Firecrawl: {exc}") from exc
 
-        if response.status_code >= 400:
+        code = response.status_code
+        if code == 401:
             raise SourceError(
-                source_id, f"Firecrawl أعاد HTTP {response.status_code}: {response.text[:200]}"
+                source_id, "مفتاح Firecrawl غير صالح (HTTP 401): راجع FIRECRAWL_API_KEY"
             )
+        if code == 402:
+            raise SourceError(
+                source_id,
+                "نفد رصيد Firecrawl (HTTP 402): اشحنه من لوحة Firecrawl أو انتظر تجديده الشهري",
+            )
+        if code == 429 or code >= 500:
+            # The free plan allows ten requests a minute: worth another try.
+            raise RetryableSourceError(source_id, f"Firecrawl مشغول (HTTP {code})")
+        if code >= 400:
+            raise SourceError(source_id, f"Firecrawl أعاد HTTP {code}: {response.text[:200]}")
 
         body = response.json()
         if not body.get("success", True):

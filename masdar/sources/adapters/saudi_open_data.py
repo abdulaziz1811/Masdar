@@ -59,6 +59,7 @@ LINK_ONLY_NOTE = (
 )
 # Publishers fetched at once when the catalogue is not cached.
 CATALOGUE_WORKERS = 8
+CATALOGUE_WORKERS_VIA_EXIT = 2
 _DATE = re.compile(r"(\d{4})-\d{2}-\d{2}")
 
 
@@ -235,7 +236,10 @@ class SaudiOpenDataAdapter(SourceAdapter):
                     problem = exc.reason
             return org, None, problem
 
-        with ThreadPoolExecutor(max_workers=CATALOGUE_WORKERS) as pool:
+        # Through the Saudi exit, two at a time: Firecrawl's free plan runs
+        # two requests at once and allows ten a minute.
+        workers = CATALOGUE_WORKERS_VIA_EXIT if self._via_exit else CATALOGUE_WORKERS
+        with ThreadPoolExecutor(max_workers=workers) as pool:
             results = list(pool.map(load, orgs))  # map keeps the configured order
 
         entries: list[dict] = []

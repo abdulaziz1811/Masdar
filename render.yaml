@@ -5,8 +5,9 @@
 # The service runs in Frankfurt, outside the Kingdom. Every verified source
 # answers from there except the national open-data portal (open.data.gov.sa),
 # which refuses non-Saudi connections; MASDAR_OUTSIDE_KSA skips it instead of
-# waiting on it, and the page says so. For the portal too, host inside the
-# Kingdom: deploy/cloudrun.sh (Google Cloud, Dammam).
+# waiting on it, and the page says so -- unless FIRECRAWL_API_KEY is set, which
+# gives it a Saudi exit. Or host inside the Kingdom: deploy/cloudrun.sh
+# (Google Cloud, Dammam; bought through CNTXT with a Saudi billing address).
 services:
   - type: web
     name: masdar
@@ -31,4 +32,9 @@ services:
         sync: false
       # Optional: the GASTAT developer-portal key, for the datasets that need it.
       - key: GASTAT_API_KEY
+        sync: false
+      # Optional: a Firecrawl key gives the national open-data platform a
+      # Saudi exit from here (sources/transport.py); its files are offered as
+      # links. Without it the platform is not asked, and answers say so.
+      - key: FIRECRAWL_API_KEY
         sync: false

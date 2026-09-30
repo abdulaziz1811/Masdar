@@ -243,3 +243,56 @@ class TestCredentialsStayLocal:
         )
         assert stored, "expected a cache entry"
         assert "SECRET-1" not in stored
+
+
+class TestSaudiExitErrors:
+    """What Firecrawl's own refusals mean, said plainly and retried when worth it."""
+
+    @staticmethod
+    def _answering(code):
+        from types import SimpleNamespace
+
+        from masdar.sources.transport import FirecrawlTransport
+
+        transport = FirecrawlTransport(api_key="test-key", wait_for_ms=0)
+        transport._session.post = lambda *a, **k: SimpleNamespace(
+            status_code=code, text="{}", json=lambda: {})
+        return transport
+
+    def test_a_busy_exit_is_tried_again(self):
+        from masdar.sources.base import RetryableSourceError
+
+        for code in (429, 502):
+            with pytest.raises(RetryableSourceError):
+                self._answering(code).get("https://open.data.gov.sa/data/api/x", "saudi_open_data")
+
+    def test_an_exhausted_balance_says_so(self):
+        with pytest.raises(SourceError) as caught:
+            self._answering(402).get("https://open.data.gov.sa/data/api/x", "saudi_open_data")
+        assert "رصيد Firecrawl" in caught.value.reason
+
+    def test_a_wrong_key_says_so(self):
+        with pytest.raises(SourceError) as caught:
+            self._answering(401).get("https://open.data.gov.sa/data/api/x", "saudi_open_data")
+        assert "FIRECRAWL_API_KEY" in caught.value.reason
+
+    def test_the_exit_asks_for_json_without_waiting_for_a_page(self):
+        from types import SimpleNamespace
+
+        from masdar.sources.transport import saudi_exit_transport
+
+        sent = {}
+        transport = saudi_exit_transport()
+        transport.api_key = "test-key"
+
+        def post(url, json, headers, timeout):
+            sent.update(json)
+            return SimpleNamespace(status_code=200, text="", json=lambda: {
+                "success": True,
+                "data": {"rawHtml": "{}", "metadata": {"statusCode": 200,
+                                                       "contentType": "application/json"}},
+            })
+
+        transport._session.post = post
+        transport.get("https://open.data.gov.sa/data/api/x", "saudi_open_data")
+        assert sent["location"] == {"country": "SA"} and "waitFor" not in sent
