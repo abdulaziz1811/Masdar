@@ -395,7 +395,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     from masdar.chat import warmup as warmup_module
     from masdar.chat.overview import SHOWCASE
     from masdar.chat.server import make_server
-    from masdar.sources.registry import outside_ksa
+    from masdar.sources.registry import outside_ksa, saudi_exit
 
     config = AgentConfig(
         max_sources=args.max_sources,
@@ -448,7 +448,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
         # Names only: a value read from .env is never printed.
         print(f"قُرئ من ملف .env: {'، '.join(loaded)}")
     print(f"الفهم بالذكاء الاصطناعي: {llm_status}")
-    if outside_ksa():
+    if saudi_exit():
+        print("الخادم خارج المملكة: المصادر المقيَّدة جغرافياً تُسأل عبر منفذ سعودي (Firecrawl)، "
+              "وملفاتها تُقدَّم روابط.")
+    elif outside_ksa():
         print("الخادم خارج المملكة (MASDAR_OUTSIDE_KSA): المصادر المقيَّدة جغرافياً لن تُسأل.")
     if warm is not None:
         warm.start(make_agent)
@@ -611,7 +614,7 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--json", action="store_true", help="أخرج النتيجة كـ JSON")
     ask.add_argument("--explain", action="store_true", help="اعرض سجل البحث")
     ask.add_argument("--out", default="out", help="مجلد ملفات الإكسل")
-    ask.add_argument("--max-sources", type=int, default=6)
+    ask.add_argument("--max-sources", type=int, default=8)
     ask.add_argument("--max-downloads", type=int, default=3)
     ask.add_argument("--no-download", action="store_true", help="لا تنزّل الملفات للتحقق")
     ask.add_argument("--no-export", action="store_true", help="لا تُنشئ ملف إكسل")
@@ -643,7 +646,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--demo", action="store_true", help="أضف المصادر التجريبية")
     serve.add_argument("--offline", action="store_true", help="استخدم المخزن المؤقت فقط")
     serve.add_argument("--out", default="out", help="مجلد ملفات الإكسل")
-    serve.add_argument("--max-sources", type=int, default=6)
+    serve.add_argument("--max-sources", type=int, default=8)
     serve.add_argument("--max-downloads", type=int, default=3)
     serve.add_argument("--timeout", type=float, default=20.0)
     serve.add_argument("--answer-seconds", type=float, default=25.0,
@@ -654,7 +657,7 @@ def build_parser() -> argparse.ArgumentParser:
     warm = sub.add_parser("warmup", help="جهّز أسئلة العرض مسبقاً وافحص جاهزيتها")
     warm.add_argument("questions", nargs="*", help="أسئلة إضافية غير أسئلة العرض")
     warm.add_argument("--out", default="out", help="مجلد ملفات الإكسل")
-    warm.add_argument("--max-sources", type=int, default=6)
+    warm.add_argument("--max-sources", type=int, default=8)
     warm.add_argument("--timeout", type=float, default=30.0)
     warm.set_defaults(func=cmd_warmup)
 

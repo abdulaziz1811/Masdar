@@ -607,8 +607,18 @@
     if (primary) {
       box.appendChild(renderResult(primary, primary.matched_years || []));
     } else if (data.message) {
-      var rest = data.message.split("\n").slice(1).join("\n").trim();
+      // The links are offered as buttons below, not as raw addresses.
+      var rest = data.message.split("\n").slice(1)
+        .filter(function (line) { return !/https?:\/\//.test(line); }).join("\n").trim();
       if (rest) box.appendChild(el("div", "message-body", rest));
+    }
+    if (!primary && (data.elsewhere || []).length) {
+      var onward = el("div", "actions");
+      data.elsewhere.forEach(function (link) {
+        var b = linkButton(link.url, link.label, "external");
+        if (b) onward.appendChild(b);
+      });
+      if (onward.childNodes.length) box.appendChild(onward);
     }
 
     if (data.suggestions.length) {

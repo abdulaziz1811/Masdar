@@ -212,10 +212,12 @@ def detect_dimensions(text: str, lexicon: Lexicon) -> tuple[tuple[Dimension, ...
     found: list[Dimension] = []
     matched_words: list[str] = []
     for dimension, words in lexicon.dimension_words.items():
-        for word in words:
+        # Longest first, and every word of it spent: «وفئات العمر» must not
+        # leave «فئات» behind as a subject word.
+        for word in sorted(words, key=len, reverse=True):
             if contains_phrase(text, word):
                 found.append(dimension)
-                matched_words.append(normalize(word))
+                matched_words.extend(normalize(word).split())
                 break
     return tuple(found), tuple(matched_words)
 

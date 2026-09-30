@@ -26,8 +26,24 @@ def outside_ksa() -> bool:
     return os.environ.get("MASDAR_OUTSIDE_KSA", "").strip().lower() in ("1", "true", "yes", "on")
 
 
+def saudi_exit() -> bool:
+    """Whether sources that refuse non-Saudi connections get a Saudi exit.
+
+    Outside the Kingdom with FIRECRAWL_API_KEY set, their requests go through
+    Firecrawl's Saudi exit (sources/transport.py) and every other source's
+    stay direct. Verified for the national platform's JSON API; its files are
+    refused on that route, so they are offered as links (see
+    SaudiOpenDataAdapter).
+    """
+    return outside_ksa() and bool(os.environ.get("FIRECRAWL_API_KEY", "").strip())
+
+
+def via_saudi_exit(descriptor: SourceDescriptor) -> bool:
+    return descriptor.geo_restricted and saudi_exit()
+
+
 def reachable_here(descriptor: SourceDescriptor) -> bool:
-    return not (descriptor.geo_restricted and outside_ksa())
+    return not (descriptor.geo_restricted and outside_ksa()) or saudi_exit()
 
 
 def load_descriptors(path: Path | None = None) -> tuple[SourceDescriptor, ...]:
@@ -72,6 +88,7 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
     from masdar.sources.adapters.fixture import FixtureAdapter
     from masdar.sources.adapters.gastat_api import GastatApiAdapter
     from masdar.sources.adapters.gastat_cdata import GastatCdataAdapter
+    from masdar.sources.adapters.gastat_site import GastatSiteAdapter
     from masdar.sources.adapters.html_index import HtmlIndexAdapter
     from masdar.sources.adapters.live_data import LiveDataAdapter
     from masdar.sources.adapters.opendatasoft import OpendatasoftAdapter
@@ -82,6 +99,7 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
         "saudi_open_data": SaudiOpenDataAdapter,
         "gastat_api": GastatApiAdapter,
         "gastat_cdata": GastatCdataAdapter,
+        "gastat_site": GastatSiteAdapter,
         "opendatasoft": OpendatasoftAdapter,
         "html_index": HtmlIndexAdapter,
         "live_data": LiveDataAdapter,
@@ -103,6 +121,7 @@ class Registry:
     def __init__(self, descriptors: tuple[SourceDescriptor, ...], http=None):
         self.descriptors = descriptors
         self._http = http
+        self._saudi_http = None
         self._by_id = {d.id: d for d in descriptors}
 
     @classmethod
@@ -115,7 +134,20 @@ class Registry:
 
     def adapter(self, source_id: str) -> SourceAdapter:
         descriptor = self._by_id[source_id]
+        if self._http is not None and via_saudi_exit(descriptor):
+            if self._saudi_http is None:
+                from masdar.sources.transport import saudi_exit_transport
+
+                self._saudi_http = self._http.routed(saudi_exit_transport())
+            return build_adapter(descriptor, self._saudi_http)
         return build_adapter(descriptor, self._http)
+
+    def not_reachable(self, topic_id: str | None) -> tuple[SourceDescriptor, ...]:
+        """Sources on the topic that this server cannot ask at all."""
+        return tuple(
+            d for d in self.descriptors
+            if d.enabled and not reachable_here(d) and d.covers_topic(topic_id)
+        )
 
     def for_topic(self, topic_id: str | None) -> tuple[SourceDescriptor, ...]:
         """Sources that claim the topic, most authoritative first."""

@@ -288,6 +288,11 @@ class DatasetCandidate:
     # adapter and carried into the answer's notes (e.g. "a live snapshot,
     # not an annual statistic").
     caveats: tuple[str, ...] = ()
+    # Set when this server cannot fetch the file (the national platform's
+    # files from outside the Kingdom): nothing is downloaded, the verdict
+    # stands on the source's declared coverage, and this says why the reader
+    # gets a link instead of a workbook.
+    download_note: str = ""
     # How closely the source's own search matched the question, from 0 to 1,
     # for a source that can tell apart what the generic ranker sees as ties
     # (the World Bank's many near-identical indicator names). 0 means the
@@ -386,6 +391,13 @@ class Answer:
     # Every source asked, in the order asked, so an answer can show where it
     # looked -- including the sources that had nothing.
     consulted: tuple[Consulted, ...] = ()
+    # Sources that publish on the topic but this server cannot reach at all
+    # (outside the Kingdom), by Arabic name: "nothing found" must not read as
+    # "nothing exists" when they were never asked.
+    not_searched: tuple[str, ...] = ()
+    # Where a reader can look on, as (label, url): GASTAT's own search for the
+    # same words when nothing was found here.
+    elsewhere: tuple[tuple[str, str], ...] = ()
     message_ar: str = ""
 
     @property

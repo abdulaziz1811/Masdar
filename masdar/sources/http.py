@@ -15,6 +15,7 @@ Three things here matter to the rest of the system:
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
@@ -193,6 +194,12 @@ class HttpClient:
 
     def describe_transport(self) -> str:
         return self.transport.describe()
+
+    def routed(self, transport: Transport) -> HttpClient:
+        """The same client -- cache, retries, down hosts -- on another route."""
+        clone = copy.copy(self)
+        clone.transport = transport
+        return clone
 
     # -- cache ---------------------------------------------------------
     def _cache_path(self, url: str) -> Path:

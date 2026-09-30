@@ -332,3 +332,48 @@ class TestYearsInTitles:
         from masdar.sources.adapters.saudi_open_data import _period_fit
 
         assert _period_fit(parse("السجلات التجارية 2024"), "السجلات التجارية") == 0.0
+
+
+class ExitTransport(PortalTransport):
+    """The recorded platform, reached as through Firecrawl's Saudi exit."""
+
+    name = "firecrawl"
+
+
+class TestSaudiExit:
+    """Abroad, the platform is asked through a Saudi exit when one is set."""
+
+    def test_abroad_with_a_key_only_the_platform_takes_the_exit(self, monkeypatch):
+        monkeypatch.setenv("MASDAR_OUTSIDE_KSA", "1")
+        monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+        reg = Registry(load_descriptors(), HttpClient(use_cache=False, transport=PortalTransport()))
+        assert reg.adapter("saudi_open_data").http.transport.name == "firecrawl"
+        assert reg.adapter("worldbank").http.transport.name == "recorded"
+        assert not reg.not_reachable("electricity")
+
+    def test_abroad_without_a_key_it_is_not_asked_and_that_is_said(self, monkeypatch):
+        from masdar.domain.models import Answer
+        from masdar.nlu.parser import parse
+        from masdar.pipeline.reply import compose_message
+
+        monkeypatch.setenv("MASDAR_OUTSIDE_KSA", "1")
+        monkeypatch.delenv("FIRECRAWL_API_KEY", raising=False)
+        reg = Registry(load_descriptors(), HttpClient(use_cache=False, transport=PortalTransport()))
+        skipped = [d.name_ar for d in reg.not_reachable("electricity")]
+        assert "منصة البيانات المفتوحة الوطنية" in skipped
+        answer = Answer(request=parse("استهلاك الكهرباء 2022"), verdict=Verdict.NO_SOURCE,
+                        not_searched=tuple(skipped))
+        assert "لم يُبحث في: منصة البيانات المفتوحة الوطنية" in compose_message(answer)
+
+    def test_through_the_exit_the_file_is_a_link_and_the_claim_stands(self, tmp_path):
+        transport = ExitTransport()
+        # Asked by its name, as a reader who knows the dataset would.
+        answer = agent(tmp_path, transport).answer(
+            "استهلاك مناطق المملكة من الكهرباء حسب المناطق التشغيلية 2022")
+        assert answer.verdict is Verdict.AVAILABLE
+        assert answer.primary.coverage.origin is CoverageOrigin.METADATA_CLAIM
+        assert answer.primary.export_path is None
+        assert answer.primary.provenance.resource_url.endswith(".xlsx")
+        assert any("الملف الأصلي" in n for n in answer.primary.notes)
+        # No file was asked for: the exit refuses them, and each try costs.
+        assert not any("/odp-public/" in u for u in transport.urls)

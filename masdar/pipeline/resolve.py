@@ -217,7 +217,7 @@ def mentions_term(candidate: DatasetCandidate, term: str) -> bool:
 
 
 def prefer_specific(request: DataRequest, ranked: list[DatasetCandidate]) -> list[DatasetCandidate]:
-    """Those naming one of the question's specific words, if any do; else all.
+    """Those naming the most of the question's specific words, if any do; else all.
 
     A soft rule: «نسبة تملك المساكن» should prefer a table about ownership to
     one about electricity in dwellings. When no result names the word, all
@@ -226,8 +226,11 @@ def prefer_specific(request: DataRequest, ranked: list[DatasetCandidate]) -> lis
     terms = specific_terms(request)
     if not terms:
         return ranked
-    naming = [c for c in ranked if any(mentions_term(c, t) for t in terms)]
-    return naming or ranked
+    # Those naming the most of them: «لشهر مايو» is named by the May bulletin,
+    # and every monthly one says «لشهر».
+    named = [(sum(1 for t in terms if mentions_term(c, t)), c) for c in ranked]
+    most = max((n for n, _ in named), default=0)
+    return [c for n, c in named if n == most] if most else ranked
 
 
 def unmatched_terms(request: DataRequest, candidate: DatasetCandidate) -> tuple[str, ...]:

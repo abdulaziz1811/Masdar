@@ -41,7 +41,9 @@ from masdar.sources.registry import Registry
 class AgentConfig:
     # Enough for every verified source of a topic: several search a local
     # catalogue (specs, configured indicators) and cost no request to ask.
-    max_sources: int = 6
+    # Eight: GASTAT (three routes), the national platform, the live sources
+    # and the international fallback all fit; searches run in parallel.
+    max_sources: int = 8
     per_source_limit: int = 8
     # How many ranked candidates we are willing to open files for. Opening a
     # file is what upgrades a claim to OBSERVED_DATA, so this is the main
@@ -131,6 +133,10 @@ class Agent:
         )
         search = self._search(request, deadline)
         candidates, errors, audit = search.candidates, search.errors, search.audit
+        not_searched = tuple(
+            d.name_ar for d in self.registry.not_reachable(
+                request.topic.id if request.topic else None)
+        )
         descriptors = {d.id: d for d in self.registry.descriptors}
         ranked = resolve.rank(request, candidates, descriptors, self.lexicon, today)
         ranked = resolve.prefer_specific(request, ranked)
@@ -156,6 +162,8 @@ class Agent:
                 audit=tuple(audit),
                 source_errors=tuple(errors),
                 consulted=tuple(search.consulted),
+                not_searched=not_searched,
+                elsewhere=self._elsewhere(request),
             )
             return answer.with_message(compose_message(answer))
 
@@ -194,8 +202,18 @@ class Agent:
             audit=tuple(audit),
             source_errors=tuple(errors),
             consulted=tuple(search.consulted),
+            not_searched=not_searched,
         )
         return answer.with_message(compose_message(answer))
+
+    def _elsewhere(self, request: DataRequest) -> tuple[tuple[str, str], ...]:
+        """GASTAT's own search, for a reader who knows the table is there."""
+        from masdar.sources.adapters.gastat_site import site_search_url
+
+        site = next((d for d in self.registry.descriptors
+                     if d.adapter == "gastat_site" and d.enabled), None)
+        url = site_search_url(request, site.base_url) if site else None
+        return (("ابحث في موقع الهيئة العامة للإحصاء", url),) if url else ()
 
     # -- search --------------------------------------------------------
     def _search(self, request: DataRequest, deadline: float | None = None) -> SearchOutcome:
@@ -347,6 +365,7 @@ class Agent:
                 self.config.download
                 and downloads < self.config.max_downloads
                 and candidate.best_tabular_resource() is not None
+                and not candidate.download_note
             )
             if may_download:
                 downloads += 1
@@ -397,6 +416,8 @@ class Agent:
                         f"{candidate.title_ar}: تم فتح الملف والتحقق من "
                         f"{len(observed.years)} سنة"
                     )
+            elif candidate.download_note:
+                notes.append(candidate.download_note)
             elif candidate.best_tabular_resource() is None:
                 notes.append("لا يتوفر ملف جدولي لهذه النتيجة، لذا لم يُنشأ ملف إكسل.")
 

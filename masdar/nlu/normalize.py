@@ -36,6 +36,11 @@ _PUNCT = re.compile(r"[،؛؟٪-٭۔!-/:-@\[-`{-~]")
 
 _WS = re.compile(r"\s+")
 
+# «و» fused to «فئة/فئات» ("and the categories of"). Folding ئ into ي would
+# turn «وفئات» into «وفيات» -- deaths -- so the conjunction is split off
+# while the hamza still tells the two apart.
+_AND_CATEGORIES = re.compile(r"(?<!\w)و(?=فئ)")
+
 # Definite article and common prepositions fused to nouns. Stripped only
 # when a bare match fails, never destructively.
 _PREFIXES = ("وال", "بال", "لل", "ال", "و")
@@ -53,6 +58,7 @@ def normalize(text: str) -> str:
     text = unicodedata.normalize("NFKC", text)
     text = fold_digits(text)
     text = _DIACRITICS.sub("", text)
+    text = _AND_CATEGORIES.sub("و ", text)
     text = text.translate(_LETTER_TABLE)
     text = _PUNCT.sub(" ", text)
     return _WS.sub(" ", text).strip().lower()
@@ -142,5 +148,6 @@ def normalize_light(text: str) -> str:
     text = unicodedata.normalize("NFKC", text)
     text = fold_digits(text)
     text = _DIACRITICS.sub("", text)
+    text = _AND_CATEGORIES.sub("و ", text)
     text = text.translate(_LETTER_TABLE)
     return _WS.sub(" ", text).strip()

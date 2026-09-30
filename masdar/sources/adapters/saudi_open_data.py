@@ -47,6 +47,16 @@ from masdar.sources.discover import DISCOVERED_FILE, load_discovered
 
 TABULAR = {"CSV", "XLSX", "XLS", "JSON", "TSV"}
 MAX_DETAIL_FETCHES = 5
+# Through the Saudi exit every request costs a Firecrawl credit (two per
+# dataset's details), so fewer are opened.
+MAX_DETAIL_FETCHES_VIA_EXIT = 3
+# Checked 2026-09-30: through Firecrawl's Saudi exit the JSON API answers,
+# but the files (/odp-public/...) are refused ("document_antibot"). A reader
+# in the Kingdom downloads them from the link.
+LINK_ONLY_NOTE = (
+    "ملفات منصة البيانات المفتوحة الوطنية لا تُنزَّل من خادم خارج المملكة، "
+    "فالحكم مبني على الفترة التي تعلنها الجهة. نزّل الملف من زر «الملف الأصلي»."
+)
 # Publishers fetched at once when the catalogue is not cached.
 CATALOGUE_WORKERS = 8
 _DATE = re.compile(r"(\d{4})-\d{2}-\d{2}")
@@ -153,6 +163,10 @@ class SaudiOpenDataAdapter(SourceAdapter):
         ]
         url = self.descriptor.url(path)
         return f"{url}?{urlencode(params)}" if params else url
+
+    @property
+    def _via_exit(self) -> bool:
+        return getattr(getattr(self.http, "transport", None), "name", "") == "firecrawl"
 
     def _get_json(self, url: str):
         fetched = self.fetch(url)
@@ -267,22 +281,30 @@ class SaudiOpenDataAdapter(SourceAdapter):
         scored = [(self._score(request, e, lexicon), e) for e in entries]
         ranked = sorted((p for p in scored if p[0] > 0), key=lambda p: (-p[0], p[1]["title_ar"]))
 
-        candidates: list[DatasetCandidate] = []
-        for _, entry in ranked[: min(limit, MAX_DETAIL_FETCHES)]:
+        opened = MAX_DETAIL_FETCHES_VIA_EXIT if self._via_exit else MAX_DETAIL_FETCHES
+
+        def open_one(entry: dict) -> DatasetCandidate | None:
             try:
-                candidate = self._candidate(entry, lexicon)
+                return self._candidate(entry, lexicon)
             except (SourceError, SourceUnreachable):
-                continue
-            if candidate is not None:
-                candidates.append(candidate)
-        return candidates
+                return None
+
+        # In parallel: through the Saudi exit each request takes seconds, and
+        # one after another they outlast the answer's time limit.
+        chosen = [entry for _, entry in ranked[: min(limit, opened)]]
+        with ThreadPoolExecutor(max_workers=max(1, len(chosen))) as pool:
+            opened_ones = list(pool.map(open_one, chosen))  # map keeps the ranking
+        return [c for c in opened_ones if c is not None]
 
     def _candidate(self, entry: dict, lexicon) -> DatasetCandidate | None:
         dataset_id = entry["id"]
-        details = self._get_json(self._api(
-            "dataset", "/data/api/datasets?version=-1&dataset={id}", id=dataset_id))
-        listing = self._get_json(self._api(
-            "resources", "/data/api/datasets/resources?version=-1&dataset={id}", id=dataset_id))
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            asked = [pool.submit(self._get_json, self._api(key, default, id=dataset_id))
+                     for key, default in (
+                         ("dataset", "/data/api/datasets?version=-1&dataset={id}"),
+                         ("resources", "/data/api/datasets/resources?version=-1&dataset={id}"),
+                     )]
+            details, listing = (future.result() for future in asked)
         if not isinstance(details, dict):
             return None
 
@@ -339,6 +361,7 @@ class SaudiOpenDataAdapter(SourceAdapter):
             claimed_coverage=coverage_from_period(details.get("timePeriod")),
             last_updated=_as_date(details.get("updatedAt")),
             provided_dimensions=tuple(present),
+            download_note=LINK_ONLY_NOTE if self._via_exit and resources else "",
         ) if resources or title_ar else None
 
     def probe(self) -> str:

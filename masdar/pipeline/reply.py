@@ -138,7 +138,14 @@ def compose_message(answer: Answer) -> str:
     else:
         lines.append(f"❌ لم يُعثر على مجموعة بيانات مطابقة: {topic} — {period}")
         lines.append("")
+        if answer.not_searched:
+            lines.append(
+                "لم يُبحث في: " + "، ".join(answer.not_searched)
+                + "، لأنها لا تُفتح من خادم خارج المملكة؛ فقد تكون البيانات منشورة فيها."
+            )
         lines.append("يُقترح استخدام صياغة أوسع، أو تحديد الجهة المتوقع نشرها للبيانات.")
+        for label, url in answer.elsewhere:
+            lines.append(f"{label}: {url}")
 
     lines.extend(_suggestions_block(answer))
     lines.extend(_errors_block(answer))

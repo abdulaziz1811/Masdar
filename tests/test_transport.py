@@ -168,21 +168,28 @@ class TestSpaGuard:
 
 
 class TestSearchUrls:
-    def test_search_path_is_used_when_configured(self):
-        from masdar.sources.registry import Registry, load_descriptors
+    """html_index builds its search URL from the descriptor's templates."""
 
-        client = HttpClient(offline=True, use_cache=False, retries=1)
-        adapter = Registry(load_descriptors(), client).adapter("gastat")
-        url = adapter._index_url("الكهرباء")
+    @staticmethod
+    def _adapter():
+        from dataclasses import replace
+
+        from masdar.sources.registry import build_adapter, load_descriptors
+
+        base = next(d for d in load_descriptors() if d.adapter == "html_index")
+        descriptor = replace(base, base_url="https://www.example.gov.sa", api={
+            "publications_index": "/ar/statistics-tabs",
+            "search_path": "/ar/statistics-tabs?q={query}&delta=60",
+        })
+        return build_adapter(descriptor, HttpClient(offline=True, use_cache=False, retries=1))
+
+    def test_search_path_is_used_when_configured(self):
+        url = self._adapter()._index_url("الكهرباء")
         assert "statistics-tabs?q=" in url
         assert "%D8%A7%D9%84%D9%83%D9%87%D8%B1%D8%A8%D8%A7%D8%A1" in url
 
     def test_plain_index_used_without_a_query(self):
-        from masdar.sources.registry import Registry, load_descriptors
-
-        client = HttpClient(offline=True, use_cache=False, retries=1)
-        adapter = Registry(load_descriptors(), client).adapter("gastat")
-        assert adapter._index_url().endswith("/ar/statistics-tabs")
+        assert self._adapter()._index_url().endswith("/ar/statistics-tabs")
 
 
 class TestRecordedAccessFacts:

@@ -276,10 +276,11 @@ class FirecrawlTransport(Transport):
             "url": url,
             "formats": ["rawHtml"],
             "location": {"country": self.country},
-            "waitFor": self.wait_for_ms,
             "onlyMainContent": False,
             "maxAge": 0,
         }
+        if self.wait_for_ms:
+            payload["waitFor"] = self.wait_for_ms
         try:
             response = self._session.post(
                 self.endpoint,
@@ -310,6 +311,15 @@ class FirecrawlTransport(Transport):
             media_type=(metadata.get("contentType") or "text/html").split(";")[0].strip(),
             headers={},
         )
+
+
+def saudi_exit_transport() -> FirecrawlTransport:
+    """The route for geo-restricted sources when this server is abroad.
+
+    Their APIs answer JSON, so there is no page to wait for; 30 seconds covers
+    the exit's slowest answers seen (the largest publisher list, ~275 KB).
+    """
+    return FirecrawlTransport(timeout=30.0, wait_for_ms=0)
 
 
 def build_transport(name: str | None = None, timeout: float = DEFAULT_TIMEOUT) -> Transport:

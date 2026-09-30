@@ -208,6 +208,10 @@ def answer_payload(
             for s in answer.suggestions
         ],
         "source_errors": [{"source": s, "reason": r} for s, r in answer.source_errors],
+        "elsewhere": [
+            {"label": label, "url": link}
+            for label, link in answer.elsewhere if _http_link(link)
+        ],
     }
 
 

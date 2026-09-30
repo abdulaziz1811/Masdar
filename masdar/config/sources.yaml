@@ -161,27 +161,24 @@ sources:
     operator_ar: الهيئة العامة للإحصاء
     operator_en: GASTAT
     base_url: https://www.stats.gov.sa
-    adapter: html_index
+    adapter: gastat_site
     authority: 100
-    api_verified: false
+    # VERIFIED on 2026-09-30 from a German exit and a Saudi one: the site's
+    # search page is server-rendered and open from outside the Kingdom.
+    api_verified: true
     rendering: server
-    access_checked: "2026-09-27"
+    access_checked: "2026-09-30"
     access_notes_ar: >-
-      بوابة Liferay تُرجع HTML حقيقياً عبر منفذ سعودي (لم تُجرَّب من خارج
-      المملكة، فالتقييد الجغرافي مُستنتج لا مُتحقَّق). عدّادات التصنيفات
-      تظهر (جداول البيانات 4113، النشرات 1418، APIs 60، وسنوات 2016-2025)،
-      لكن صفوف النتائج تحتاج معامل البورتلت المُسمّى ولا يكفي ?q=. كما أن
-      تصنيف "APIs" فيه 60 مدخلاً يستحق الفحص كمسار بيانات مباشر.
+      بحث الموقع (/ar/search?q=) يُرجع HTML فيه نوع كل نتيجة وعنوانها ورابطها
+      ومقتطفاً منها، ويعمل من خارج المملكة. الأخبار تحت /ar/w/news/، وجداول
+      البيانات صفحات تحت /ar/w/ تعرض بياناتها عبر Tableau بلا ملف للتنزيل، لذا
+      تُقدَّم رابطاً وحكمها «غير مؤكدة». صفحة statistics-tabs لا تعرض الصفوف مع
+      ?q= وحده، وواجهة Liferay البرمجية لا تعطي الزائر شيئاً.
     api:
-      # Liferay faceted search. `{query}` is substituted by the adapter.
-      publications_index: /ar/statistics-tabs
-      search_path: /ar/statistics-tabs?q={query}&delta=60
-      database_portal: https://database.stats.gov.sa
-      # Liferay serves attachments from this prefix.
-      document_prefix: /documents/
+      search_path: /ar/search?q={query}&delta=40
     notes_ar: >-
-      الجهة الرسمية المسؤولة عن الإحصاءات الوطنية. تصدر نشرات سنوية وربعية،
-      وعادة ما تكون المرجع النهائي عند تعارض الأرقام.
+      الجهة الرسمية المسؤولة عن الإحصاءات الوطنية. معظم جداولها (نحو أربعة آلاف)
+      في موقعها لا في واجهاتها البرمجية، فيُبحث فيه ليُدلّ القارئ على الجدول.
     topics: [population, labour, prices, gdp, trade, education, health, tourism,
              transport, environment, housing, energy, electricity, water, ict,
              agriculture, finance, business, research, culture]
