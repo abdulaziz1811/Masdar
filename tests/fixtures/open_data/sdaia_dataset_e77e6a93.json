@@ -1,0 +1,38 @@
+{
+ "id": "e77e6a93-0743-420e-a7b2-0b389d0b607c",
+ "providerNameEn": "saudi data and artificial intelligence authority",
+ "providerNameAr": "الهيئة السعودية للبيانات والذكاء الاصطناعي ",
+ "organizationId": "f113025a-e838-40c9-b6e5-84736bbc3e74",
+ "titleEn": "Quarterly Donation Collection for Ehsan Platform",
+ "titleAr": "احصائيات التبرعات لمنصة احسان بشكل ربعي لسنة 2024",
+ "descriptionAr": "احصائيات التبرعات للمشاريع والحملات والجمعيات لمنصة احسان بشكل ربعي لسنة 2024",
+ "updateFrequency": "QUARTERLY",
+ "timePeriod": "2024-01-01 - 2024-12-31",
+ "categories": [
+  {
+   "titleAr": "تقنية المعلومات"
+  },
+  {
+   "titleAr": "الحكومة الإلكترونية"
+  }
+ ],
+ "tags": [
+  {
+   "name": "SDAIA"
+  },
+  {
+   "name": "Ehsan"
+  },
+  {
+   "name": "إحسان"
+  },
+  {
+   "name": "سدايا"
+  },
+  {
+   "name": "الهيئة السعودية للبيانات والذكاء الاصطناعي"
+  }
+ ],
+ "createdAt": "2024-06-06 14:09:06",
+ "updatedAt": "2025-02-02 18:43:29"
+}

@@ -39,7 +39,10 @@ BETAS = ["server-side-fallback-2026-07-01"]
 # Mapping a question to a handful of fields is a light task.
 EFFORT = "low"
 MAX_TOKENS = 4096
-TIMEOUT_SECONDS = 30.0
+# Reading a question takes the model a second or two. Waiting longer only
+# delays the answer: the rules' reading is used instead (one question once
+# took 86 s, 30 of them waiting on a stalled model before any search began).
+TIMEOUT_SECONDS = 10.0
 
 MAX_PHRASES = 5
 API_MESSAGE_CHARS = 160

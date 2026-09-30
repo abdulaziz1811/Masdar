@@ -1,0 +1,102 @@
+{
+ "id": "f113025a-e838-40c9-b6e5-84736bbc3e74",
+ "nameEn": "saudi data and artificial intelligence authority",
+ "nameAr": "الهيئة السعودية للبيانات والذكاء الاصطناعي ",
+ "datasets": [
+  {
+   "id": "34cac599-8bc1-4000-b0f5-d25bf0cdf553",
+   "titleEn": "Relative Distribution of Nafath Application Transactions by Verification Methods for 2025",
+   "titleAr": "التوزيع النسبي لعمليات تطبيق نفاذ حسب أنماط التحقق لعام 2025"
+  },
+  {
+   "id": "36bc6b58-f871-4621-8d6f-ee0ccdde8f14",
+   "titleEn": "SDAIA Job Titles 2025",
+   "titleAr": "المسميات الوظيفية في سدايا لعام 2025"
+  },
+  {
+   "id": "e4aaf7b7-646c-4b1e-a597-329074bf9050",
+   "titleEn": "Freedom of Information Requests Statistics at SDAIA 2025",
+   "titleAr": "احصائيات طلبات حرية المعلومات في سدايا لعام 2025"
+  },
+  {
+   "id": "058ef8eb-26d2-41b9-9b99-c2180b359222",
+   "titleEn": "Freedom of Information Requests Statistics at SDAIA 2026",
+   "titleAr": "احصائيات طلبات حرية المعلومات في سدايا لعام 2026"
+  },
+  {
+   "id": "82744035-e8da-40a5-83b4-b1afd2d52566",
+   "titleEn": "Freedom of Information Request Response Rates at SDAIA in 2026",
+   "titleAr": "نسب الاستجابة لطلبات حرية المعلومات في سدايا لعام 2026"
+  },
+  {
+   "id": "ba0f0e3b-4072-4454-9cac-4ad18cce2c66",
+   "titleEn": "SDAIA Employee Statistics by Age 2025",
+   "titleAr": "احصائيات موظفي سدايا حسب العمر لعام 2025"
+  },
+  {
+   "id": "957ad7d1-80e5-462c-b87f-7be0922e1b08",
+   "titleEn": "SDAIA Academy training activitiesQuarterly2024",
+   "titleAr": "احصائيات أنشطة التدريب أكاديمية سدايا بشكل ربعي لسنة 2024"
+  },
+  {
+   "id": "fd7fc102-3eab-4ce8-8e97-e72c059ab99b",
+   "titleEn": "SDAIA Academy training activitiesQuarterly2025",
+   "titleAr": "احصائيات أنشطة التدريب أكاديمية سدايا بشكل ربعي لسنة 2025"
+  },
+  {
+   "id": "fdc5bfb9-4d9f-4f64-a3c4-2ff1285d5743",
+   "titleEn": "SDAIA Academy training activitiesQuarterly2026",
+   "titleAr": "احصائيات أنشطة التدريب أكاديمية سدايا بشكل ربعي لسنة 2026"
+  },
+  {
+   "id": "2974a7ab-6b11-4d61-8093-9b575fb86c64",
+   "titleEn": "New Users for Tawakkalna Platform 2022 monthly",
+   "titleAr": "أعداد المستخدمين الجدد لمنصة توكلنا لسنة 2022 على مستوى الأشهر  "
+  },
+  {
+   "id": "853507fd-2bd8-40a9-ac3b-32fab042420e",
+   "titleEn": "2023 New Users for Tawakkalna Platform monthly",
+   "titleAr": "أعداد المستخدمين الجدد لمنصة توكلنا لسنة 2023 على مستوى الأشهر"
+  },
+  {
+   "id": "b806a4ff-8366-4ea1-8fab-0a8ca753abc2",
+   "titleEn": "2024 New Users for Tawakkalna Platform monthly",
+   "titleAr": "أعداد المستخدمين الجدد لمنصة توكلنا لسنة 2024 على مستوى الأشهر"
+  },
+  {
+   "id": "b843a1e1-d3b0-4440-98e7-4290289f572b",
+   "titleEn": "Number of Organ Donations on the Tawakkalna Platform for 2024",
+   "titleAr": "اعداد التبرع بالاعضاء في منصة توكلنا لعام 2024"
+  },
+  {
+   "id": "73b29c18-6d55-44d2-a5d3-56ea0940d44a",
+   "titleEn": "Number of Organ Donations on the Tawakkalna Platform for 2025",
+   "titleAr": "اعداد التبرع بالاعضاء في منصة توكلنا لعام 2025"
+  },
+  {
+   "id": "9fc64bf3-2341-4ee0-9a97-8be40f3026fd",
+   "titleEn": "Quarterly Donation Collection for Ehsan Platform 2023",
+   "titleAr": "احصائيات التبرعات لمنصة احسان بشكل ربعي لسنة 2023"
+  },
+  {
+   "id": "e77e6a93-0743-420e-a7b2-0b389d0b607c",
+   "titleEn": "Quarterly Donation Collection for Ehsan Platform",
+   "titleAr": "احصائيات التبرعات لمنصة احسان بشكل ربعي لسنة 2024"
+  },
+  {
+   "id": "33e68cde-83a5-4ed7-937a-3640e77935a4",
+   "titleEn": "Quarterly Donation Collection for Ehsan Platform in 2025  ",
+   "titleAr": "احصائيات التبرعات لمنصة احسان بشكل ربعي لسنة 2025"
+  },
+  {
+   "id": "c6517ecd-300e-4214-a4b0-dc14af95dfdc",
+   "titleEn": "The budget of Saudi Data and AI Authority for 2024",
+   "titleAr": "ميزانية الهيئة السعودية للبيانات والذكاء الاصطناعي للعام 2024م"
+  },
+  {
+   "id": "b5eba2d7-6d4b-4fe4-b4dc-b32a530b0d0c",
+   "titleEn": "Number of Requests Received through the Deem Government Cloud in 2024",
+   "titleAr": "أعداد الطلبات الواردة عبر السحابة الحكومية ديم لعام 2024"
+  }
+ ]
+}

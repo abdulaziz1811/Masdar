@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from masdar.domain.models import Dimension, Topic
-from masdar.nlu.normalize import normalize, strip_article
+from masdar.nlu.normalize import normalize, root, strip_article
 
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 TOPICS_FILE = CONFIG_DIR / "topics.yaml"
@@ -24,6 +24,7 @@ class Lexicon:
         stopwords: frozenset[str] = frozenset(),
         qualifiers: tuple[str, ...] = (),
         places: dict[str, tuple[str, ...]] | None = None,
+        synonyms: dict[str, tuple[str, ...]] | None = None,
     ):
         self.topics = topics
         self.dimension_words = dimension_words
@@ -31,7 +32,13 @@ class Lexicon:
         self.qualifiers = qualifiers
         # Region name -> the ways a question or a table may write it.
         self.places = places or {}
+        # A word's root -> what publishers call the same thing («معسكرات»
+        # are training: «أنشطة التدريب»).
+        self.synonyms = synonyms or {}
         self._by_id = {t.id: t for t in topics}
+
+    def alternatives(self, word: str) -> tuple[str, ...]:
+        return self.synonyms.get(root(normalize(word)), ())
 
     def get(self, topic_id: str) -> Topic | None:
         return self._by_id.get(topic_id)
@@ -76,12 +83,18 @@ def _load(path: Path) -> Lexicon:
         for name, variants in (raw.get("places") or {}).items()
     }
 
+    synonyms = {
+        root(normalize(str(word))): tuple(str(v) for v in alternatives)
+        for word, alternatives in (raw.get("synonyms") or {}).items()
+    }
+
     return Lexicon(
         topics=topics,
         dimension_words=dimension_words,
         stopwords=stopwords,
         qualifiers=qualifiers,
         places=places,
+        synonyms=synonyms,
     )
 
 

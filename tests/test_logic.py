@@ -69,6 +69,9 @@ class TestTheConceptAskedMustBeNamed:
         assert mentions("التقديرات السكانية", "السكان")
         assert mentions("عدد الصيدليات", "صيدلية")
         assert not mentions("الإيرادات التشغيلية للمنشآت", "الصادرات")
+        # «ل» for "for", glued to the word: «لمنصة إحسان» names «منصة».
+        assert mentions("احصائيات التبرعات لمنصة احسان", "منصة")
+        assert mentions("عدد اللقاحات", "لقاحات")
 
     def test_unemployment_is_found_in_the_world_bank_catalogue(self, catalogues):
         for question in ("أحدث بيانات البطالة", "معدل البطالة حسب الجنس 2023"):

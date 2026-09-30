@@ -1,0 +1,38 @@
+{
+ "id": "73b29c18-6d55-44d2-a5d3-56ea0940d44a",
+ "providerNameEn": "saudi data and artificial intelligence authority",
+ "providerNameAr": "الهيئة السعودية للبيانات والذكاء الاصطناعي ",
+ "organizationId": "f113025a-e838-40c9-b6e5-84736bbc3e74",
+ "titleEn": "Number of Organ Donations on the Tawakkalna Platform for 2025",
+ "titleAr": "اعداد التبرع بالاعضاء في منصة توكلنا لعام 2025",
+ "descriptionAr": "تحتوي مجموعة البيانات هذه على إحصائيات التبرع بالأعضاء المسجلة عبر منصة توكلنا لعام 2025، وتشمل نوع التبرع، السنة، وعدد التبرعات",
+ "updateFrequency": "YEARLY",
+ "timePeriod": "2025-01-01 - 2025-12-31",
+ "categories": [
+  {
+   "titleAr": "الحكومة الإلكترونية"
+  },
+  {
+   "titleAr": "تقنية المعلومات"
+  }
+ ],
+ "tags": [
+  {
+   "name": "Tawakkalna"
+  },
+  {
+   "name": "سدايا"
+  },
+  {
+   "name": "الهيئة السعودية للبيانات والذكاء الاصطناعي"
+  },
+  {
+   "name": "توكلنا"
+  },
+  {
+   "name": "SDAIA"
+  }
+ ],
+ "createdAt": "2026-05-19 17:37:07",
+ "updatedAt": "2026-05-23 12:05:57"
+}

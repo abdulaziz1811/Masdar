@@ -52,9 +52,14 @@ SYNONYMS = {
     "نفطيه": ("بتروليه",),
     "نفط": ("بترول",),
     "بتروليه": ("نفطيه",),
+    # A publisher known by its short name: the platform says the full one.
+    "سدايا": ("الهيئة السعودية للبيانات والذكاء الاصطناعي", "sdaia"),
 }
 # Free terms too plain to say what a result must be about.
 _PLAIN = frozenset({"غير", "حسب", "لعدد", "بعدد"})
+# A publisher's name says whose data, not what data: «عدد الخيول في سدايا»
+# is not answered by any SDAIA table.
+_PUBLISHER_NAMES = frozenset({"سدايا", "sdaia"})
 
 
 def _freshness(last_updated: date | None, today: date) -> float:
@@ -247,7 +252,20 @@ def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:
             for phrase in request.typed_phrases
             for name in (phrase, *_aliases(phrase))
         )
-    return any(mentions(haystack, term) for term in request.free_terms)
+    # No topic recognised: the question's own words are all there is, and
+    # one shared word is not a subject. «عدد المستفيدين من معسكرات سدايا»
+    # once returned «نسبة السكان المستفيدين من خدمات الكهرباء» on
+    # «المستفيدين» alone. At least half of them must be named -- the
+    # publisher's name counting, since «سدايا» asks for SDAIA's data -- and
+    # at least one word of the subject itself.
+    terms = [t for t in request.free_terms if t not in _PLAIN]
+    if not terms:
+        return False
+    named = {t for t in terms if mentions_term(candidate, t)}
+    subject = [t for t in terms if strip_article(t) not in _PUBLISHER_NAMES]
+    if subject and not named & set(subject):
+        return False
+    return len(named) >= (len(terms) + 1) // 2
 
 
 def specific_terms(request: DataRequest) -> tuple[str, ...]:
@@ -260,7 +278,7 @@ def mentions_term(candidate: DatasetCandidate, term: str) -> bool:
         candidate.title_ar, candidate.title_en, candidate.description, candidate.keywords,
         candidate.publisher_ar, candidate.publisher_en,
     )))
-    words = (term, *SYNONYMS.get(strip_article(term), ()))
+    words = (term, *SYNONYMS.get(strip_article(term), ()), *load_lexicon().alternatives(term))
     return any(mentions(haystack, w) for w in words)
 
 

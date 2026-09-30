@@ -195,6 +195,16 @@ dimensions:
            موسمي, موسم, season, seasonal, winter, summer]
   activity: [النشاط, الأنشطة, حسب النشاط, activity, activities, by activity]
 
+# What a publisher calls the same thing, for words a question may use: the
+# dataset says «أنشطة التدريب» where the reader asks about «معسكرات».
+# Used to rank and to judge a result on the subject; keep it to true
+# equivalents.
+synonyms:
+  معسكرات: [التدريب, تدريبية, المعسكرات التدريبية]
+  معسكر: [التدريب, تدريبية]
+  دورات: [التدريب, تدريبية]
+  مخيمات: [التدريب, تدريبية]
+
 # The thirteen administrative regions, as a question or a table may name
 # them. Naming one («في الرياض») asks for the region breakdown, narrowed to
 # that region. «المدينة» alone is left out: it usually means "the city".

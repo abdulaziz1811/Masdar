@@ -1,0 +1,47 @@
+{
+ "id": "fdc5bfb9-4d9f-4f64-a3c4-2ff1285d5743",
+ "providerNameEn": "saudi data and artificial intelligence authority",
+ "providerNameAr": "الهيئة السعودية للبيانات والذكاء الاصطناعي ",
+ "organizationId": "f113025a-e838-40c9-b6e5-84736bbc3e74",
+ "titleEn": "SDAIA Academy training activitiesQuarterly2026",
+ "titleAr": "احصائيات أنشطة التدريب أكاديمية سدايا بشكل ربعي لسنة 2026",
+ "descriptionAr": "احصائيات أنشطة التدريب والبرامج والمعسكرات لأكاديمية سدايا بشكل ربعي لسنة 2026",
+ "updateFrequency": "QUARTERLY",
+ "timePeriod": "2026-01-01 - 2026-12-31",
+ "categories": [
+  {
+   "titleAr": "أحصائيات"
+  },
+  {
+   "titleAr": "التعليم والتدريب"
+  },
+  {
+   "titleAr": "التعليم"
+  }
+ ],
+ "tags": [
+  {
+   "name": "انشطة"
+  },
+  {
+   "name": "تعليم"
+  },
+  {
+   "name": "Education"
+  },
+  {
+   "name": "سدايا"
+  },
+  {
+   "name": "SDAIA"
+  },
+  {
+   "name": "Training"
+  },
+  {
+   "name": "التدريب"
+  }
+ ],
+ "createdAt": "2026-04-16 15:05:13",
+ "updatedAt": "2026-07-19 13:26:58"
+}

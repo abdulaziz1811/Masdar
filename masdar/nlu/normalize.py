@@ -115,15 +115,19 @@ def root(token: str) -> str:
 
 
 def _roots(token: str) -> set[str]:
-    """A token's family, read with and without a leading «و».
+    """A token's family, read with and without a leading «و» or «ل».
 
     «و» is sometimes "and" («والسكان») and sometimes the word's own first
     letter («وفيات», «وحدات»): stripped, «وفيات» would never meet «الوفيات».
+    «ل» is "for" in «لمنصة إحسان», which must meet «منصة»; it is never
+    stripped alone, since «لقاحات» begins with it.
     """
     found = {root(token)}
     bare = token[2:] if token.startswith("ال") else token
     if bare.startswith("و") and len(bare) >= 4:
         found.add(_reduce(bare))
+    if token.startswith("ل") and not token.startswith("لل") and len(token) >= 5:
+        found.add(_reduce(token[1:]))
     return found
 
 

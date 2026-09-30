@@ -7,6 +7,12 @@ verbatim. The data file itself could not be downloaded from the build
 environment, so `SYNTHETIC_consumption_by_area.csv` stands in for it: it has
 the platform's declared column (السنة) and formulaic numbers, and is named
 so it cannot be mistaken for the real file.
+
+The SDAIA recordings (`organization_sdaia.json`, `sdaia_*.json`) were made
+on 2026-09-30 through the Saudi exit: the catalogue is nineteen of SDAIA's
+entries copied verbatim, and five datasets' details (and one's file list)
+are verbatim. A dataset whose details were not recorded answers "not
+found", as a withdrawn one would.
 """
 
 from datetime import date
@@ -377,3 +383,138 @@ class TestSaudiExit:
         assert any("الملف الأصلي" in n for n in answer.primary.notes)
         # No file was asked for: the exit refuses them, and each try costs.
         assert not any("/odp-public/" in u for u in transport.urls)
+
+
+SDAIA = "f113025a-e838-40c9-b6e5-84736bbc3e74"
+
+
+class SdaiaTransport(PortalTransport):
+    """SDAIA's datasets on the platform, as recorded through the Saudi exit."""
+
+    name = "firecrawl"
+
+    def get(self, url, source_id, params=None, headers=None):
+        parts = urlsplit(url)
+        query = dict(parse_qsl(parts.query))
+        if parts.path.endswith("/organizations") and query.get("organization") == SDAIA:
+            self.urls.append(url)
+            return self._json(url, "organization_sdaia.json")
+        dataset = query.get("dataset", "")
+        if dataset and dataset != CONSUMPTION:
+            self.urls.append(url)
+            kind = "resources" if parts.path.endswith("/resources") else "dataset"
+            recorded = FIXTURES / f"sdaia_{kind}_{dataset[:8]}.json"
+            if not recorded.exists():
+                raise SourceError(source_id, "not found")
+            return self._json(url, recorded.name)
+        return super().get(url, source_id, params, headers)
+
+    @staticmethod
+    def _json(url, name):
+        body = (FIXTURES / name).read_bytes()
+        return Response(url, url, 200, body, "application/json", {})
+
+
+class TestAskingSdaia:
+    """Questions a reader asked, or would, about SDAIA's own data."""
+
+    @staticmethod
+    def ask(tmp_path, question):
+        transport = SdaiaTransport()
+        reg = registry(transport)
+        answer = Agent(registry=reg, http=reg._http,
+                       config=AgentConfig(out_dir=tmp_path / "out",
+                                          today=date(2026, 9, 30))).answer(question)
+        return answer, transport
+
+    def test_the_camps_are_the_academys_training(self, tmp_path):
+        # Asked live: the answer was the electricity SDG indicator, on the
+        # one word «المستفيدين».
+        answer, _ = self.ask(tmp_path, "عطني عدد المستفيدين من معسكرات سدايا")
+        assert answer.verdict is Verdict.AVAILABLE
+        titles = [f.candidate.title_ar for f in answer.findings]
+        assert titles and all("أكاديمية سدايا" in t for t in titles)
+        assert "لسنة 2026" in answer.primary.candidate.title_ar
+        assert answer.primary.coverage.origin is CoverageOrigin.METADATA_CLAIM
+        assert answer.primary.coverage.years == frozenset({2026})
+        # Through the exit the file is a link, never a download.
+        assert answer.primary.export_path is None
+        assert any("الملف الأصلي" in n for n in answer.primary.notes)
+        assert "الكهرباء" not in answer.message_ar
+
+    def test_the_named_publisher_is_asked_first_not_everyone(self, tmp_path):
+        _, transport = self.ask(tmp_path, "عطني عدد المستفيدين من معسكرات سدايا")
+        asked = [dict(parse_qsl(urlsplit(u).query)).get("organization")
+                 for u in transport.urls if urlsplit(u).path.endswith("/organizations")]
+        assert asked and asked[0] == SDAIA
+        adapter = registry(PortalTransport()).adapter("saudi_open_data")
+        assert len(asked) < len(adapter._organizations())
+
+    def test_tawakkalna_new_users_of_a_year(self, tmp_path):
+        answer, _ = self.ask(tmp_path, "عدد المستخدمين الجدد في توكلنا 2023")
+        assert answer.verdict is Verdict.AVAILABLE
+        assert "توكلنا لسنة 2023" in answer.primary.candidate.title_ar
+        assert answer.primary.matched_years == (2023,)
+
+    def test_ehsan_donations_of_a_year(self, tmp_path):
+        answer, _ = self.ask(tmp_path, "تبرعات منصة إحسان 2024")
+        assert answer.verdict is Verdict.AVAILABLE
+        assert "احسان بشكل ربعي لسنة 2024" in answer.primary.candidate.title_ar
+
+    def test_organ_donations_are_not_ehsans_donations(self, tmp_path):
+        answer, _ = self.ask(tmp_path, "التبرع بالأعضاء في توكلنا 2025")
+        assert answer.verdict is Verdict.AVAILABLE
+        assert "التبرع بالاعضاء" in answer.primary.candidate.title_ar
+        assert "2025" in answer.primary.candidate.title_ar
+
+    def test_the_academys_2024_year(self, tmp_path):
+        answer, _ = self.ask(tmp_path, "احصائيات أكاديمية سدايا 2024")
+        assert answer.verdict is Verdict.AVAILABLE
+        assert "لسنة 2024" in answer.primary.candidate.title_ar
+
+    def test_a_year_sdaia_has_not_published_is_not_confirmed(self, tmp_path):
+        # Tawakkalna's figures start in 2022. The platform's description of
+        # one year is no proof another is absent, so 2021 is left
+        # unconfirmed and a published year is offered instead.
+        answer, _ = self.ask(tmp_path, "عدد المستخدمين الجدد في توكلنا 2021")
+        assert answer.verdict not in (Verdict.AVAILABLE, Verdict.PARTIAL)
+        assert "توكلنا" in answer.primary.candidate.title_ar
+        assert answer.suggestions and all(s.year >= 2022 for s in answer.suggestions)
+
+    def test_something_sdaia_does_not_publish_is_not_found(self, tmp_path):
+        answer, _ = self.ask(tmp_path, "عدد الخيول في سدايا")
+        assert answer.verdict is Verdict.NO_SOURCE
+        assert answer.primary is None
+
+    def test_the_electricity_indicator_is_not_about_sdaias_camps(self):
+        from masdar.domain.models import DatasetCandidate
+        from masdar.nlu.parser import parse
+        from masdar.pipeline.resolve import on_subject
+
+        request = parse("عطني عدد المستفيدين من معسكرات سدايا")
+        electricity = DatasetCandidate(
+            "sdg", "7.1.1", "المؤشر 7.1.1: نسبة السكان المستفيدين من خدمات الكهرباء (%)")
+        academy = DatasetCandidate(
+            "saudi_open_data", "fdc5bfb9",
+            "احصائيات أنشطة التدريب أكاديمية سدايا بشكل ربعي لسنة 2026")
+        assert not on_subject(request, electricity)
+        assert on_subject(request, academy)
+
+    def test_the_publishers_name_alone_is_not_a_subject(self):
+        from masdar.domain.models import DatasetCandidate
+        from masdar.nlu.parser import parse
+        from masdar.pipeline.resolve import on_subject
+
+        job_titles = DatasetCandidate(
+            "saudi_open_data", "36bc6b58", "المسميات الوظيفية في سدايا لعام 2025",
+            publisher_ar="الهيئة السعودية للبيانات والذكاء الاصطناعي")
+        assert not on_subject(parse("عدد الزوار في سدايا"), job_titles)
+        # Asked for SDAIA's data and nothing narrower, any of it answers.
+        assert on_subject(parse("بيانات سدايا"), job_titles)
+
+
+def test_a_stalled_model_cannot_hold_the_answer_long():
+    # One question once took 86 s, 30 of them waiting on the model.
+    from masdar.nlu.llm import TIMEOUT_SECONDS
+
+    assert TIMEOUT_SECONDS <= 10

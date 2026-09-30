@@ -1,0 +1,38 @@
+{
+ "id": "853507fd-2bd8-40a9-ac3b-32fab042420e",
+ "providerNameEn": "saudi data and artificial intelligence authority",
+ "providerNameAr": "الهيئة السعودية للبيانات والذكاء الاصطناعي ",
+ "organizationId": "f113025a-e838-40c9-b6e5-84736bbc3e74",
+ "titleEn": "2023 New Users for Tawakkalna Platform monthly",
+ "titleAr": "أعداد المستخدمين الجدد لمنصة توكلنا لسنة 2023 على مستوى الأشهر",
+ "descriptionAr": "أعداد المستخدمين الجدد لمنصة توكلنا لسنة 2023 على مستوى الأشهر",
+ "updateFrequency": "YEARLY",
+ "timePeriod": "2023-01-01 - 2023-12-31",
+ "categories": [
+  {
+   "titleAr": "الحكومة الإلكترونية"
+  },
+  {
+   "titleAr": "تقنية المعلومات"
+  }
+ ],
+ "tags": [
+  {
+   "name": "سدايا"
+  },
+  {
+   "name": "الهيئة السعودية للبيانات والذكاء الاصطناعي"
+  },
+  {
+   "name": "SDAIA"
+  },
+  {
+   "name": "توكلنا"
+  },
+  {
+   "name": "Tawakkalna"
+  }
+ ],
+ "createdAt": "2024-01-29 15:41:19",
+ "updatedAt": "2024-02-01 10:07:19"
+}

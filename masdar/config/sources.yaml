@@ -77,6 +77,13 @@ sources:
       # /ar/publishers/<id>, carries its id.
       organizations:
         - {id: bd9ff32e-4956-4dbf-bdde-1c1e4d786640, name_ar: الهيئة العامة للإحصاء, datasets: 84}
+        # Verified by id on 2026-09-30 (the platform's WAF now refuses this
+        # name): Tawakkalna, Ehsan, Nafath, Deem, SDAIA Academy, budgets. A
+        # question naming one of its platforms asks for its data.
+        - {id: f113025a-e838-40c9-b6e5-84736bbc3e74,
+           name_ar: الهيئة السعودية للبيانات والذكاء الاصطناعي, datasets: 100,
+           aliases: [سدايا, SDAIA, توكلنا, إحسان, نفاذ, ديم],
+           topics: [ict, education, finance, health]}
         - {id: 886f6d71-8034-47f7-914d-9613825d9153, name_ar: وزارة الطاقة, datasets: 100,
            topics: [electricity, energy, environment]}
         - {id: c43616c3-f3ac-41b9-bbad-040670bc396d, name_ar: وزارة الصحة, datasets: 100,

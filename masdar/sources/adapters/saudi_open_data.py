@@ -72,6 +72,7 @@ _TITLE_YEAR = re.compile(r"(?<!\d)(19[5-9]\d|20\d\d)(?!\d)")
 _QUARTER = re.compile(r"ربع\s+(?:السنوي\s+)?(الاول|الثاني|الثانيه|الثالث|الرابع)|\bq([1-4])\b")
 _QUARTER_NUMBERS = {"الاول": 1, "الثاني": 2, "الثانيه": 2, "الثالث": 3, "الرابع": 4}
 W_WORD_FIT = 6.0
+W_NAMED_PUBLISHER = 4.0
 W_TITLE_YEAR_MATCH = 4.0
 W_TITLE_YEAR_OTHER = -3.0
 W_PER_YEAR = 0.05
@@ -184,7 +185,32 @@ class SaudiOpenDataAdapter(SourceAdapter):
         path = Path(configured)
         return path if path.is_absolute() else DISCOVERED_FILE.parent / path
 
-    def _organizations(self, topic_id: str | None = None) -> list[dict]:
+    @staticmethod
+    def _names(org: dict) -> list[str]:
+        return [str(n) for n in (org.get("name_ar"), *(org.get("aliases") or ())) if n]
+
+    def named_in(self, question: str) -> set[str]:
+        """Publishers the question names («سدايا», «وزارة الصحة»), by id or name."""
+        return {
+            str(org.get("id") or org.get("name_ar"))
+            for org in self._publishers()
+            if any(contains_phrase(question, name) for name in self._names(org))
+        }
+
+    def _publishers(self) -> list[dict]:
+        """Every publisher known: configured, then found by `masdar publishers`."""
+        configured = self.descriptor.api.get("organizations") or []
+        orgs = [o for o in configured if isinstance(o, dict) and (o.get("id") or o.get("name_ar"))]
+        # The configured ones win on a clash.
+        known = {str(v) for o in orgs for v in (o.get("id"), o.get("name_ar")) if v}
+        for entry in load_discovered(self._discovered_file()):
+            if not ({str(v) for v in (entry.get("id"), entry.get("name_ar")) if v} & known):
+                orgs.append(entry)
+        return orgs
+
+    def _organizations(
+        self, topic_id: str | None = None, named: frozenset[str] = frozenset()
+    ) -> list[dict]:
         """Configured publishers, narrowed to those that publish the topic.
 
         A publisher may list the topics it covers; one that does is skipped
@@ -192,27 +218,30 @@ class SaudiOpenDataAdapter(SourceAdapter):
         court statistics out of an electricity search. A publisher with no
         list -- or a question with no topic -- is always searched.
         """
-        configured = self.descriptor.api.get("organizations") or []
-        orgs = [o for o in configured if isinstance(o, dict) and (o.get("id") or o.get("name_ar"))]
-        # Publishers found by `masdar publishers`, after the configured ones,
-        # which win on a clash.
-        known = {str(v) for o in orgs for v in (o.get("id"), o.get("name_ar")) if v}
-        for entry in load_discovered(self._discovered_file()):
-            if not ({str(v) for v in (entry.get("id"), entry.get("name_ar")) if v} & known):
-                orgs.append(entry)
+        orgs = self._publishers()
+        general = [o for o in orgs if not o.get("topics")]
+        # A publisher the question names is asked whatever the topic.
+        chosen = [o for o in orgs if str(o.get("id") or o.get("name_ar")) in named]
         if topic_id is None:
-            return orgs
-        return [o for o in orgs if not o.get("topics") or topic_id in o["topics"]]
+            # Through the Saudi exit every publisher costs a request; a
+            # question with no topic asks the ones it names and the general
+            # ones, not all of them.
+            rest = general if (named or self._via_exit) else orgs
+        else:
+            rest = [o for o in orgs if not o.get("topics") or topic_id in o["topics"]]
+        return chosen + [o for o in rest if o not in chosen]
 
     # -- catalogue -----------------------------------------------------
-    def catalogue(self, topic_id: str | None = None) -> tuple[list[dict], list[str]]:
+    def catalogue(
+        self, topic_id: str | None = None, named: frozenset[str] = frozenset()
+    ) -> tuple[list[dict], list[str]]:
         """Every dataset of the relevant publishers, with any failures.
 
         One request per publisher, made in parallel and cached on disk by the
         HTTP layer. A publisher that fails is reported, not fatal: the others
         still answer.
         """
-        orgs = self._organizations(topic_id)
+        orgs = self._organizations(topic_id, named)
 
         def request(key: str):
             return self._get_json(self._api(
@@ -256,6 +285,7 @@ class SaudiOpenDataAdapter(SourceAdapter):
                         "title_en": str(item.get("titleEn") or "").strip(),
                         "org_ar": str(payload.get("nameAr") or org.get("name_ar") or ""),
                         "org_en": str(payload.get("nameEn") or ""),
+                        "org_key": str(org.get("id") or org.get("name_ar")),
                     })
         return entries, problems
 
@@ -269,7 +299,11 @@ class SaudiOpenDataAdapter(SourceAdapter):
             # «GDP and National Accounts» must not outrank the growth rate
             # asked for by name.
             score += min(2.0, sum(1.0 for k in keywords if k and contains_phrase(text, k)))
-        score += sum(2.0 for t in request.free_terms if contains_phrase(text, t))
+        for term in request.free_terms:
+            if contains_phrase(text, term):
+                score += 2.0
+            elif any(contains_phrase(text, w) for w in lexicon.alternatives(term)):
+                score += 1.5  # the publisher's word for it («التدريب» for «معسكرات»)
         if score <= 0:
             return 0.0  # a breakdown word alone is not a match
         # Worded like the question: a publisher's catalogue holds dozens of
@@ -284,12 +318,17 @@ class SaudiOpenDataAdapter(SourceAdapter):
     def search(self, request: DataRequest, limit: int = 10) -> list[DatasetCandidate]:
         if self.http is None:
             raise SourceError(self.id, "no HTTP client configured")
-        entries, problems = self.catalogue(request.topic.id if request.topic else None)
+        named = frozenset(self.named_in(request.raw_query))
+        entries, problems = self.catalogue(request.topic.id if request.topic else None, named)
         if not entries and problems:
             raise SourceUnreachable(self.id, "؛ ".join(problems[:3]))
 
         lexicon = load_lexicon()
-        scored = [(self._score(request, e, lexicon), e) for e in entries]
+        # Asked for a publisher's data («معسكرات سدايا»), its datasets first.
+        scored = [
+            (score + (W_NAMED_PUBLISHER if score and e.get("org_key") in named else 0.0), e)
+            for score, e in ((self._score(request, e, lexicon), e) for e in entries)
+        ]
         ranked = sorted((p for p in scored if p[0] > 0), key=lambda p: (-p[0], p[1]["title_ar"]))
 
         opened = MAX_DETAIL_FETCHES_VIA_EXIT if self._via_exit else MAX_DETAIL_FETCHES
@@ -310,12 +349,18 @@ class SaudiOpenDataAdapter(SourceAdapter):
     def _candidate(self, entry: dict, lexicon) -> DatasetCandidate | None:
         dataset_id = entry["id"]
         with ThreadPoolExecutor(max_workers=2) as pool:
-            asked = [pool.submit(self._get_json, self._api(key, default, id=dataset_id))
-                     for key, default in (
-                         ("dataset", "/data/api/datasets?version=-1&dataset={id}"),
-                         ("resources", "/data/api/datasets/resources?version=-1&dataset={id}"),
-                     )]
-            details, listing = (future.result() for future in asked)
+            asked = pool.submit(self._get_json, self._api(
+                "dataset", "/data/api/datasets?version=-1&dataset={id}", id=dataset_id))
+            listed = pool.submit(self._get_json, self._api(
+                "resources", "/data/api/datasets/resources?version=-1&dataset={id}",
+                id=dataset_id))
+            details = asked.result()
+            try:
+                listing = listed.result()
+            except (SourceError, SourceUnreachable):
+                # The dataset and its declared period still stand; the page
+                # link remains for the reader.
+                listing = None
         if not isinstance(details, dict):
             return None
 
@@ -364,7 +409,8 @@ class SaudiOpenDataAdapter(SourceAdapter):
             title_ar=title_ar or title_en,
             title_en=title_en,
             description=description,
-            keywords=" ".join([*tags, *categories]),
+            # The files' columns say what the data holds («عدد المستفيدين»).
+            keywords=" ".join([*tags, *categories, *columns]),
             landing_url=self.descriptor.url(f"/ar/datasets/view/{dataset_id}"),
             publisher_ar=str(details.get("providerNameAr") or entry["org_ar"]),
             publisher_en=str(details.get("providerNameEn") or entry["org_en"]),

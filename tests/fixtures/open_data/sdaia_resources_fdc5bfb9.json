@@ -1,0 +1,37 @@
+{
+ "datasetId": "fdc5bfb9-4d9f-4f64-a3c4-2ff1285d5743",
+ "resources": [
+  {
+   "id": "18ae59ff-03d6-407c-a6ef-990cfbaad120",
+   "name": "SDAIA Academy training activities Quarterly 2026",
+   "format": "CSV",
+   "columns": [
+    {
+     "name": "عدد المستفيدين",
+     "type": "numeric"
+    },
+    {
+     "name": "نوع البرنامج",
+     "type": "text"
+    }
+   ],
+   "downloadUrl": "https://open.data.gov.sa/odp-public/f113025a-e838-40c9-b6e5-84736bbc3e74/fdc5bfb9-4d9f-4f64-a3c4-2ff1285d5743/v2/SDAIA Academy training activities Quarterly 2026.csv"
+  },
+  {
+   "id": "39d25d4a-afdf-4630-99d7-ce8a9eaa7a59",
+   "name": "SDAIA Academy training activities Quarterly2026",
+   "format": "XLSX",
+   "columns": [
+    {
+     "name": "عدد المستفيدين",
+     "type": "numeric"
+    },
+    {
+     "name": "نوع البرنامج",
+     "type": "text"
+    }
+   ],
+   "downloadUrl": "https://open.data.gov.sa/odp-public/f113025a-e838-40c9-b6e5-84736bbc3e74/fdc5bfb9-4d9f-4f64-a3c4-2ff1285d5743/v2/SDAIA Academy training activities Quarterly2026.xlsx"
+  }
+ ]
+}
