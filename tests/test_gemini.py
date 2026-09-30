@@ -134,6 +134,10 @@ class TestWhenGeminiCannotHelp:
                                     "API_KEY_INVALID")), "غير صالح"),
         (Response(429, google_error(429, "RESOURCE_EXHAUSTED", "Quota exceeded")), "حد الاستخدام"),
         (Response(404, google_error(404, "NOT_FOUND", "no such model")), "النموذج غير متاح"),
+        # Seen live on 2026-09-30, in English, under the question.
+        (Response(503, google_error(503, "UNAVAILABLE",
+                                    "This model is currently experiencing high demand.")),
+         "مزدحم"),
         (Response(400, google_error(400, "INVALID_ARGUMENT", "something about the request")),
          "something about the request"),
         (Response(200, answer("{", finish="MAX_TOKENS")), "انقطع"),

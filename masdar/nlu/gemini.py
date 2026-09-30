@@ -71,6 +71,12 @@ def describe_response_error(response) -> str:
         return "النموذج غير متاح لهذا المفتاح"
     if code == 429 or status == "RESOURCE_EXHAUSTED":
         return "تجاوز حد الاستخدام لدى Google؛ أعد المحاولة بعد دقيقة"
+    # "This model is currently experiencing high demand": Google's side, and
+    # passing; said in Arabic, not in the English it comes in.
+    if code == 503 or status == "UNAVAILABLE":
+        return "نموذج Google مزدحم الآن"
+    if code >= 500:
+        return "خطأ مؤقت لدى Google"
     suffix = f": {message}" if message else ""
     return f"خطأ من Google ({code}){suffix}"
 

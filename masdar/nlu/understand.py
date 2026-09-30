@@ -78,6 +78,9 @@ def continue_request(previous: DataRequest, current: DataRequest, root: str) -> 
     )
 
 
+READ_BY_RULES = "قُرئ السؤال بالمحلل العربي"
+
+
 def understand(
     message: str,
     lexicon: Lexicon,
@@ -95,10 +98,12 @@ def understand(
 
     try:
         reading = llm.read(message, previous if has_context else None)
+    # The model is an aid: without it the question is read by the rules, and
+    # the answer says so without alarm.
     except LlmUnavailable as exc:
-        return Understanding(current, False, note=f"تعذّر الفهم بالنموذج: {exc.reason}")
-    except Exception as exc:  # the model is an aid; its failure must not sink the answer
-        return Understanding(current, False, note=f"تعذّر الفهم بالنموذج: {type(exc).__name__}")
+        return Understanding(current, False, note=f"{READ_BY_RULES}؛ {exc.reason}")
+    except Exception:  # its failure must not sink the answer
+        return Understanding(current, False, note=f"{READ_BY_RULES}؛ تعذّر الاتصال بالنموذج")
 
     reading = with_rule_years(reading, current)
     request = replace(reading.request, typed_phrases=current.typed_phrases)

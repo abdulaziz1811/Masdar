@@ -357,6 +357,18 @@ class TestSaudiExit:
         assert reg.adapter("worldbank").http.transport.name == "recorded"
         assert not reg.not_reachable("electricity")
 
+    def test_the_warmup_does_not_spend_the_exit(self, monkeypatch):
+        # The start-up warm-up once took the exit for its eight questions and
+        # their retries: the free plan's rate was spent, and the platform
+        # benched as slow, just as the presenter asked about SDAIA.
+        monkeypatch.setenv("MASDAR_OUTSIDE_KSA", "1")
+        monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+        http = HttpClient(use_cache=False, transport=PortalTransport())
+        background = Registry(load_descriptors(), http, use_saudi_exit=False)
+        assert "saudi_open_data" not in {d.id for d in background.for_topic("electricity")}
+        page = Registry(load_descriptors(), http)
+        assert "saudi_open_data" in {d.id for d in page.for_topic("electricity")}
+
     def test_abroad_without_a_key_it_is_not_asked_and_that_is_said(self, monkeypatch):
         from masdar.domain.models import Answer
         from masdar.nlu.parser import parse
@@ -442,13 +454,24 @@ class TestAskingSdaia:
         assert any("الملف الأصلي" in n for n in answer.primary.notes)
         assert "الكهرباء" not in answer.message_ar
 
-    def test_the_named_publisher_is_asked_first_not_everyone(self, tmp_path):
+    def test_through_the_exit_the_named_publisher_is_asked_alone(self, tmp_path):
+        # Firecrawl's free plan allows ten requests a minute: the question
+        # once took nine, and a second question in the same minute failed.
         _, transport = self.ask(tmp_path, "عطني عدد المستفيدين من معسكرات سدايا")
         asked = [dict(parse_qsl(urlsplit(u).query)).get("organization")
                  for u in transport.urls if urlsplit(u).path.endswith("/organizations")]
-        assert asked and asked[0] == SDAIA
-        adapter = registry(PortalTransport()).adapter("saudi_open_data")
-        assert len(asked) < len(adapter._organizations())
+        assert asked == [SDAIA]
+        # Its catalogue, two datasets' details, the first one's file list.
+        assert len(transport.urls) <= 4
+
+    def test_through_the_exit_a_broad_topic_asks_few_publishers(self):
+        from masdar.sources.adapters.saudi_open_data import MAX_PUBLISHERS_VIA_EXIT
+
+        adapter = registry(SdaiaTransport()).adapter("saudi_open_data")
+        finance = adapter._organizations("finance")
+        assert len(finance) == MAX_PUBLISHERS_VIA_EXIT
+        # Those publishing the topic first, not the general ones.
+        assert all("finance" in (o.get("topics") or ()) for o in finance)
 
     def test_tawakkalna_new_users_of_a_year(self, tmp_path):
         answer, _ = self.ask(tmp_path, "عدد المستخدمين الجدد في توكلنا 2023")
@@ -518,3 +541,35 @@ def test_a_stalled_model_cannot_hold_the_answer_long():
     from masdar.nlu.llm import TIMEOUT_SECONDS
 
     assert TIMEOUT_SECONDS <= 10
+
+
+class SlowExit(SdaiaTransport):
+    """The Saudi exit as the free plan serves it: two at a time, each slow."""
+
+    def __init__(self, seconds):
+        super().__init__()
+        import threading
+
+        self.seconds = seconds
+        self._two = threading.Semaphore(2)
+
+    def get(self, url, source_id, params=None, headers=None):
+        import time
+
+        with self._two:
+            time.sleep(self.seconds)
+            return super().get(url, source_id, params, headers)
+
+
+def test_a_slow_exit_still_answers_when_nothing_else_does(tmp_path):
+    # Live, 2026-09-30: «لم يُعثر» at 21 s, the platform cut off at 15 s.
+    # Scaled down: the search waits at least a second, and the platform
+    # needs three rounds of 0.45 s (its catalogue, then three requests two
+    # at a time).
+    reg = registry(SlowExit(0.45))
+    agent = Agent(registry=reg, http=reg._http,
+                  config=AgentConfig(out_dir=tmp_path / "out", today=date(2026, 9, 30),
+                                     answer_seconds=1.0))
+    answer = agent.answer("عطني عدد المستفيدين من معسكرات سدايا")
+    assert answer.verdict is Verdict.AVAILABLE
+    assert "أكاديمية سدايا" in answer.primary.candidate.title_ar

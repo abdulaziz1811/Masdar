@@ -233,11 +233,15 @@ class FirecrawlTransport(Transport):
         country: str = "SA",
         timeout: float = 90.0,
         wait_for_ms: int = 5000,
+        max_age_ms: int = 0,
     ):
         self.api_key = api_key or os.environ.get("FIRECRAWL_API_KEY", "")
         self.country = country
         self.timeout = timeout
         self.wait_for_ms = wait_for_ms
+        # Firecrawl may answer from its own copy of the page if it is no
+        # older than this; 0 always fetches afresh.
+        self.max_age_ms = max_age_ms
         self._session = requests.Session()
 
     def describe(self) -> str:
@@ -277,7 +281,7 @@ class FirecrawlTransport(Transport):
             "formats": ["rawHtml"],
             "location": {"country": self.country},
             "onlyMainContent": False,
-            "maxAge": 0,
+            "maxAge": self.max_age_ms,
         }
         if self.wait_for_ms:
             payload["waitFor"] = self.wait_for_ms
@@ -324,13 +328,20 @@ class FirecrawlTransport(Transport):
         )
 
 
+EXIT_MAX_AGE_MS = 6 * 60 * 60 * 1000
+
+
 def saudi_exit_transport() -> FirecrawlTransport:
     """The route for geo-restricted sources when this server is abroad.
 
     Their APIs answer JSON, so there is no page to wait for; 30 seconds covers
     the exit's slowest answers seen (the largest publisher list, ~275 KB).
+    A copy Firecrawl fetched in the last six hours is taken: it comes back far
+    sooner than a fresh fetch through the exit, and a publisher's list of
+    datasets changes over weeks, not hours. It also spares a restarted
+    server, whose own cache is gone, the full wait.
     """
-    return FirecrawlTransport(timeout=30.0, wait_for_ms=0)
+    return FirecrawlTransport(timeout=30.0, wait_for_ms=0, max_age_ms=EXIT_MAX_AGE_MS)
 
 
 def build_transport(name: str | None = None, timeout: float = DEFAULT_TIMEOUT) -> Transport:

@@ -118,11 +118,22 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
 class Registry:
     """The set of sources available to a run."""
 
-    def __init__(self, descriptors: tuple[SourceDescriptor, ...], http=None):
+    def __init__(
+        self, descriptors: tuple[SourceDescriptor, ...], http=None, use_saudi_exit: bool = True
+    ):
         self.descriptors = descriptors
         self._http = http
         self._saudi_http = None
+        # False: geo-restricted sources are left out rather than asked through
+        # the Saudi exit -- for background work that must not spend its
+        # credits or its rate (see chat/warmup.py).
+        self._use_saudi_exit = use_saudi_exit
         self._by_id = {d.id: d for d in descriptors}
+
+    def _reachable(self, descriptor: SourceDescriptor) -> bool:
+        if self._use_saudi_exit:
+            return reachable_here(descriptor)
+        return not (descriptor.geo_restricted and outside_ksa())
 
     @classmethod
     def load(cls, path: Path | None = None, http=None) -> Registry:
@@ -134,7 +145,7 @@ class Registry:
 
     def adapter(self, source_id: str) -> SourceAdapter:
         descriptor = self._by_id[source_id]
-        if self._http is not None and via_saudi_exit(descriptor):
+        if self._http is not None and self._use_saudi_exit and via_saudi_exit(descriptor):
             if self._saudi_http is None:
                 from masdar.sources.transport import saudi_exit_transport
 
@@ -146,14 +157,14 @@ class Registry:
         """Sources on the topic that this server cannot ask at all."""
         return tuple(
             d for d in self.descriptors
-            if d.enabled and not reachable_here(d) and d.covers_topic(topic_id)
+            if d.enabled and not self._reachable(d) and d.covers_topic(topic_id)
         )
 
     def for_topic(self, topic_id: str | None) -> tuple[SourceDescriptor, ...]:
         """Sources that claim the topic, most authoritative first."""
         matches = [
             d for d in self.descriptors
-            if d.enabled and reachable_here(d) and d.covers_topic(topic_id)
+            if d.enabled and self._reachable(d) and d.covers_topic(topic_id)
         ]
         return tuple(sorted(matches, key=lambda d: -d.authority))
 
@@ -186,7 +197,7 @@ DEMO_SOURCES_FILE = (
 )
 
 
-def load_registry(demo: bool = False, http=None) -> Registry:
+def load_registry(demo: bool = False, http=None, use_saudi_exit: bool = True) -> Registry:
     """The registry for a run.
 
     Demo sources live in a separate file and are only ever added when asked
@@ -195,4 +206,4 @@ def load_registry(demo: bool = False, http=None) -> Registry:
     descriptors = load_descriptors()
     if demo:
         descriptors = descriptors + load_descriptors(DEMO_SOURCES_FILE)
-    return Registry(descriptors, http)
+    return Registry(descriptors, http, use_saudi_exit=use_saudi_exit)

@@ -116,3 +116,33 @@ def test_a_file_that_does_not_arrive_in_time(tmp_path, monkeypatch):
     assert time.monotonic() - started < SLOW_SECONDS - 0.5
     assert any("لم يصل الملف" in " ".join(f.notes) for f in answer.findings)
 
+
+
+
+def slow_cdata_alone(tmp_path):
+    """The slow source with no other to answer: nothing on the subject in time."""
+    agent, transport = agent_with_slow_cdata(tmp_path)
+    agent.registry = Registry((cdata_descriptor(),), agent.http)
+    return agent, transport
+
+
+def test_with_nothing_on_the_subject_the_slow_source_is_waited_for(tmp_path, monkeypatch):
+    # «معسكرات سدايا» came back «لم يُعثر» at fifteen seconds while the
+    # national platform, the one source with the answer, was still replying.
+    monkeypatch.setattr(orchestrator, "PATIENCE_SECONDS", SLOW_SECONDS + 2)
+    agent, _ = slow_cdata_alone(tmp_path)
+    started = time.monotonic()
+    answer = agent.answer(QUESTION)
+    assert time.monotonic() - started >= SLOW_SECONDS - 0.5
+    # It was heard out: its own reply, not "did not answer in time".
+    assert "لم يُجب خلال" not in dict(answer.source_errors)["gastat_cdata"]
+    assert "gastat_cdata" not in agent._slow
+
+
+def test_patience_has_a_limit(tmp_path, monkeypatch):
+    monkeypatch.setattr(orchestrator, "PATIENCE_SECONDS", 0.5)
+    agent, _ = slow_cdata_alone(tmp_path)
+    started = time.monotonic()
+    answer = agent.answer(QUESTION)
+    assert time.monotonic() - started < SLOW_SECONDS - 0.5
+    assert "لم يُجب خلال 2 ثانية" in dict(answer.source_errors)["gastat_cdata"]

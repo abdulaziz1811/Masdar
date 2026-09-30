@@ -41,6 +41,12 @@ class KapsarcTransport:
         path = urlsplit(url).path
         query = dict(parse_qsl(urlsplit(url).query))
         if path.endswith("/catalog/datasets"):
+            # As the platform answers since September 2026: a language
+            # variant named in the select is a malformed query.
+            variants = [f.strip() for f in query.get("select", "").split(",")
+                        if f.strip().endswith(("_ar", "_en"))]
+            if variants:
+                raise SourceError(source_id, f"HTTP 400: Unknown field: {variants[0]}")
             body = (FIXTURES / "catalog.json").read_bytes()
         elif path.endswith("/records") and "group_by" in query:
             body = (FIXTURES / "groupby_years.json").read_bytes()

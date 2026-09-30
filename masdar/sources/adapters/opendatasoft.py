@@ -41,9 +41,13 @@ from masdar.nlu.normalize import contains_phrase
 from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 
 API = "/api/explore/v2.1"
+# Selecting a field brings its language variants along (`title` answers with
+# `title_en` and `title_ar`, `theme` with `theme_ar`). Naming a variant is
+# refused: since September 2026 `title_ar` in the select is "Unknown field",
+# a 400 that failed every search.
 CATALOG_SELECT = (
-    "dataset_id, title, title_ar, description, modified, publisher, records_count, "
-    "license, keyword, theme, theme_ar, fields"
+    "dataset_id, title, description, modified, publisher, records_count, "
+    "license, keyword, theme, fields"
 )
 MAX_COVERAGE_PROBES = 5
 MAX_SEARCH_TERMS = 6

@@ -47,9 +47,13 @@ from masdar.sources.discover import DISCOVERED_FILE, load_discovered
 
 TABULAR = {"CSV", "XLSX", "XLS", "JSON", "TSV"}
 MAX_DETAIL_FETCHES = 5
-# Through the Saudi exit every request costs a Firecrawl credit (two per
-# dataset's details), so fewer are opened.
-MAX_DETAIL_FETCHES_VIA_EXIT = 3
+# Through the Saudi exit every request costs a Firecrawl credit and counts
+# against its rate (ten a minute on the free plan), so fewer are opened, and
+# only the first one's file list is asked for.
+MAX_DETAIL_FETCHES_VIA_EXIT = 2
+# Publishers whose catalogues are fetched for one question through the exit:
+# a finance question would otherwise ask thirteen.
+MAX_PUBLISHERS_VIA_EXIT = 3
 # Checked 2026-09-30: through Firecrawl's Saudi exit the JSON API answers,
 # but the files (/odp-public/...) are refused ("document_antibot"). A reader
 # in the Kingdom downloads them from the link.
@@ -229,7 +233,14 @@ class SaudiOpenDataAdapter(SourceAdapter):
             rest = general if (named or self._via_exit) else orgs
         else:
             rest = [o for o in orgs if not o.get("topics") or topic_id in o["topics"]]
-        return chosen + [o for o in rest if o not in chosen]
+        if not self._via_exit:
+            return chosen + [o for o in rest if o not in chosen]
+        # Through the exit a named publisher is asked alone, and otherwise
+        # those of the topic come before the general ones, up to a cap.
+        if chosen:
+            return chosen[:MAX_PUBLISHERS_VIA_EXIT]
+        specific = [o for o in rest if o.get("topics")]
+        return (specific + [o for o in rest if o not in specific])[:MAX_PUBLISHERS_VIA_EXIT]
 
     # -- catalogue -----------------------------------------------------
     def catalogue(
@@ -333,9 +344,11 @@ class SaudiOpenDataAdapter(SourceAdapter):
 
         opened = MAX_DETAIL_FETCHES_VIA_EXIT if self._via_exit else MAX_DETAIL_FETCHES
 
-        def open_one(entry: dict) -> DatasetCandidate | None:
+        def open_one(position: int, entry: dict) -> DatasetCandidate | None:
             try:
-                return self._candidate(entry, lexicon)
+                # Through the exit, the file list only for the likeliest.
+                return self._candidate(entry, lexicon,
+                                       with_files=position == 0 or not self._via_exit)
             except (SourceError, SourceUnreachable):
                 return None
 
@@ -343,20 +356,23 @@ class SaudiOpenDataAdapter(SourceAdapter):
         # one after another they outlast the answer's time limit.
         chosen = [entry for _, entry in ranked[: min(limit, opened)]]
         with ThreadPoolExecutor(max_workers=max(1, len(chosen))) as pool:
-            opened_ones = list(pool.map(open_one, chosen))  # map keeps the ranking
+            # map keeps the ranking
+            opened_ones = list(pool.map(open_one, range(len(chosen)), chosen))
         return [c for c in opened_ones if c is not None]
 
-    def _candidate(self, entry: dict, lexicon) -> DatasetCandidate | None:
+    def _candidate(
+        self, entry: dict, lexicon, with_files: bool = True
+    ) -> DatasetCandidate | None:
         dataset_id = entry["id"]
         with ThreadPoolExecutor(max_workers=2) as pool:
             asked = pool.submit(self._get_json, self._api(
                 "dataset", "/data/api/datasets?version=-1&dataset={id}", id=dataset_id))
             listed = pool.submit(self._get_json, self._api(
                 "resources", "/data/api/datasets/resources?version=-1&dataset={id}",
-                id=dataset_id))
+                id=dataset_id)) if with_files else None
             details = asked.result()
             try:
-                listing = listed.result()
+                listing = listed.result() if listed else None
             except (SourceError, SourceUnreachable):
                 # The dataset and its declared period still stand; the page
                 # link remains for the reader.

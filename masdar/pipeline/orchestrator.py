@@ -69,6 +69,11 @@ MIN_FETCH_SECONDS = 8.0
 # A source that ran out of time is not asked again for this long, unless its
 # late reply arrives first: the next question should not wait on it again.
 SLOW_COOLDOWN_SECONDS = 120.0
+# When the sources that answered in time found nothing on the subject, those
+# still working get this much longer: "not found" is the wrong answer to give
+# early. The national platform, reached through the Saudi exit, takes seconds
+# a request, and its answer to «معسكرات سدايا» was cut off at fifteen.
+PATIENCE_SECONDS = 20.0
 
 
 @dataclass
@@ -297,6 +302,10 @@ class Agent:
         futures = {d.id: pool.submit(self._search_one, d, request) for d in asked}
         budget = max(1.0, (deadline - now) * SEARCH_SHARE)
         wait(futures.values(), timeout=budget)
+        pending = [f for f in futures.values() if not f.done()]
+        if pending and not self._on_subject_found(request, futures.values()):
+            wait(pending, timeout=PATIENCE_SECONDS)
+        waited = time.monotonic() - now
         pool.shutdown(wait=False)
 
         results = []
@@ -311,11 +320,21 @@ class Agent:
                 results.append(future.result())
             else:
                 self._slow[descriptor.id] = time.monotonic() + SLOW_COOLDOWN_SECONDS
-                seconds = round(budget)
+                seconds = round(waited)
                 results.append((
                     None, f"لم يُجب خلال {seconds} ثانية", f"لم يُجب خلال {seconds} ثانية",
                 ))
         return results
+
+    @staticmethod
+    def _on_subject_found(request: DataRequest, futures) -> bool:
+        """Whether a source that has answered found something on the subject."""
+        for future in futures:
+            if future.done():
+                found = future.result()[0]
+                if any(resolve.on_subject(request, c) for c in found or ()):
+                    return True
+        return False
 
     # -- verify and export ---------------------------------------------
     def _evaluate(

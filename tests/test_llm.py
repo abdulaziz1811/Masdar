@@ -200,7 +200,8 @@ class TestFailuresFallBackToTheRules:
     def test_an_unexpected_error_cannot_sink_the_answer(self, lexicon):
         llm, _ = llm_with(lexicon, raises=RuntimeError("boom"))
         result = understand(UNPLACED, lexicon, llm=llm)
-        assert result.method == RULES and "RuntimeError" in result.note
+        # Said plainly to the reader, not as the exception's name.
+        assert result.method == RULES and "المحلل العربي" in result.note
 
 
 class TestConfiguration:

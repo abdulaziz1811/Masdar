@@ -413,9 +413,9 @@ def cmd_serve(args: argparse.Namespace) -> int:
     down_hosts: dict = {}
     slow_sources: dict = {}
 
-    def make_agent(llm=None) -> Agent:
+    def make_agent(llm=None, use_saudi_exit: bool = True) -> Agent:
         http = HttpClient(timeout=args.timeout, offline=args.offline, down_hosts=down_hosts)
-        registry = load_registry(demo=args.demo, http=http)
+        registry = load_registry(demo=args.demo, http=http, use_saudi_exit=use_saudi_exit)
         return Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm,
                      slow=slow_sources)
 
@@ -454,7 +454,11 @@ def cmd_serve(args: argparse.Namespace) -> int:
     elif outside_ksa():
         print("الخادم خارج المملكة (MASDAR_OUTSIDE_KSA): المصادر المقيَّدة جغرافياً لن تُسأل.")
     if warm is not None:
-        warm.start(make_agent)
+        # Not through the Saudi exit: eight questions and their retries would
+        # spend its credits and its rate (ten a minute on the free plan) just
+        # as the presenter starts asking, and the platform would be benched
+        # as slow for the page's own questions.
+        warm.start(lambda: make_agent(use_saudi_exit=False))
         print(f"يجهّز {len(warm.questions)} من أسئلة العرض في الخلفية…")
     import os
 

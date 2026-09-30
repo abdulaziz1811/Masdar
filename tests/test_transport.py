@@ -296,3 +296,22 @@ class TestSaudiExitErrors:
         transport._session.post = post
         transport.get("https://open.data.gov.sa/data/api/x", "saudi_open_data")
         assert sent["location"] == {"country": "SA"} and "waitFor" not in sent
+
+    def test_the_exit_takes_a_recent_copy(self, monkeypatch):
+        from masdar.sources.transport import EXIT_MAX_AGE_MS, saudi_exit_transport
+
+        monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+        transport = saudi_exit_transport()
+        sent = {}
+
+        def post(url, json, headers, timeout):
+            from types import SimpleNamespace
+
+            sent.update(json)
+            return SimpleNamespace(status_code=402, text="{}", json=lambda: {})
+
+        transport._session.post = post
+        with pytest.raises(SourceError):
+            transport.get("https://open.data.gov.sa/data/api/x", "saudi_open_data")
+        assert sent["maxAge"] == EXIT_MAX_AGE_MS == 6 * 60 * 60 * 1000
+        assert "waitFor" not in sent
