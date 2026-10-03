@@ -43,10 +43,18 @@ class Verification:
     notes: tuple[str, ...] = ()
 
 
-def _plausibility_notes(request: DataRequest, today: date) -> tuple[str, ...]:
-    """Explain, in advance, why a very recent year is unlikely to exist."""
+def _plausibility_notes(
+    request: DataRequest, today: date, found: frozenset[int] = frozenset()
+) -> tuple[str, ...]:
+    """Explain, in advance, why a very recent year is unlikely to exist.
+
+    Not for a year the data holds: «سنة 2026 لم تنتهِ بعد» under the 2026
+    Hajj figures only confused the answer.
+    """
     notes: list[str] = []
     for year in request.period.years:
+        if year in found:
+            continue
         if year > today.year:
             notes.append(f"سنة {year} لم تبدأ بعد، لذا لا توجد إحصاءات سنوية لها.")
         elif year == today.year:
@@ -60,6 +68,9 @@ def _plausibility_notes(request: DataRequest, today: date) -> tuple[str, ...]:
                 "قد نُشرت بعد."
             )
     return tuple(notes)
+
+
+TITLE_YEAR_NOTE = "السنة مقروءة من عنوان الجدول في الملف، فلا تدل على غياب غيرها."
 
 
 def verify(request: DataRequest, coverage: Coverage, today: date | None = None) -> Verification:
@@ -100,7 +111,7 @@ def verify(request: DataRequest, coverage: Coverage, today: date | None = None) 
 
     matched = tuple(sorted(requested & coverage.years))
     missing = tuple(sorted(requested - coverage.years))
-    notes = list(_plausibility_notes(request, today))
+    notes = list(_plausibility_notes(request, today, frozenset(matched)))
 
     if coverage.is_empty:
         return Verification(
@@ -139,6 +150,19 @@ def verify(request: DataRequest, coverage: Coverage, today: date | None = None) 
                     "كقائمة كاملة، فلا يمكن الجزم بعدم التوفر.",
                 ]),
             )
+
+    if not matched and not coverage.is_exhaustive:
+        # Read from the file, but only from a table's title: presence, not
+        # absence, is what it can show.
+        return Verification(
+            verdict=Verdict.UNVERIFIED,
+            coverage=coverage,
+            missing_years=missing,
+            notes=tuple([
+                *notes,
+                TITLE_YEAR_NOTE,
+            ]),
+        )
 
     if not matched:
         return Verification(

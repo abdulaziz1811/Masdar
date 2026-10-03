@@ -21,7 +21,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from masdar.nlu.normalize import contains_phrase, fold_digits
+from masdar.nlu.normalize import contains_phrase, fold_digits, normalize, word_fit
 from masdar.nlu.parser import extract_years
 
 MAX_HEADER_SCAN = 15
@@ -29,6 +29,12 @@ MAX_ROWS = 200_000
 
 _YEAR_COLUMN_NAMES = ("السنة", "سنة", "العام", "عام", "year", "السنه", "الفترة", "period")
 
+
+# A contents sheet lists the workbook's tables -- every row naming the
+# bulletin's year -- and is never the data. GASTAT's Hajj 2026 workbook opens
+# with one, and it was once delivered as the answer's spreadsheet.
+_INDEX_SHEETS = frozenset({"الفهرس", "فهرس", "المحتويات", "محتويات", "index", "contents", "toc"})
+_INDEX_COLUMNS = ("رقم الجدول", "table no", "table number")
 
 _INAPPLICABLE = frozenset({
     "لاينطبق", "لا ينطبق", "not-applicable", "not applicable", "not_applicable", "n/a",
@@ -100,7 +106,12 @@ class Table:
 
     # -- observation ---------------------------------------------------
     def observed_years(self) -> frozenset[int]:
-        """Years actually present in the data. Authoritative evidence."""
+        """Years actually present in the data. Authoritative evidence.
+
+        A table with no year axis is often titled for its year inside the
+        file («إجمالي أعداد الحجاج لعام 2026م» above a two-column table):
+        that title is read from the file itself, and stands for the table.
+        """
         axis = self.year_axis()
         if axis is YearAxis.COLUMNS:
             return frozenset(self.year_columns().values())
@@ -113,7 +124,27 @@ class Table:
                 if index < len(row):
                     years.update(extract_years(str(row[index])))
             return frozenset(years)
-        return frozenset()
+        return self.title_years()
+
+    def title_years(self) -> frozenset[int]:
+        """Years named in the title rows above the header."""
+        return frozenset(y for line in self.preamble for y in extract_years(line))
+
+    @property
+    def years_from_title(self) -> bool:
+        return self.year_axis() is YearAxis.NONE and bool(self.title_years())
+
+    @property
+    def title(self) -> str:
+        """What the table calls itself: its title rows, else its sheet's name."""
+        return " ".join(self.preamble) or self.sheet_name
+
+    @property
+    def is_contents(self) -> bool:
+        if normalize(self.sheet_name) in {normalize(n) for n in _INDEX_SHEETS}:
+            return True
+        header = " ".join(str(c) for c in self.columns)
+        return any(contains_phrase(header, name) for name in _INDEX_COLUMNS)
 
     def observed_dimensions(self, dimension_words: dict) -> set:
         """Which breakdown axes the columns provide."""
@@ -238,23 +269,44 @@ def coerce(value: object) -> object:
     return int(number) if number.is_integer() and "." not in bare else number
 
 
+def _is_number(cell: object) -> bool:
+    if isinstance(cell, bool):
+        return False
+    if isinstance(cell, int | float):
+        return True
+    return bool(_NUMERIC.match(fold_digits(str(cell)).strip()))
+
+
 def _find_header_row(grid: list[list[object]]) -> int:
     """Pick the header row, skipping title and logo rows above it.
 
     The header is the row with the most filled cells among the first few,
-    provided real rows follow it. Ties go to the earliest row.
+    provided real rows follow it; ties go to the earliest row. A row holding
+    figures is data, and is a header only when no row without figures will
+    do: GASTAT's gender table (ذكور | إناث above 893396 | 813905 | 1707301)
+    once had its numbers read as column names, and a yearbook's «— | 2019 |
+    2020» lost to the fuller «الرياض | 10 | 11» below it. Years are words here.
     """
-    best_index, best_filled = 0, -1
-    limit = min(MAX_HEADER_SCAN, len(grid))
-    for index in range(limit):
-        filled = sum(1 for cell in grid[index] if cell not in (None, ""))
-        if filled < 2:
-            continue
-        if index + 1 >= len(grid):
-            continue
-        if filled > best_filled:
+    def figures(row: list[object]) -> bool:
+        return any(
+            _is_number(c) and not extract_years(str(c)) for c in row if c not in (None, "")
+        )
+
+    def pick(allow_figures: bool) -> int | None:
+        best_index, best_filled = None, 1
+        for index in range(min(MAX_HEADER_SCAN, len(grid))):
+            filled = sum(1 for cell in grid[index] if cell not in (None, ""))
+            if filled <= best_filled or index + 1 >= len(grid):
+                continue
+            if not allow_figures and figures(grid[index]):
+                continue
             best_index, best_filled = index, filled
-    return best_index if best_filled > 0 else 0
+        return best_index
+
+    found = pick(allow_figures=False)
+    if found is None:
+        found = pick(allow_figures=True)
+    return found or 0
 
 
 def _grid_to_table(grid: list[list[object]], sheet_name: str = "") -> Table:
@@ -291,15 +343,25 @@ def read_csv(content: bytes) -> Table:
     return _grid_to_table(grid)
 
 
-def read_xlsx(content: bytes) -> Table:
+def read_xlsx(content: bytes, question: str = "") -> Table:
+    """The workbook's sheet that best answers `question`.
+
+    A bulletin's workbook holds one table per sheet («إجمالي أعداد الحجاج»,
+    «... حسب الجنس», «... حسب طريقة القدوم»): the one worded most like the
+    question is the answer, not merely the longest. A contents sheet never is.
+    """
     from openpyxl import load_workbook
 
-    workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    from masdar.nlu.lexicon import load_lexicon
 
-    def rank(table: Table) -> tuple[bool, int]:
-        # A sheet carrying years beats one without; among equals, the longer
-        # one wins. Yearbooks often open with a contents or notes sheet.
-        return bool(table.observed_years()), len(table)
+    workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    stopwords = load_lexicon().stopwords if question else frozenset()
+
+    def rank(table: Table) -> tuple[bool, float, bool, int]:
+        # Then a sheet carrying years beats one without, and among equals the
+        # longer one wins. Yearbooks often open with a contents or notes sheet.
+        fit = word_fit(question, table.title, stopwords) if question else 0.0
+        return not table.is_contents, round(fit, 3), bool(table.observed_years()), len(table)
 
     best: Table | None = None
     for sheet in workbook.worksheets:
@@ -376,12 +438,12 @@ def coerce_value(value: object) -> object:
     return coerce(value) if isinstance(value, str) else value
 
 
-def read_table(content: bytes, fmt: str) -> Table:
+def read_table(content: bytes, fmt: str, question: str = "") -> Table:
     fmt = (fmt or "").upper()
     if fmt in ("CSV", "TSV", "TXT"):
         return read_csv(content)
     if fmt in ("XLSX", "XLSM", "XLS"):
-        return read_xlsx(content)
+        return read_xlsx(content, question)
     if fmt == "JSON":
         return read_json(content)
     raise ValueError(f"unsupported tabular format: {fmt or 'unknown'}")

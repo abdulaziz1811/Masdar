@@ -114,3 +114,51 @@ class TestInapplicableColumns:
         table = Table(["YEAR_TIME", "OBS_VALUE"], [["2021", 1.0]])
         cleaned, dropped = table.without_inapplicable_columns()
         assert cleaned is table and dropped == []
+
+
+class TestBulletinWorkbooks:
+    """GASTAT's bulletins: a contents sheet, then one titled table a sheet.
+
+    `Hajj_Statistics_2026_AR.rebuilt.xlsx` is GASTAT's Hajj 2026 workbook
+    rebuilt cell by cell from its contents (see tests/test_gastat_site.py).
+    """
+
+    WORKBOOK = (Path(__file__).resolve().parent / "fixtures" / "gastat_site"
+                / "Hajj_Statistics_2026_AR.rebuilt.xlsx").read_bytes()
+
+    def read(self, question=""):
+        from masdar.export.tabular import read_xlsx
+
+        return read_xlsx(self.WORKBOOK, question)
+
+    def test_the_contents_sheet_is_never_the_data(self):
+        # Every row of it names 2026, so it once won as "the sheet with years".
+        assert self.read().sheet_name != "الفهرس"
+
+    def test_the_sheet_worded_like_the_question_is_read(self):
+        assert self.read("عدد الحجاج 2026").sheet_name == "1"
+        assert self.read("عدد الحجاج حسب الجنس 2026").sheet_name == "2"
+        assert self.read("حجاج الداخل حسب الجنسية").sheet_name == "3"
+        assert self.read("المتطوعين في الحج").sheet_name == "8"
+
+    def test_a_tables_title_inside_the_file_gives_its_year(self):
+        table = self.read("عدد الحجاج 2026")
+        assert table.observed_years() == frozenset({2026})
+        assert table.years_from_title
+
+    def test_a_row_of_figures_is_never_the_header(self):
+        table = self.read("عدد الحجاج حسب الجنس 2026")
+        assert table.columns[0] == "الجنس"
+        assert [893396, 813905, 1707301] in table.rows
+
+    def test_a_header_of_years_beats_a_fuller_row_of_figures(self):
+        from masdar.export.tabular import _grid_to_table
+
+        table = _grid_to_table([
+            ["جدول 3", None, None, None],
+            [None, 2019, 2020, 2021],
+            ["الرياض", 10, 11, 12],
+            ["مكة", 5, 6, 7],
+        ])
+        assert table.columns[1:] == ["2019", "2020", "2021"]
+        assert table.rows[0] == ["الرياض", 10, 11, 12]

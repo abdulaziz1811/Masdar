@@ -101,7 +101,16 @@ def contains_phrase(haystack: str, phrase: str) -> bool:
     for variant in (tokens(haystack), stems(haystack)):
         if variant:
             haystacks.append(" " + " ".join(variant) + " ")
+            # How often a series is published is not what it is about:
+            # «الرقم القياسي السنوي للإنتاج الصناعي» names «الرقم القياسي
+            # للإنتاج الصناعي».
+            bare = [w for w in variant if strip_article(w) not in _FREQUENCY]
+            if len(bare) < len(variant):
+                haystacks.append(" " + " ".join(bare) + " ")
     return any(f" {needle} " in hay for needle in needles for hay in haystacks)
+
+
+_FREQUENCY = frozenset({"سنوي", "شهري", "ربعي", "اسبوعي", "يومي"})
 
 # Endings that turn a noun into its adjective or plural: «الكهرباء» and
 # «الكهربائية», «مستشفى» and «المستشفيات», «السكان» and «السكانية». Longest
@@ -131,7 +140,15 @@ def _roots(token: str) -> set[str]:
     return found
 
 
+# Words an ending cannot be taken from without changing what they mean:
+# «الجنسية» (nationality) is not «الجنس» (sex), and a table by nationality
+# was once chosen for a question by sex.
+_WHOLE = {"جنسيه": "جنسيه", "جنسيات": "جنسيه"}
+
+
 def _reduce(stem: str) -> str:
+    if stem in _WHOLE:
+        return _WHOLE[stem]
     for ending in _ENDINGS:
         if stem.endswith(ending) and len(stem) - len(ending) >= 3:
             stem = stem[: -len(ending)]
@@ -218,6 +235,25 @@ _MONTHS = {normalize(name): number for number, names in enumerate((
     ("سبتمبر", "september"), ("أكتوبر", "اكتوبر", "october"), ("نوفمبر", "november"),
     ("ديسمبر", "december"),
 ), start=1) for name in names}
+
+
+MONTH_WORDS = frozenset(_MONTHS)
+
+
+def period_grain(text: str) -> str | None:
+    """'month', 'quarter' or 'year': what span of time a text names.
+
+    «الرقم القياسي السنوي للإنتاج الصناعي لعام 2025» is a year,
+    «... لشهر ديسمبر 2025» a month. None when it names no year.
+    """
+    folded = normalize(fold_digits(text))
+    if not _TITLE_YEAR.search(folded):
+        return None
+    if any(w in _MONTHS for w in tokens(folded)):
+        return "month"
+    if _QUARTER.search(folded.lower()):
+        return "quarter"
+    return "year"
 
 
 def title_period(text: str) -> float | None:

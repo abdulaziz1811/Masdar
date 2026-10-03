@@ -15,6 +15,7 @@ from masdar.nlu.normalize import (
     contains_phrase,
     mentions,
     normalize,
+    period_grain,
     stems,
     strip_article,
     strip_phrase_articles,
@@ -30,8 +31,18 @@ W_TABULAR = 5.0
 W_DIMENSION = 3.0
 W_AUTHORITY = 0.06      # 0-100 authority contributes up to 6 points
 W_FRESHNESS = 2.0
-# Per year of how recent a period a title names, for "the latest" (10 years).
-W_LATEST_PERIOD = 0.4
+# Per year of how recent a period a title names, for "the latest", over the
+# last LATEST_SPAN years: a month is a tenth of a point, above the noise of a
+# site's own ordering -- July's CPI once came before August's.
+W_LATEST_PERIOD = 1.2
+LATEST_SPAN = 3
+# A whole year asked, a release for the whole year found: GASTAT's annual
+# industrial production index before its December bulletin.
+W_WHOLE_YEAR = 2.0
+# Per pair of the question's words found side by side in the title, as asked:
+# «لأسعار المستهلك» is the consumer price index, while «مؤشر ثقة المستهلك»
+# shares two words with «مؤشر لأسعار المستهلك» but none of its pairs.
+W_WORD_PAIR = 1.5
 # An international compiler's copy of a figure ranks below the Saudi
 # publisher's own, even when both match the question equally.
 W_INTERNATIONAL = -3.0
@@ -110,6 +121,12 @@ def score_candidate(
         score += typed
         reasons.append(f"يطابق عبارة السؤال: {', '.join(typed_hits)}")
 
+    pairs = [p for p in _word_pairs(request.raw_query, lexicon.stopwords)
+             if contains_phrase(candidate.title_ar or candidate.title_en, p)]
+    if pairs:
+        score += W_WORD_PAIR * len(pairs)
+        reasons.append(f"كلمات السؤال متجاورة في العنوان: {'، '.join(pairs)}")
+
     # Naming the publisher («... من وزارة الموارد البشرية») asks for that
     # publisher's data, so its name counts as matching words; it only adds
     # to the ranking, never lets an off-subject result through (`on_subject`).
@@ -128,6 +145,14 @@ def score_candidate(
         if overlap:
             score += W_YEAR_CLAIMED
             reasons.append(f"التغطية المعلنة تشمل: {sorted(overlap)}")
+
+    if (
+        requested
+        and period_grain(request.raw_query) == "year"
+        and period_grain(candidate.title_ar or candidate.title_en) == "year"
+    ):
+        score += W_WHOLE_YEAR
+        reasons.append("إصدار للسنة كاملة، كما سُئل")
 
     if candidate.best_tabular_resource() is not None:
         score += W_TABULAR
@@ -166,11 +191,22 @@ def score_candidate(
         if period is None and candidate.claimed_coverage.latest():
             period = candidate.claimed_coverage.latest() + 1.0
         if period is not None:
-            score += W_LATEST_PERIOD * max(0.0, min(10.0, period - (today.year - 9)))
+            since = today.year - LATEST_SPAN + 1
+            score += W_LATEST_PERIOD * max(0.0, min(float(LATEST_SPAN), period - since))
 
     candidate.score = round(score, 3)
     candidate.match_reasons = tuple(reasons)
     return candidate
+
+
+def _word_pairs(question: str, stopwords: frozenset[str]) -> list[str]:
+    """Neighbouring words of the question, filler and periods left out."""
+    words = [
+        w for w in normalize(question).split()
+        if not w.isdigit() and w not in stopwords and strip_article(w) not in stopwords
+        and period_grain(w + " 2000") != "month"
+    ]
+    return [f"{a} {b}" for a, b in zip(words, words[1:], strict=False)]
 
 
 def rank(
@@ -200,7 +236,10 @@ def rank(
 # What GASTAT publishes a concept under, when the title does not name it:
 # non-oil exports are in «التجارة الدولية السلعية غير البترولية», the
 # unemployment rate in «إحصاءات سوق العمل», inflation in the consumer price
-# index. A result naming the publication is on the subject of the concept.
+# index, pilgrims in «إحصاءات الحج». A result naming the publication is on the
+# subject of the concept. Written as GASTAT spells them: they are also asked
+# of its website's search, which matches words, not their families --
+# «الحجاج» finds nothing there, «الحج» finds the bulletin.
 SUBJECT_ALIASES = {
     "صادرات": ("التجارة الدولية", "التجارة الخارجية"),
     "واردات": ("التجارة الدولية", "التجارة الخارجية"),
@@ -210,16 +249,29 @@ SUBJECT_ALIASES = {
     "توظيف": ("سوق العمل",),
     "مشتغلين": ("سوق العمل",),
     "عاطلين": ("سوق العمل",),
-    "تضخم": ("اسعار المستهلك",),
+    "تضخم": ("أسعار المستهلك",),
     "حجاج": ("الحج",),
-    "معتمرين": ("العمره",),
-    "سياح": ("السياحه",),
-    "ناتج محلي": ("الحسابات القوميه",),
+    "حاج": ("الحج",),
+    "معتمرين": ("العمرة",),
+    "معتمرون": ("العمرة",),
+    "سياح": ("السياحة",),
+    "ناتج محلي": ("الحسابات القومية",),
 }
 
 
 def _aliases(phrase: str) -> tuple[str, ...]:
     return SUBJECT_ALIASES.get(strip_phrase_articles(normalize(phrase)), ())
+
+
+def subject_aliases(request: DataRequest) -> tuple[str, ...]:
+    """GASTAT's names for what the question asks about, as GASTAT spells them."""
+    phrases = (*request.typed_phrases, *request.free_terms, *request.raw_query.split())
+    found: list[str] = []
+    for phrase in phrases:
+        for name in _aliases(phrase):
+            if name not in found:
+                found.append(name)
+    return tuple(found)
 
 
 def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:

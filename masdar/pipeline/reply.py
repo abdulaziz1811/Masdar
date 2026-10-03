@@ -8,7 +8,10 @@ collapsing them into one apology would quietly mislead.
 
 from __future__ import annotations
 
-from masdar.domain.models import Answer, Finding, Verdict
+import re
+
+from masdar.domain.models import Answer, DataRequest, Finding, Verdict
+from masdar.nlu.normalize import normalize
 
 _ORIGIN_LABELS = {
     "observed_data": "تم فتح الملف والتحقق من السنوات الموجودة فيه",
@@ -82,9 +85,33 @@ def _errors_block(answer: Answer) -> list[str]:
     return lines
 
 
+# Openings of a question that say nothing of its subject.
+_OPENINGS = frozenset(normalize(w) for w in (
+    "عطني", "اعطني", "أعطني", "ابي", "أبي", "ابغى", "أبغى", "ابغي", "اريد", "أريد",
+    "ودي", "ممكن", "لو", "سمحت", "كم", "ما", "ماهو", "ماهي", "هل", "وش",
+))
+# A year and the word that introduces it: the period is said separately.
+_PERIOD = re.compile(
+    r"(?:\b(?:لسنة|لسنه|لعام|سنة|سنه|عام|في|من|الى|إلى|حتى|و)\s+)?[0-9٠-٩]{4}(?:م|هـ)?\b"
+)
+
+
+def _subject(request: DataRequest) -> str:
+    """What was asked about, in the asker's words.
+
+    Not the topic's name: «عدد الحجاج 2026» was headed «السياحة», the topic
+    pilgrims fall under, and read as an answer to another question.
+    """
+    words = _PERIOD.sub(" ", request.raw_query).split()
+    while words and normalize(words[0]) in _OPENINGS:
+        words.pop(0)
+    subject = " ".join(words).strip(" ،,.؟?!")
+    return subject or (request.topic.label_ar if request.topic else request.raw_query)
+
+
 def compose_message(answer: Answer) -> str:
     request = answer.request
-    topic = request.topic.label_ar if request.topic else request.raw_query
+    topic = _subject(request)
     period = request.period.label()
     best = answer.primary
     lines: list[str] = []

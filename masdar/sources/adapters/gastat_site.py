@@ -14,6 +14,10 @@ one:
   under `/ar/w/` whose snippet names its attachments, and the page links them
   under `/documents/`: a spreadsheet there is downloaded and read like any
   other file, so its years are observed, not guessed.
+* The search matches words, not their families: «الحجاج» finds nothing,
+  «الحج» the Hajj bulletin; «البطالة» two results, «سوق العمل» forty. Each
+  question is searched in the asker's words and in GASTAT's own name for the
+  subject (`resolve.subject_aliases`), and the results are interleaved.
 * A data table is a page under `/ar/w/` that embeds a Tableau view (its
   snippet shows the embed). It has no file to download, so it is offered as
   a link: its year is at best read from its title -- `INFERRED_TITLE`, which
@@ -27,6 +31,7 @@ import html
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
+from itertools import zip_longest
 from urllib.parse import quote, unquote_plus, urljoin, urlsplit, urlunsplit
 
 from masdar.domain.models import (
@@ -37,8 +42,9 @@ from masdar.domain.models import (
     Resource,
 )
 from masdar.nlu.lexicon import load_lexicon
-from masdar.nlu.normalize import fold_digits, mentions, normalize, strip_article
+from masdar.nlu.normalize import MONTH_WORDS, fold_digits, mentions, normalize, strip_article
 from masdar.nlu.parser import LATEST_MARKERS, extract_years
+from masdar.pipeline.resolve import subject_aliases
 from masdar.sources.base import SourceAdapter, SourceError, SourceUnreachable
 
 DEFAULT_SEARCH = "/ar/search?q={query}&delta=40"
@@ -71,6 +77,9 @@ _DOCUMENT = re.compile(r'href="(?P<href>[^"]*/documents/[^"]+)"')
 # "15‏/09‏/26، 8:26 ص" -- day, month, two-digit year, with direction marks.
 _DATE = re.compile(r"(\d{1,2})\D{1,3}(\d{1,2})\D{1,3}(\d{2,4})")
 _FILE_NAME = re.compile(r"\.(?:xlsx|xls|csv)\b", re.I)
+# A file name's own suffix: «.xlsx», or «.xlsx_fixed_15032733» as the site
+# now writes it.
+_FILE_SUFFIX = re.compile(r"\.(xlsx|xls|csv)(?=$|_fixed_)", re.I)
 # A table's Tableau workbook is named for its survey: «umrah_survey_2018_0_AR».
 _WORKBOOK = re.compile(r"/views/([^/\s'\"]+)/")
 # The site's search is loose (any word matches), so its order is a hint for
@@ -138,12 +147,15 @@ def document_links(page: str, base: str) -> list[Resource]:
     for match in _DOCUMENT.finditer(page):
         url = urljoin(base, html.unescape(match.group("href")))
         # /documents/<group>/<folder>/<name>.xlsx/<uuid>: the name is the
-        # segment before the uuid.
+        # segment before the uuid. Since 2026 the site also writes
+        # <name>.xlsx_fixed_<n>: the 2026 Hajj bulletin's spreadsheet was
+        # missed, and the bulletin offered as a page with no file.
         name = unquote_plus(next(
             (s for s in reversed(urlsplit(url).path.split("/")) if "." in s), ""))
-        suffix = name.rsplit(".", 1)[-1].lower()
-        if suffix in DATA_SUFFIXES and all(r.url != url for r in found):
-            found.append(Resource(url=url, format=suffix.upper(), title=name))
+        kind = _FILE_SUFFIX.search(name)
+        if kind and all(r.url != url for r in found):
+            title = name[:kind.end()]
+            found.append(Resource(url=url, format=kind.group(1).upper(), title=title))
     return found
 
 
@@ -171,12 +183,24 @@ def _fit(request: DataRequest, words: list[str], result: dict) -> float:
     return score + (released.toordinal() / 1e7 if released else 0.0)
 
 
+def _interleave(lists: list[list[dict]]) -> list[dict]:
+    """Each search's results in turn, so neither crowds the other out."""
+    merged: list[dict] = []
+    seen: set[str] = set()
+    for group in zip_longest(*lists):
+        for result in group:
+            if result is not None and result["url"] not in seen:
+                seen.add(result["url"])
+                merged.append(result)
+    return merged
+
+
 def query_words(request: DataRequest, stopwords: frozenset[str]) -> list[str]:
     """The asker's own words, as typed: the site's search stems them itself.
 
-    Years and filler are left out -- "2023" would pull in every news item of
-    that year -- and the words keep their original letters, since the site
-    does not know this project's normalised spellings.
+    Years, months and filler are left out -- "2023" would pull in every news
+    item of that year -- and the words keep their original letters, since the
+    site does not know this project's normalised spellings.
     """
     words: list[str] = []
     for token in _WORD.findall(request.raw_query):
@@ -186,6 +210,12 @@ def query_words(request: DataRequest, stopwords: frozenset[str]) -> list[str]:
         if folded in stopwords or strip_article(folded) in stopwords:
             continue
         if folded in ("حسب", "بحسب") or folded in _LATEST or token in words:
+            continue
+        # Like years, months and quarters are matched by this side: «أغسطس»
+        # would pull in every August release on the site.
+        if folded in MONTH_WORDS or strip_article(folded) in MONTH_WORDS:
+            continue
+        if folded in ("ربع", "الربع", "للربع", "لربع"):
             continue
         words.append(token)
     return words[:MAX_QUERY_WORDS]
@@ -208,13 +238,24 @@ class GastatSiteAdapter(SourceAdapter):
         words = query_words(request, load_lexicon().stopwords)
         if not words:
             return []
+        # The asker's words, and GASTAT's own names for the subject: the
+        # site's search matches words, not their families, so «الحجاج» finds
+        # nothing where «الحج» finds the Hajj bulletin.
+        named = [n for n in subject_aliases(request)
+                 if not any(normalize(n) == normalize(w) for w in words)]
+        queries = [" ".join(words)] + ([" ".join(named)] if named else [])
         template = str(self.descriptor.api.get("search_path") or DEFAULT_SEARCH)
-        url = self.descriptor.url(template.format(query=quote(" ".join(words))))
-        page = self.fetch(url).content.decode("utf-8", errors="replace")
+        with ThreadPoolExecutor(max_workers=len(queries)) as pool:
+            pages = list(pool.map(self._page, (
+                self.descriptor.url(template.format(query=quote(q))) for q in queries)))
+        if all(page is None for page in pages):
+            # Every query failed: the first one's error is the source's.
+            self._page(self.descriptor.url(template.format(query=quote(queries[0]))),
+                       strict=True)
 
         results: list[tuple[dict, str, frozenset[int]]] = []
         seen: set[tuple[str, frozenset[int]]] = set()
-        for result in parse_results(page):
+        for result in _interleave([parse_results(page) for page in pages if page]):
             kind = classify(result)
             if kind is None:
                 continue
@@ -226,13 +267,15 @@ class GastatSiteAdapter(SourceAdapter):
             results.append((result, kind, years))
         # More than the usual cut: the site ranks loosely (a 2024 table can
         # come before the 2018 one asked for), and a table costs no request.
-        results = results[:max(limit, MAX_RESULTS)]
+        # Each search keeps its share: the August non-oil exports bulletin,
+        # twelfth under GASTAT's word, was once cut by the asker's results.
+        results = results[:max(limit, MAX_RESULTS * len(queries))]
 
         # Bulletins are opened for their spreadsheets, the likeliest first:
         # «لشهر أغسطس 2026» among a year of monthly releases.
         bulletins = sorted(
             (r for r, kind, years in results if kind == "bulletin"),
-            key=lambda r: -_fit(request, words, r),
+            key=lambda r: -_fit(request, [*words, *named], r),
         )[:MAX_PAGES]
         with ThreadPoolExecutor(max_workers=max(1, len(bulletins))) as pool:
             files = dict(zip(
@@ -262,9 +305,19 @@ class GastatSiteAdapter(SourceAdapter):
                 # The date GASTAT shows for the release.
                 last_updated=result["date"],
                 download_note=note,
+                is_release=True,
                 relevance=MAX_RELEVANCE * (1.0 - index / max(len(results), 1)),
             ))
         return candidates
+
+    def _page(self, url: str, strict: bool = False) -> str | None:
+        """One search page; with several asked, one failing is not fatal."""
+        try:
+            return self.fetch(url).content.decode("utf-8", errors="replace")
+        except (SourceError, SourceUnreachable):
+            if strict:
+                raise
+            return None
 
     def _files(self, page_url: str) -> list[Resource]:
         try:

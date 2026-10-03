@@ -3,8 +3,13 @@
 The search pages under fixtures/gastat_site were recorded on 2026-09-30 from
 a German exit (the site answers from outside the Kingdom) and trimmed to the
 result list; the bulletin page keeps only its /documents/ links. The
-spreadsheet behind the bulletin could not be fetched from the build
+spreadsheet behind the CPI bulletin could not be fetched from the build
 environment, so the one served here is SYNTHETIC, built in `_synthetic_cpi`.
+
+The Hajj recordings (2026-10-03, through Firecrawl) are real: the search for
+«الحج», the 2026 bulletin's links, and its workbook, rebuilt cell by cell
+from GASTAT's file as Firecrawl read it (`Hajj_Statistics_2026_AR.rebuilt.xlsx`:
+values verbatim, merged cells and styling not reproduced).
 """
 
 from __future__ import annotations
@@ -43,8 +48,11 @@ RECORDED = {
     ("الصادرات", "السلعية", "غير", "البترولية"): "search_non_oil_exports.html",
     ("الرقم", "القياسي", "لأسعار", "العقارات"): "search_real_estate_index.html",
     ("المعتمرين", "الخارج"): "search_umrah_abroad.html",
+    ("الحج",): "search_hajj.html",
 }
 CPI_AUGUST = "/ar/w/consumer-price-index-august-2026"
+HAJJ_2026 = "/ar/w/إحصاءات-الحج-لعام-2026"
+HAJJ_WORKBOOK = FIXTURES / "Hajj_Statistics_2026_AR.rebuilt.xlsx"
 
 
 def _page(name: str) -> str:
@@ -84,6 +92,13 @@ class SiteTransport:
         if unquote(parts.path) == CPI_AUGUST:
             return Response(url, url, 200, _page("bulletin_cpi_august_2026.html").encode(),
                             "text/html", {})
+        if unquote(parts.path) == HAJJ_2026:
+            return Response(url, url, 200, _page("bulletin_hajj_2026.html").encode(),
+                            "text/html", {})
+        if "Hajj_Statistics_2026_AR.xlsx" in parts.path:
+            return Response(url, url, 200, HAJJ_WORKBOOK.read_bytes(),
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            {})
         if "/documents/" in parts.path and ".xlsx" in parts.path:
             return Response(url, url, 200, _synthetic_cpi(),
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -189,7 +204,7 @@ class TestAnswers:
         assert MAX_RELEVANCE < SUBJECT_RELEVANCE
 
     def test_nothing_found_points_to_gastats_own_search(self, tmp_path):
-        answer = agent(tmp_path).answer("كم عدد الحجاج")
+        answer = agent(tmp_path).answer("كم عدد الخيول")
         assert answer.verdict is Verdict.NO_SOURCE
         (label, url), = answer.elsewhere
         assert "موقع الهيئة العامة للإحصاء" in label
@@ -225,3 +240,53 @@ class TestWhatTheTesterMet:
     def test_the_year_asked_steers_among_surveys(self, tmp_path):
         answer = agent(tmp_path).answer("عدد المعتمرين من الخارج 2018")
         assert 2018 in answer.primary.coverage.years
+
+
+class TestHajj:
+    """«عدد الحجاج»: the site's search knows «الحج», not «الحجاج»."""
+
+    @staticmethod
+    def exported(answer):
+        from openpyxl import load_workbook
+
+        sheet = load_workbook(answer.primary.export_path)["البيانات"]
+        return [list(row) for row in sheet.iter_rows(values_only=True)]
+
+    def test_the_bulletin_is_found_by_gastats_word_for_it(self, tmp_path):
+        transport = SiteTransport()
+        answer = agent(tmp_path, transport).answer("عدد الحجاج 2026")
+        searched = [dict(parse_qsl(urlsplit(u).query))["q"] for u in transport.urls
+                    if urlsplit(u).path == "/ar/search"]
+        assert searched == ["الحجاج", "الحج"]
+        assert answer.verdict is Verdict.AVAILABLE
+        assert answer.primary.candidate.title_ar == "إحصاءات الحج لعام 2026"
+
+    def test_the_workbooks_link_is_read_as_the_site_now_writes_it(self):
+        files = document_links(_page("bulletin_hajj_2026.html"),
+                               "https://www.stats.gov.sa" + HAJJ_2026)
+        assert [(f.format, f.title) for f in files] == [("XLSX", "Hajj_Statistics_2026_AR.xlsx")]
+
+    def test_the_year_is_read_from_the_tables_title_in_the_file(self, tmp_path):
+        answer = agent(tmp_path).answer("عدد الحجاج 2026")
+        primary = answer.primary
+        assert primary.coverage.origin is CoverageOrigin.OBSERVED_DATA
+        assert primary.coverage.years == frozenset({2026})
+        assert "عنوان الجدول داخل الملف" in primary.coverage.note
+
+    def test_the_total_is_delivered_not_the_contents_sheet(self, tmp_path):
+        rows = self.exported(agent(tmp_path).answer("عدد الحجاج 2026"))
+        assert rows[0] == ["جهة القدوم", "الإجمالي"]
+        assert ["الإجمالي", 1707301] in rows
+        assert not any("رقم الجدول" in str(cell) for row in rows for cell in row)
+
+    def test_the_table_by_sex_answers_the_question_by_sex(self, tmp_path):
+        rows = self.exported(agent(tmp_path).answer("عدد الحجاج حسب الجنس 2026"))
+        assert [893396, 813905, 1707301] in rows
+
+    def test_one_bulletin_is_no_proof_another_year_is_missing(self, tmp_path):
+        # The site holds the 2026 bulletin only; GASTAT published 2023's too.
+        answer = agent(tmp_path).answer("عدد الحجاج 2023")
+        assert answer.verdict is not Verdict.NOT_AVAILABLE
+        assert "غير موجودة" not in answer.message_ar
+        assert any("إصدار واحد" in n for n in answer.primary.notes)
+        assert 2026 in [s.year for s in answer.suggestions]

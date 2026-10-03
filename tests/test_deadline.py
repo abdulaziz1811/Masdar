@@ -106,7 +106,7 @@ def test_a_file_that_does_not_arrive_in_time(tmp_path, monkeypatch):
     agent, _ = agent_with_slow_cdata(tmp_path, answer_seconds=0.5)
     monkeypatch.setattr(orchestrator, "MIN_FETCH_SECONDS", 0.3)
 
-    def slow_observe(candidate):
+    def slow_observe(candidate, question=""):
         time.sleep(SLOW_SECONDS)
         return None, None, None, None
 

@@ -61,6 +61,19 @@ class AgentConfig:
     answer_seconds: float | None = None
 
 
+RELEASE_NOTE = (
+    "هذا إصدار واحد من إصدارات الجهة (يغطي {held})، لا سلسلة كاملة؛ عدم ظهور "
+    "{asked} فيه لا يعني أنها لم تُنشر في إصدار آخر."
+)
+
+
+def _years_text(years) -> str:
+    years = sorted(years)
+    if not years:
+        return "—"
+    return str(years[0]) if len(years) == 1 else f"{years[0]}–{years[-1]}"
+
+
 # Of an answer's time limit, the share the search may use; the rest is for
 # opening files.
 SEARCH_SHARE = 0.6
@@ -181,6 +194,7 @@ class Agent:
         )
         international = frozenset(d.id for d in descriptors.values() if d.international)
         findings.sort(key=lambda f: _finding_sort_key(f, international))
+        findings = _absence_needs_every_lead(findings, request, today, international)
 
         best = findings[0] if findings else None
         verdict = best.verdict if best else Verdict.NO_SOURCE
@@ -394,7 +408,7 @@ class Agent:
                 downloads += 1
                 try:
                     observed, table, fetched, problem = self._observe_within(
-                        candidate, deadline
+                        candidate, deadline, request.raw_query
                     )
                 except _Unreachable as exc:
                     down.setdefault(candidate.source_id, exc.reason)
@@ -445,6 +459,25 @@ class Agent:
                 notes.append("لا يتوفر ملف جدولي لهذه النتيجة، لذا لم يُنشأ ملف إكسل.")
 
             verification = verify_module.verify(request, coverage, today=today)
+            if (
+                candidate.is_release
+                and verification.verdict in (Verdict.NOT_AVAILABLE, Verdict.UNVERIFIED)
+                and verification.missing_years
+                and verification.coverage.years
+            ):
+                # The 2026 Hajj bulletin holds 2026; that is no evidence that
+                # 2023 was never published.
+                verification = replace(
+                    verification,
+                    verdict=Verdict.UNVERIFIED,
+                    notes=(
+                        *(n for n in verification.notes if n != verify_module.TITLE_YEAR_NOTE),
+                        RELEASE_NOTE.format(
+                            held=_years_text(verification.coverage.years),
+                            asked=_years_text(verification.missing_years),
+                        ),
+                    ),
+                )
             notes.extend(verification.notes)
 
             if table is not None:
@@ -528,7 +561,7 @@ class Agent:
         return findings
 
     def _observe_within(
-        self, candidate: DatasetCandidate, deadline: float | None
+        self, candidate: DatasetCandidate, deadline: float | None, question: str = ""
     ) -> tuple[Coverage | None, Table | None, object | None, str | None]:
         """`_observe`, bounded by what is left of the answer's time.
 
@@ -537,10 +570,10 @@ class Agent:
         cached, so asking again shortly after finds it at once.
         """
         if deadline is None:
-            return self._observe(candidate)
+            return self._observe(candidate, question)
         seconds = max(MIN_FETCH_SECONDS, deadline - time.monotonic())
         pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fetch")
-        future = pool.submit(self._observe, candidate)
+        future = pool.submit(self._observe, candidate, question)
         try:
             return future.result(timeout=seconds)
         except FutureTimeout:
@@ -549,13 +582,14 @@ class Agent:
             pool.shutdown(wait=False)
 
     def _observe(
-        self, candidate: DatasetCandidate
+        self, candidate: DatasetCandidate, question: str = ""
     ) -> tuple[Coverage | None, Table | None, object | None, str | None]:
         """Open the actual file to see which years it holds.
 
         Every tabular file of the dataset is tried in order until one opens
         with a readable year axis: publishers often attach the same table as
-        XLSX and CSV, and one damaged copy should not cost the answer.
+        XLSX and CSV, and one damaged copy should not cost the answer. In a
+        workbook of several tables, the one worded like `question` is read.
         """
         resources = candidate.tabular_resources()
         if not resources:
@@ -575,7 +609,7 @@ class Agent:
                 problems.append(f"تعذّر قراءة ملف {resource.format}: {exc.reason}")
                 continue
             try:
-                table = read_table(fetched.content, resource.format)
+                table = read_table(fetched.content, resource.format, question)
             except Exception as exc:
                 problems.append(f"تعذّر تحليل ملف {resource.format}: {exc}")
                 continue
@@ -593,8 +627,14 @@ class Agent:
                 Coverage(
                     years=years,
                     origin=CoverageOrigin.OBSERVED_DATA,
-                    is_exhaustive=True,
-                    note="تم استخراج السنوات من محتوى الملف نفسه",
+                    # A title proves the year it names is there, not that no
+                    # other is: it might name the date of publication.
+                    is_exhaustive=not table.years_from_title,
+                    note=(
+                        f"السنة من عنوان الجدول داخل الملف: «{table.title[:80]}»"
+                        if table.years_from_title
+                        else "تم استخراج السنوات من محتوى الملف نفسه"
+                    ),
                 ),
                 table,
                 fetched,
@@ -718,6 +758,31 @@ def _each_source_first(ranked: list[DatasetCandidate]) -> list[DatasetCandidate]
         (rest if candidate.source_id in seen else first).append(candidate)
         seen.add(candidate.source_id)
     return first + rest
+
+
+def _absence_needs_every_lead(
+    findings: list[Finding], request: DataRequest, today: date, international: frozenset[str]
+) -> list[Finding]:
+    """«غير متوفرة» only when no Saudi lead on the subject is left open.
+
+    One dataset lacking a year is one dataset: the World Bank's series or a
+    GASTAT API table ending at 2024 says nothing of the 2025 table GASTAT has
+    on its website, unopened or undated. While such a lead remains, the
+    answer is that the year could not be confirmed -- with the lead first and
+    the dataset that lacks the year below it -- not that it is unavailable.
+    A year not yet over is left alone: its absence is the expected answer.
+    """
+    if not findings or findings[0].verdict is not Verdict.NOT_AVAILABLE:
+        return findings
+    if not any(year < today.year for year in request.period.years):
+        return findings
+    lead = next((
+        f for f in findings
+        if f.verdict is Verdict.UNVERIFIED and f.candidate.source_id not in international
+    ), None)
+    if lead is None:
+        return findings
+    return [lead, *(f for f in findings if f is not lead)]
 
 
 def _finding_sort_key(finding: Finding, international: frozenset[str] = frozenset()) -> tuple:

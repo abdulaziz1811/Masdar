@@ -165,3 +165,68 @@ class TestConversation:
     def test_a_greeting_is_not_searched(self, greeting):
         assert not parse(greeting).is_answerable
 
+
+
+class TestWhatGastatsSiteTaught:
+    def test_nationality_is_not_sex(self):
+        # «حسب الجنس» once chose the table by nationality.
+        assert not mentions("أعداد حجاج الداخل حسب الجنسية", "الجنس")
+        assert mentions("عدد جنسيات حجاج الخارج", "الجنسية")
+
+    def test_how_often_a_series_is_issued_is_not_its_subject(self):
+        from masdar.nlu.normalize import contains_phrase
+
+        assert contains_phrase("الرقم القياسي السنوي للإنتاج الصناعي لعام 2025",
+                               "الرقم القياسي للإنتاج الصناعي")
+
+    def test_months_and_years_are_not_sent_to_the_sites_search(self):
+        from masdar.sources.adapters.gastat_site import query_words
+
+        words = query_words(parse("معدل التضخم لشهر أغسطس 2026"), load_lexicon().stopwords)
+        assert "أغسطس" not in words and "2026" not in words and "التضخم" in words
+
+    def test_gastats_own_name_for_the_subject(self):
+        assert resolve.subject_aliases(parse("كم عدد الحجاج")) == ("الحج",)
+        assert resolve.subject_aliases(parse("معدل البطالة 2025")) == ("سوق العمل",)
+        assert resolve.subject_aliases(parse("نسبة التضخم")) == ("أسعار المستهلك",)
+
+    def test_the_headline_names_what_was_asked_not_its_topic(self):
+        from masdar.pipeline.reply import _subject
+
+        assert _subject(parse("عدد الحجاج 2026")) == "عدد الحجاج"
+        assert _subject(parse("عطني معدل البطالة لسنة 2025")) == "معدل البطالة"
+
+
+class TestNotAvailableNeedsEveryLead:
+    """«غير متوفرة» is a claim about the data, not about one dataset."""
+
+    @staticmethod
+    def finding(source_id, title, verdict, years=()):
+        from datetime import datetime
+
+        from masdar.domain.models import Coverage, CoverageOrigin, Finding, Provenance
+
+        coverage = (Coverage(frozenset(years), CoverageOrigin.OBSERVED_DATA, True)
+                    if years else Coverage.unknown())
+        return Finding(
+            candidate=DatasetCandidate(source_id, title, title),
+            provenance=Provenance(source_id=source_id, publisher_ar="", publisher_en="",
+                                  landing_url="", retrieved_at=datetime(2026, 10, 3)),
+            verdict=verdict, coverage=coverage,
+        )
+
+    def held(self, question, today=date(2026, 10, 3)):
+        from masdar.pipeline.orchestrator import _absence_needs_every_lead
+
+        series = self.finding("worldbank", "Unemployment, total", Verdict.NOT_AVAILABLE,
+                              range(2010, 2025))
+        table = self.finding("gastat", "معدل البطالة حسب الجنس", Verdict.UNVERIFIED)
+        return _absence_needs_every_lead([series, table], parse(question), today,
+                                         frozenset({"worldbank"}))
+
+    def test_a_saudi_lead_left_open_keeps_the_answer_unconfirmed(self):
+        # The World Bank's series ends at 2024; GASTAT's table is not dated.
+        assert self.held("معدل البطالة 2025")[0].candidate.source_id == "gastat"
+
+    def test_a_year_not_yet_over_is_still_not_available(self):
+        assert self.held("معدل البطالة 2026")[0].verdict is Verdict.NOT_AVAILABLE

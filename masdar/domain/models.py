@@ -293,6 +293,11 @@ class DatasetCandidate:
     # stands on the source's declared coverage, and this says why the reader
     # gets a link instead of a workbook.
     download_note: str = ""
+    # One release among a publisher's many (GASTAT's «إحصاءات الحج لعام 2026»,
+    # a bulletin for one month or quarter), not a series kept complete. A
+    # year missing from it says nothing of whether that year was published
+    # in another release, so it can never make the answer «غير متوفرة».
+    is_release: bool = False
     # How closely the source's own search matched the question, from 0 to 1,
     # for a source that can tell apart what the generic ranker sees as ties
     # (the World Bank's many near-identical indicator names). 0 means the
