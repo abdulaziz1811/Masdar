@@ -57,7 +57,7 @@ W_MEASURE = 2.0
 # A count asked, a rate found: «عدد المستشفيات» is not «أسرّة المستشفيات لكل
 # 1000 شخص». Worth the measure bonus in reverse, and said in the answer.
 W_MEASURE_MISMATCH = -2.0
-_RATE_MARKERS = ("%", "لكل", "per", "نسبه", "معدل")
+_RATE_MARKERS = ("%", "لكل", "per", "نسبه", "نسبي", "معدل")
 # Words the publishers use for the same thing, normalised.
 SYNONYMS = {
     "نفطيه": ("بتروليه",),
@@ -357,11 +357,15 @@ def unmatched_terms(request: DataRequest, candidate: DatasetCandidate) -> tuple[
 
 def measure_mismatch(request: DataRequest, candidate: DatasetCandidate) -> bool:
     """The question asks for a count, and the result is a rate or a share."""
+    return text_measure_mismatch(request, candidate.title_ar or candidate.title_en)
+
+
+def text_measure_mismatch(request: DataRequest, title: str) -> bool:
+    """The question asks for a count, and `title` names a rate or a share."""
     asked = set(stems(request.raw_query))
     if not asked & set(MEASURES[0]):
         return False
-    title = normalize(candidate.title_ar or candidate.title_en)
-    return any(marker in title for marker in _RATE_MARKERS)
+    return any(marker in normalize(title) for marker in _RATE_MARKERS)
 
 
 

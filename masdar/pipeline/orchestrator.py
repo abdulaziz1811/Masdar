@@ -480,6 +480,13 @@ class Agent:
                 )
             notes.extend(verification.notes)
 
+            # In a workbook of tables, which one was read, and is it what was
+            # asked: «عدد المشتغلين» once got «التوزيع النسبي للمشتغلين (%)».
+            table_title = table.title if table is not None and table.sheet_name else ""
+            mismatch = bool(table_title) and resolve.text_measure_mismatch(request, table_title)
+            if mismatch:
+                notes.insert(0, "طُلب عدد، والجدول المقروء من الملف نسب أو معدلات.")
+
             if table is not None:
                 present = table.observed_dimensions(self.lexicon.dimension_words)
                 # A source that grouped by a dimension provides it, whatever
@@ -544,6 +551,8 @@ class Agent:
                     missing_years=verification.missing_years,
                     export_path=export_path,
                     notes=tuple(notes),
+                    table_title=table_title,
+                    measure_mismatch=mismatch,
                 )
             )
 
@@ -555,6 +564,7 @@ class Agent:
                 verification.verdict is Verdict.AVAILABLE
                 and export_path
                 and request.period.years
+                and not mismatch
             ):
                 break
 
@@ -798,6 +808,8 @@ def _finding_sort_key(finding: Finding, international: frozenset[str] = frozense
         # At the same verdict, the Saudi publisher's own file comes before an
         # international compiler's copy; a better verdict still wins.
         finding.candidate.source_id in international,
+        # A table of what was asked before one of shares, when a count was.
+        finding.measure_mismatch,
         0 if finding.export_path else 1,
         -finding.candidate.score,
     )

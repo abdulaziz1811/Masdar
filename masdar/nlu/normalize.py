@@ -128,14 +128,15 @@ def _roots(token: str) -> set[str]:
 
     «و» is sometimes "and" («والسكان») and sometimes the word's own first
     letter («وفيات», «وحدات»): stripped, «وفيات» would never meet «الوفيات».
-    «ل» is "for" in «لمنصة إحسان», which must meet «منصة»; it is never
-    stripped alone, since «لقاحات» begins with it.
+    «ل» is "for" in «لمنصة إحسان» and «لسوق العمل», which must meet «منصة»
+    and «سوق»; the reading without it is added, never substituted, since
+    «لقاحات» begins with it.
     """
     found = {root(token)}
     bare = token[2:] if token.startswith("ال") else token
     if bare.startswith("و") and len(bare) >= 4:
         found.add(_reduce(bare))
-    if token.startswith("ل") and not token.startswith("لل") and len(token) >= 5:
+    if token.startswith("ل") and not token.startswith("لل") and len(token) >= 4:
         found.add(_reduce(token[1:]))
     return found
 
@@ -208,21 +209,34 @@ def word_fit(question: str, title: str, stopwords: frozenset[str] = frozenset())
     «تعداد 2022 الحالة الاجتماعية») scores less. Years and filler are not
     counted.
     """
-    def content(text: str) -> list[str]:
-        # «لسنة 2026حسب»: a year glued to the next word is still two words.
-        words = _DIGITS_APART.findall(normalize(text))
-        return [
-            w for w in words
-            if not w.isdigit() and w not in stopwords
-            and strip_article(w) not in stopwords and strip_article(w) not in _PERIOD_WORDS
-        ]
-
-    asked, named = content(question), content(title)
+    asked, named = _content_words(question, stopwords), _content_words(title, stopwords)
     if not asked or not named:
         return 0.0
     recall = sum(1 for w in asked if mentions(title, w)) / len(asked)
     precision = sum(1 for w in named if mentions(question, w)) / len(named)
     return (2 * recall + precision) / 3
+
+
+def word_recall(question: str, title: str, stopwords: frozenset[str] = frozenset()) -> float:
+    """The share of the question's words a title has, however long the title.
+
+    For choosing among one workbook's tables, whose titles are bilingual and
+    long: «الناتج المحلي الإجمالي» names every GDP table, and the first wins.
+    """
+    asked = _content_words(question, stopwords)
+    if not asked:
+        return 0.0
+    return sum(1 for w in asked if mentions(title, w)) / len(asked)
+
+
+def _content_words(text: str, stopwords: frozenset[str]) -> list[str]:
+    # «لسنة 2026حسب»: a year glued to the next word is still two words.
+    words = _DIGITS_APART.findall(normalize(text))
+    return [
+        w for w in words
+        if not w.isdigit() and w not in stopwords
+        and strip_article(w) not in stopwords and strip_article(w) not in _PERIOD_WORDS
+    ]
 
 
 _TITLE_YEAR = re.compile(r"(?<!\d)(19[5-9]\d|20\d\d)(?!\d)")

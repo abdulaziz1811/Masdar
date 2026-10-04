@@ -21,7 +21,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from masdar.nlu.normalize import contains_phrase, fold_digits, normalize, word_fit
+from masdar.nlu.normalize import contains_phrase, fold_digits, word_recall
 from masdar.nlu.parser import extract_years
 
 MAX_HEADER_SCAN = 15
@@ -33,8 +33,15 @@ _YEAR_COLUMN_NAMES = ("السنة", "سنة", "العام", "عام", "year", "�
 # A contents sheet lists the workbook's tables -- every row naming the
 # bulletin's year -- and is never the data. GASTAT's Hajj 2026 workbook opens
 # with one, and it was once delivered as the answer's spreadsheet.
-_INDEX_SHEETS = frozenset({"الفهرس", "فهرس", "المحتويات", "محتويات", "index", "contents", "toc"})
+_INDEX_SHEETS = ("الفهرس", "فهرس", "المحتوى", "المحتويات", "محتويات", "قائمة الجداول",
+                 "القائمة الرئيسية", "index", "contents", "content", "toc")
 _INDEX_COLUMNS = ("رقم الجدول", "table no", "table number")
+# Source lines, notes and table captions sit in a table's first column below
+# or between its rows («المصدر : …», «*أسلوب جمع البيانات», «جدول (2-1-1)»):
+# they say nothing of whether the column holds periods. Counted, they kept
+# GASTAT's unemployment series, «الربع الأول 2021» to «الربع الثاني 2026»,
+# under the share a period column needs.
+_NOTE_CELL = re.compile(r"^\s*(?:\*|المصدر|مصدر|ملاحظ|source|note|جدول|table)", re.IGNORECASE)
 
 _INAPPLICABLE = frozenset({
     "لاينطبق", "لا ينطبق", "not-applicable", "not applicable", "not_applicable", "n/a",
@@ -75,7 +82,12 @@ class Table:
 
     def _column_is_yearlike(self, index: int, threshold: float = 0.6) -> bool:
         values = [row[index] for row in self.rows[:500] if index < len(row)]
-        values = [v for v in values if v not in (None, "")]
+        values = [
+            v for v in values
+            if v not in (None, "") and not _NOTE_CELL.match(str(v))
+            and not any(contains_phrase(str(v), n) and len(str(v)) < 12
+                        for n in _YEAR_COLUMN_NAMES)
+        ]
         if not values:
             return False
         hits = sum(1 for v in values if extract_years(str(v)))
@@ -141,10 +153,32 @@ class Table:
 
     @property
     def is_contents(self) -> bool:
-        if normalize(self.sheet_name) in {normalize(n) for n in _INDEX_SHEETS}:
+        if any(contains_phrase(self.sheet_name, name) for name in _INDEX_SHEETS):
             return True
         header = " ".join(str(c) for c in self.columns)
         return any(contains_phrase(header, name) for name in _INDEX_COLUMNS)
+
+    @property
+    def has_figures(self) -> bool:
+        """Whether it holds data: one figure at least, years aside.
+
+        An introduction or notes sheet is prose: GASTAT's register-based labour
+        workbook opens with «المقدمة», which named every word of «عدد
+        المشتغلين» and was once read as the answer. One figure is a table
+        («المتطوعين المشاركين في الحج»: 26,701).
+        """
+        return any(
+            cell not in (None, "") and _is_number(cell) and not extract_years(str(cell))
+            for row in self.rows[:300] for cell in row
+        )
+
+    def names_sheets(self, others: set[str]) -> bool:
+        """Whether its cells list the workbook's other sheets: a contents page."""
+        listed = {
+            str(cell).strip() for row in self.rows for cell in row[:2]
+            if cell not in (None, "") and str(cell).strip() in others
+        }
+        return len(listed) >= 3
 
     def observed_dimensions(self, dimension_words: dict) -> set:
         """Which breakdown axes the columns provide."""
@@ -224,9 +258,12 @@ class Table:
             index = self.year_column_index()
             if index is None:
                 return self
+            # A note naming the year («من الربع الأول 2025 : اجراء المقابلات…»)
+            # is not a row of that year: a data row has a value besides it.
             kept = [
                 row for row in self.rows
                 if index < len(row) and years & set(extract_years(str(row[index])))
+                and any(c not in (None, "") for j, c in enumerate(row) if j != index)
             ]
             return Table(list(self.columns), kept, self.sheet_name, list(self.preamble))
 
@@ -309,16 +346,49 @@ def _find_header_row(grid: list[list[object]]) -> int:
     return found or 0
 
 
+def _text(cell: object) -> str:
+    return str(cell).strip() if cell not in (None, "") else ""
+
+
+def _header_names(grid: list[list[object]], header_index: int) -> list[str]:
+    """Column names, with the group row above a two-row header folded in.
+
+    GASTAT heads its labour tables «السعوديين | غير السعوديين | الإجمالي» over
+    «الذكور | الاناث | الإجمالي» three times: read alone, the lower row gave
+    three columns called «الذكور». Each becomes «السعوديين - الذكور». An
+    unnamed first column takes the label above it («الربع / السنة»).
+    """
+    names = [_text(c) for c in grid[header_index]]
+    if not names[0]:
+        for above in range(header_index - 1, max(-1, header_index - 3), -1):
+            label = _text(grid[above][0]) if grid[above] else ""
+            if label and not _NOTE_CELL.match(label):
+                names[0] = label
+                break
+    filled = [n for n in names[1:] if n]
+    if len(set(filled)) == len(filled):
+        return names
+    for above in range(header_index - 1, max(-1, header_index - 3), -1):
+        cells = [_text(c) for c in grid[above]] + [""] * len(names)
+        if sum(1 for c in cells[1:len(names)] if c) < 2:
+            continue
+        group, merged = "", [names[0]]
+        for i in range(1, len(names)):
+            group = cells[i] or group
+            name = names[i]
+            merged.append(f"{group} - {name}" if group and name and group != name
+                          else name or group)
+        return merged
+    return names
+
+
 def _grid_to_table(grid: list[list[object]], sheet_name: str = "") -> Table:
     grid = [row for row in grid if any(cell not in (None, "") for cell in row)]
     if not grid:
         return Table([], [], sheet_name)
     header_index = _find_header_row(grid)
-    header = grid[header_index]
-    columns = [
-        (str(cell).strip() if cell not in (None, "") else f"عمود {i + 1}")
-        for i, cell in enumerate(header)
-    ]
+    names = _header_names(grid, header_index)
+    columns = [name or f"عمود {i + 1}" for i, name in enumerate(names)]
     rows = [row for row in grid[header_index + 1:]]
     preamble = [
         " | ".join(str(c) for c in row if c not in (None, ""))
@@ -357,23 +427,28 @@ def read_xlsx(content: bytes, question: str = "") -> Table:
     workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     stopwords = load_lexicon().stopwords if question else frozenset()
 
-    def rank(table: Table) -> tuple[bool, float, bool, int]:
-        # Then a sheet carrying years beats one without, and among equals the
-        # longer one wins. Yearbooks often open with a contents or notes sheet.
-        fit = word_fit(question, table.title, stopwords) if question else 0.0
-        return not table.is_contents, round(fit, 3), bool(table.observed_years()), len(table)
-
-    best: Table | None = None
+    tables: list[Table] = []
     for sheet in workbook.worksheets:
         grid = [
             list(row)
             for _, row in zip(range(MAX_ROWS), sheet.iter_rows(values_only=True), strict=False)
         ]
-        table = _grid_to_table(grid, sheet.title)
-        if best is None or rank(table) > rank(best):
-            best = table
+        tables.append(_grid_to_table(grid, sheet.title))
     workbook.close()
-    return best or Table([], [])
+    names = {t.sheet_name.strip() for t in tables}
+
+    def rank(position: int, table: Table) -> tuple[bool, bool, float, bool, int]:
+        contents = table.is_contents or table.names_sheets(names - {table.sheet_name})
+        fit = word_recall(question, table.title, stopwords) if question else 0.0
+        # Then a sheet carrying years beats one without, and among equals the
+        # earlier one wins: a publisher puts its headline table first (the
+        # CPI summary, not the 748 rows of detail behind it).
+        return (not contents, table.has_figures, round(fit, 3),
+                bool(table.observed_years()), -position)
+
+    if not tables:
+        return Table([], [])
+    return max(enumerate(tables), key=lambda pair: rank(*pair))[1]
 
 
 # OData bookkeeping keys carry no data.

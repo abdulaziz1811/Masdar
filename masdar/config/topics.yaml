@@ -26,7 +26,8 @@ topics:
     label_ar: السكان
     label_en: Population
     keywords_ar: [السكان, سكان, التعداد, تعداد, الديموغرافيا, المواليد, الوفيات,
-                  الخصوبة, معدل الخصوبة]
+                  الخصوبة, معدل الخصوبة, الأجانب, الأسر, دخل الأسرة, إنفاق الأسرة,
+                  دخل وإنفاق الأسرة, حجم الأسرة, الإنفاق الاستهلاكي]
     keywords_en: [population, census, demography, births, deaths, fertility]
     preferred_sources: [saudi_census, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, worldbank]
 
@@ -35,7 +36,9 @@ topics:
     label_en: Labour market
     keywords_ar: [العمل, سوق العمل, البطالة, التوظيف, العاملين, الموظفين, الأجور,
                   القوى العاملة, التوطين, المناصب الإدارية, المشتغلين, تعويضات المشتغلين,
-                  العمالة]
+                  العمالة, الرواتب, متوسط الرواتب, متوسط الأجور, الأجر الشهري,
+                  المشاركة الاقتصادية, معدل المشاركة, قوة العمل, السعودة,
+                  السعوديين في القطاع الخاص, العمالة المنزلية]
     keywords_en: [labour, labor, unemployment, employment, wages, workforce, managerial positions]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, hrsd_live, worldbank]
 
@@ -49,7 +52,8 @@ topics:
   - id: health
     label_ar: الصحة
     label_en: Health
-    keywords_ar: [الصحة, المستشفيات, الأسرة, الأطباء, المراكز الصحية, الأمراض,
+    keywords_ar: [الصحة, المستشفيات, أسرة المستشفيات, الأسرة في المستشفيات,
+                  الأطباء, المراكز الصحية, الأمراض,
                   متوسط العمر المتوقع, العمر المتوقع, معدل الوفيات, الحالة الصحية, سوء التغذية, التغذية, الممارسين الصحيين]
     keywords_en: [health, hospitals, beds, physicians, clinics, diseases,
                   life expectancy, mortality, death rate, malnutrition, nutrition]
@@ -103,7 +107,8 @@ topics:
   - id: transport
     label_ar: النقل
     label_en: Transport
-    keywords_ar: [النقل, الطيران, المطارات, الطرق, المرور, الحوادث, الموانئ, السكك]
+    keywords_ar: [النقل, الطيران, المطارات, الطرق, المرور, الحوادث, الموانئ, السكك,
+                  السيارات, المركبات, رخص القيادة, المسافرين, الركاب]
     keywords_en: [transport, aviation, airports, roads, traffic, accidents, ports]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, worldbank]
 
@@ -127,7 +132,8 @@ topics:
     label_ar: الزراعة
     label_en: Agriculture
     keywords_ar: [الزراعة, المحاصيل, الثروة الحيوانية, الأسماك, النخيل, الإبل,
-                  النحل, خلايا النحل, الصيد, رخص الصيد, الصيادين, المواشي]
+                  النحل, خلايا النحل, الصيد, رخص الصيد, الصيادين, المواشي,
+                  التمور, التمر, الدواجن, الأغنام, الأبقار, الإنتاج الزراعي]
     keywords_en: [agriculture, crops, livestock, fisheries, camels, bees, fishing]
     preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, mewa_live, worldbank]
 
@@ -143,7 +149,7 @@ topics:
     label_en: Business statistics
     keywords_ar: [المنشآت, المنشآت الاقتصادية, إحصاءات الأعمال, المنشآت الصغيرة والمتوسطة,
                   الإيرادات التشغيلية, النفقات التشغيلية, فائض التشغيل, الشركات,
-                  القطاع الخاص, النشاط الاقتصادي, الرقم القياسي للإنتاج الصناعي,
+                  القطاع الخاص, الرقم القياسي للإنتاج الصناعي,
                   السجلات التجارية, السجل التجاري, الأسماء التجارية]
     keywords_en: [business, enterprises, establishments, smes, operating revenue,
                   industrial production index]

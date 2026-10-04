@@ -367,6 +367,11 @@ class Finding:
     missing_years: tuple[int, ...] = ()
     export_path: str | None = None
     notes: tuple[str, ...] = ()
+    # The table read from the file, when it holds several (a bulletin's
+    # workbook): what the figures are, said to the reader.
+    table_title: str = ""
+    # Asked for a count, the table is a rate or a share («التوزيع النسبي»).
+    measure_mismatch: bool = False
 
 
 @dataclass(frozen=True)

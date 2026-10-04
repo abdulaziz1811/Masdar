@@ -25,11 +25,21 @@ def _years(values: tuple[int, ...]) -> str:
 
 
 
+def _table_name(title: str) -> str:
+    """A table's own title, without the bulletin's name and «جدول (n)» around it."""
+    parts = [p.strip() for p in title.split("|")]
+    title = " ".join(parts)
+    title = re.sub(r"\s*جدول\s*\(\s*[\d\-\.]+\s*\)\s*", " ", title).strip()
+    return title[:160]
+
+
 def _finding_block(finding: Finding, index: int | None = None) -> list[str]:
     candidate = finding.candidate
     provenance = finding.provenance
     prefix = f"{index}. " if index else ""
     lines = [f"{prefix}📊 {candidate.title_ar or candidate.title_en}"]
+    if finding.table_title:
+        lines.append(f"   📑 الجدول المستخدم من الملف: {_table_name(finding.table_title)}")
     lines.append(f"   🏛 الجهة الناشرة: {provenance.publisher_ar or '—'}")
     lines.append(
         "   📅 آخر تحديث معلن: "

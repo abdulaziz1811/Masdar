@@ -188,7 +188,7 @@ sources:
       في موقعها لا في واجهاتها البرمجية، فيُبحث فيه ليُدلّ القارئ على الجدول.
     topics: [population, labour, prices, gdp, trade, education, health, tourism,
              transport, environment, housing, energy, electricity, water, ict,
-             agriculture, finance, business, research, culture]
+             agriculture, finance, business, research, culture, justice]
 
   - id: wera
     name_ar: هيئة تنظيم المياه والكهرباء
