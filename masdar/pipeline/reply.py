@@ -145,9 +145,14 @@ def compose_message(answer: Answer) -> str:
         lines.extend(_notes_block(best))
 
     elif answer.verdict is Verdict.PARTIAL and best is not None:
-        lines.append(f"⚠️ البيانات متوفرة جزئياً: {topic}")
+        lines.append(f"⚠️ البيانات متوفرة جزئياً: {topic} — {period}")
         lines.append(f"   المتاح: {_years(best.matched_years)}")
-        lines.append(f"   غير متاح: {_years(best.missing_years)}")
+        if best.missing_years:
+            lines.append(f"   غير متاح: {_years(best.missing_years)}")
+        if best.missing_dimensions:
+            # The years are there; the breakdown asked for is not.
+            labels = "، ".join(d.label_ar for d in best.missing_dimensions)
+            lines.append(f"   غير متاح: التفصيل المطلوب ({labels})")
         lines.append("")
         lines.extend(_finding_block(best))
         lines.extend(_notes_block(best))

@@ -137,10 +137,6 @@ def classify(result: dict) -> str | None:
     return None
 
 
-def is_data_table(result: dict) -> bool:
-    return classify(result) == "table"
-
-
 def document_links(page: str, base: str) -> list[Resource]:
     """Spreadsheets a bulletin page links under /documents/, first listed first."""
     found: list[Resource] = []

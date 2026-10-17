@@ -131,6 +131,9 @@ class Fetched:
     headers: dict[str, str] | None = None
     # A saved copy used because the source could not be reached just now.
     stale: bool = False
+    # What a source adapter learned only from the data itself (GCC-Stat:
+    # one value repeated year after year), for the answer's notes.
+    notes: tuple[str, ...] = ()
 
     @property
     def byte_size(self) -> int:

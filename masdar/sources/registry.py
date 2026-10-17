@@ -64,6 +64,7 @@ def load_descriptors(path: Path | None = None) -> tuple[SourceDescriptor, ...]:
             topics=tuple(entry.get("topics", ())),
             synthetic=bool(entry.get("synthetic", False)),
             international=bool(entry.get("international", False)),
+            regional=bool(entry.get("regional", False)),
             site_url=str(entry.get("site_url", "") or ""),
             rendering=entry.get("rendering", "server"),
             geo_restricted=bool(entry.get("geo_restricted", False)),
@@ -89,6 +90,7 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
     from masdar.sources.adapters.gastat_api import GastatApiAdapter
     from masdar.sources.adapters.gastat_cdata import GastatCdataAdapter
     from masdar.sources.adapters.gastat_site import GastatSiteAdapter
+    from masdar.sources.adapters.gccstat import GccStatAdapter
     from masdar.sources.adapters.html_index import HtmlIndexAdapter
     from masdar.sources.adapters.live_data import LiveDataAdapter
     from masdar.sources.adapters.opendatasoft import OpendatasoftAdapter
@@ -104,6 +106,7 @@ def build_adapter(descriptor: SourceDescriptor, http=None) -> SourceAdapter:
         "html_index": HtmlIndexAdapter,
         "live_data": LiveDataAdapter,
         "worldbank": WorldBankAdapter,
+        "gccstat": GccStatAdapter,
         "fixture": FixtureAdapter,
     }
     try:

@@ -93,6 +93,27 @@ class TestPlausibilityNotes:
         v = verify(parse("الكهرباء 2030"), observed(), today=TODAY)
         assert any("لم تبدأ بعد" in note for note in v.notes)
 
+    def test_a_year_not_begun_is_absent_even_from_an_incomplete_list(self):
+        # A table title's 2026, or a declaration not given as complete, cannot
+        # show a year is missing -- except a year no data can exist for yet.
+        title_year = Coverage(years=frozenset({2026}), origin=CoverageOrigin.OBSERVED_DATA,
+                              is_exhaustive=False)
+        for coverage in (title_year, claimed(exhaustive=False), hinted()):
+            v = verify(parse("عدد الحجاج 2030"), coverage, today=TODAY)
+            assert v.verdict is Verdict.NOT_AVAILABLE, coverage.origin
+
+    def test_the_current_year_from_an_incomplete_list_stays_unverified(self):
+        # 2026 is under way: a monthly or quarterly release may hold it.
+        title_year = Coverage(years=frozenset({2025}), origin=CoverageOrigin.OBSERVED_DATA,
+                              is_exhaustive=False)
+        v = verify(parse("عدد الحجاج 2026"), title_year, today=TODAY)
+        assert v.verdict is Verdict.UNVERIFIED
+
+    def test_a_projection_holding_the_year_answers_it(self):
+        projection = observed(frozenset(range(2025, 2051)))
+        v = verify(parse("عدد السكان 2030"), projection, today=TODAY)
+        assert v.verdict is Verdict.AVAILABLE
+
     def test_notes_do_not_override_evidence(self):
         # If a source really holds the current year, that beats the heuristic.
         coverage = observed(YEARS | {2026})
@@ -197,6 +218,17 @@ class TestNewerDataElsewhere:
         best = self.finding({2022})
         declared = self.finding({2025}, origin=CoverageOrigin.METADATA_CLAIM)
         assert newer_elsewhere(best, [best, declared]) is None
+
+    def test_a_table_only_mentioning_the_subject_is_not_offered(self):
+        # The industrial production index holds 2026 and lists «الكهرباء»
+        # among its activities; it is no newer edition of electricity data.
+        from dataclasses import replace
+
+        from masdar.pipeline.verify import newer_elsewhere
+
+        best = self.finding({2022})
+        loose = replace(self.finding({2026}), names_subject=False)
+        assert newer_elsewhere(best, [best, loose]) is None
 
     def test_a_file_never_opened_is_not_offered(self):
         from masdar.pipeline.verify import newer_elsewhere

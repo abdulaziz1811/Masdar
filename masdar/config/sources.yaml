@@ -544,3 +544,112 @@ sources:
     topics: [population, labour, education, health, water, energy, electricity,
              environment, gdp, trade, prices, finance, agriculture, ict,
              transport, tourism, business, research, housing]
+
+  - id: gccstat
+    name_ar: المركز الإحصائي لدول مجلس التعاون الخليجي — واجهة SDMX
+    name_en: GCC-Stat SDMX service
+    operator_ar: المركز الإحصائي لدول مجلس التعاون لدول الخليج العربية
+    operator_en: GCC-Stat
+    base_url: https://sdmx.marsa.gccstat.org/FusionRegistry/ws/public/sdmxapi/rest
+    site_url: https://dp.marsa.gccstat.org/ar
+    adapter: gccstat
+    # A regional compiler of the member states' official figures (for the
+    # Kingdom, mostly GASTAT): ranked after the Saudi publishers like an
+    # international source, and named as regional.
+    international: true
+    regional: true
+    # An intergovernmental statistical office relaying the national offices'
+    # own figures: above the World Bank (70), below the Saudi publishers.
+    authority: 85
+    # VERIFIED 2026-10-04 by direct calls: the dataflow list (234 flows),
+    # the mobile data structure (country and year, footnotes in Arabic and
+    # English, no unit) and the Kingdom's series of every indicator below
+    # all answer anonymously as SDMX-JSON. No key is needed.
+    api_verified: true
+    access_checked: "2026-10-04"
+    access_notes_ar: >-
+      خدمة SDMX عامة بلا مفتاح. السلاسل المستخدمة هي «مؤشرات التطبيق» لدى
+      المركز: مؤشر واحد لكل سلسلة، بُعداها الدولة والسنة، والحواشي بالعربية.
+      السلاسل لا تذكر وحدتها، فوحدة كل مؤشر أدناه تحققنا منها بمطابقة قيمته
+      لجداول المركز التفصيلية (التي تذكر الوحدة) أو بحجم الرقم المعروف، ومنها
+      ما يكرر القيمة نفسها لسنوات متتالية (الوفيات 80,246 من 2018 إلى 2022)،
+      فيُنبَّه إلى ذلك في الجواب.
+    api:
+      # One entry per mobile dataflow (`id`). `unit_ar` was checked as
+      # written beside each (counts were checked by the figure's size);
+      # `aliases` are the other names people use. 24 flows, 2026-10-04/17.
+      indicators:
+        - {id: MOBILE_DF_POP, title_ar: عدد السكان, title_en: Population, unit_ar: نسمة,
+           aliases: [إجمالي السكان, سكان المملكة, تعداد السكان], topics: [population]}
+          # 35,300,280 for 2024, GASTAT's published total.
+        - {id: MOBILE_DF_POP_CITIZEN, title_ar: عدد السكان السعوديين, title_en: Citizen Population,
+           unit_ar: نسمة, aliases: [عدد المواطنين, السكان المواطنون], topics: [population]}
+        - {id: MOBILE_DF_BTH, title_ar: عدد المواليد, title_en: Number of Births, unit_ar: مولود,
+           aliases: [المواليد الأحياء], topics: [population, health]}
+        - {id: MOBILE_DF_DTH, title_ar: عدد الوفيات, title_en: Number of Deaths, unit_ar: حالة وفاة,
+           topics: [population, health]}
+        - {id: MOBILE_DF_MAR_MARRIAGE_CASES, title_ar: عدد حالات الزواج,
+           title_en: Number of Marriage Cases, unit_ar: حالة, aliases: [عقود الزواج],
+           topics: [population, justice]}
+        - {id: MOBILE_DF_DIV_DIVORCE_CASES, title_ar: عدد حالات الطلاق,
+           title_en: Number of Divorce Cases, unit_ar: حالة, aliases: [صكوك الطلاق],
+           topics: [population, justice]}
+        - {id: MOBILE_DF_LAB_EMPLOYEES, title_ar: عدد المشتغلين, title_en: Number of Employed,
+           unit_ar: فرد, aliases: [عدد العاملين, عدد الموظفين], topics: [labour]}
+        - {id: MOBILE_DF_SDG08_8_5_2, title_ar: معدل البطالة, title_en: Unemployment rate,
+           unit_ar: "%", topics: [labour]}
+        - {id: MOBILE_DF_CPI_INF_Y, title_ar: معدل التضخم السنوي, title_en: Annual Inflation,
+           unit_ar: "%", aliases: [معدل التضخم, التضخم], topics: [prices]}
+        - {id: MOBILE_DF_NA_GDP_CUR, title_ar: الناتج المحلي الإجمالي بالأسعار الجارية,
+           title_en: GDP at Current Prices, unit_ar: مليار دولار أمريكي,
+           aliases: [الناتج المحلي الإجمالي], topics: [gdp]}
+          # 1,254.1 for 2024 = 1,254,141 million US$ in GCC-Stat's GDP table.
+        - {id: MOBILE_DF_GDP_CAP_CUR, title_ar: نصيب الفرد من الناتج المحلي الإجمالي بالأسعار الجارية,
+           title_en: GDP per Capita at Current Prices, unit_ar: ألف دولار أمريكي,
+           aliases: [نصيب الفرد من الناتج المحلي, متوسط دخل الفرد], topics: [gdp]}
+          # 35.5 for 2024 = 35,528 US$ in the same table.
+        - {id: MOBILE_DF_IT_GEXP, title_ar: إجمالي الصادرات السلعية, title_en: Total Export of Goods,
+           unit_ar: مليون دولار أمريكي, aliases: [الصادرات, صادرات السلع], topics: [trade]}
+          # 264,783 for 2024: about a trillion riyals, the size of the
+          # Kingdom's goods exports; in riyals or billions it would not be.
+        - {id: MOBILE_DF_TUR_TOURISTS, title_ar: عدد السياح القادمين,
+           title_en: Total Number of Tourists Coming to GCC, unit_ar: ألف سائح,
+           aliases: [عدد السياح, السياح الوافدون, السياحة الوافدة], topics: [tourism]}
+          # 29,727.4 for 2024 = "Total number of tourists (000)" in the tourism table.
+        - {id: MOBILE_DF_TUR_EXP, title_ar: إنفاق الزوار القادمين,
+           title_en: Total Expenditure of Visitors Coming to GCC, unit_ar: مليون دولار أمريكي,
+           aliases: [إنفاق السياح, الإنفاق السياحي], topics: [tourism]}
+          # The tourism table gives this expenditure in US$ Mn.
+        - {id: MOBILE_DF_ENR_ELECT_CONS, title_ar: استهلاك الكهرباء, title_en: Electricity Consumption,
+           unit_ar: جيجاواط ساعة, aliases: [استهلاك الطاقة الكهربائية],
+           topics: [electricity, energy]}
+          # 340,430 for 2024 = the energy table's figure, in GWh.
+        - {id: MOBILE_DF_ENR_ELECT_PROD, title_ar: إنتاج الكهرباء, title_en: Electricity Production,
+           unit_ar: جيجاواط ساعة, aliases: [توليد الكهرباء, إنتاج الطاقة الكهربائية],
+           topics: [electricity, energy]}
+          # 402,628 for 2024 = the energy table's total production, in GWh.
+        - {id: MOBILE_DF_ENR_CRD_OIL_PROD, title_ar: إنتاج النفط الخام, title_en: Crude Oil Production,
+           unit_ar: ألف برميل يومياً, aliases: [إنتاج النفط], topics: [energy]}
+          # 8,954.9 for 2024 = the energy table's figure, in 1000 b/d.
+        - {id: MOBILE_DF_WTR_DESALINATED_WATER, title_ar: كمية المياه المحلاة,
+           title_en: Quantity of Desalinated Water, unit_ar: مليون متر مكعب,
+           aliases: [المياه المحلاة, إنتاج المياه المحلاة, تحلية المياه], topics: [water]}
+          # 3,404.1 for 2024 = "Desalinated water - mio m3/y" in the water table.
+        - {id: MOBILE_DF_EDU_STUDENT_UNI, title_ar: عدد طلاب التعليم العالي,
+           title_en: Higher Education Students, unit_ar: طالب,
+           aliases: [طلاب الجامعات, عدد الطلاب الجامعيين], topics: [education]}
+        - {id: MOBILE_DF_HTH_HOSPITAL, title_ar: عدد المستشفيات, title_en: Number of Hospitals,
+           unit_ar: مستشفى, topics: [health]}
+        - {id: MOBILE_DF_HTH_PHYSICIANS, title_ar: عدد الأطباء, title_en: Number of Physicians,
+           unit_ar: طبيب, topics: [health]}
+          # 129,772 for 2024.
+        - {id: MOBILE_DF_EDU_SCHOOL, title_ar: عدد المدارس, title_en: Number of Schools,
+           unit_ar: مدرسة, topics: [education]}
+        - {id: MOBILE_DF_CUL_MUES_VIST, title_ar: عدد زوار المتاحف, title_en: Total Museums Visitors,
+           unit_ar: زائر, aliases: [زوار المتاحف], topics: [culture, tourism]}
+          # 2011-2018 only, as published.
+        - {id: MOBILE_DF_AGR_Dates, title_ar: إنتاج التمور, title_en: Dates Production, unit_ar: طن,
+           aliases: [إنتاج التمر, التمور], topics: [agriculture]}
+          # 1,922,933 for 2024: the Kingdom's crop, about two million tonnes.
+    topics: [population, health, labour, prices, gdp, trade, tourism, electricity, energy,
+             water, education, agriculture, culture, justice]

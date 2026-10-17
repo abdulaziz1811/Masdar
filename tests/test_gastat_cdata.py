@@ -327,7 +327,7 @@ class TestProvidedDimensions:
         # word in the lexicon; the adapter declaring it is what prevents a
         # warning that the file lacks data it plainly contains.
         answer = agent.answer("استهلاك الكهرباء 2022 حسب المناطق والفصل")
-        assert not any("لا يحتوي عمود" in note for note in answer.primary.notes)
+        assert not any("لا يحتوي التفصيل" in note for note in answer.primary.notes)
 
     def test_candidate_declares_what_it_grouped_by(self, registry):
         from masdar.domain.models import Dimension
@@ -341,7 +341,8 @@ class TestProvidedDimensions:
     def test_a_genuinely_absent_breakdown_is_still_reported(self, agent):
         # This dataset has no gender axis, so the warning must appear.
         answer = agent.answer("استهلاك الكهرباء 2022 حسب الجنس")
-        assert any("لا يحتوي عمود" in note for note in answer.primary.notes)
+        assert any("لا يحتوي التفصيل المطلوب (الجنس)" in note for note in answer.primary.notes)
+        assert answer.verdict is Verdict.PARTIAL
 
 
 class TestKeyReachesTheWire:

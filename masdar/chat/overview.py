@@ -38,6 +38,7 @@ _UNITS = {
     "saudi_open_data": "جهة حكومية",
     "live_data": "مؤشراً لحظياً",
     "worldbank": "مؤشراً",
+    "gccstat": "مؤشراً",
 }
 
 
@@ -48,7 +49,7 @@ def _reach(registry: Registry, descriptor) -> int | None:
             return len(adapter._datasets())
         if descriptor.adapter == "saudi_open_data":
             return len(adapter._organizations())
-        if descriptor.adapter in ("live_data", "worldbank"):
+        if descriptor.adapter in ("live_data", "worldbank", "gccstat"):
             return len(adapter._indicators())
     except Exception:  # an overview must never stop the page from opening
         return None
@@ -96,7 +97,10 @@ def overview(
                               "reason": "لا تُفتح إلا من خادم داخل المملكة"})
             continue
         count = _reach(registry, d)
-        kind = "دولي" if d.international else "لحظي" if d.adapter == "live_data" else "رسمي"
+        kind = (
+            "إقليمي" if d.regional else "دولي" if d.international
+            else "لحظي" if d.adapter == "live_data" else "رسمي"
+        )
         sources.append({
             "id": d.id,
             "name": d.name_ar,
@@ -106,9 +110,9 @@ def overview(
             "unit": _UNITS.get(d.adapter, ""),
             "checked": d.access_checked,
         })
-    # Saudi first, then live, then international; the national statistics
-    # office leads.
-    order = {"رسمي": 0, "لحظي": 1, "دولي": 2}
+    # Saudi first, then live, then regional and international; the national
+    # statistics office leads.
+    order = {"رسمي": 0, "لحظي": 1, "إقليمي": 2, "دولي": 3}
     sources.sort(key=lambda s: (order[s["kind"]], s["operator"] != "الهيئة العامة للإحصاء"))
 
     publishers = {s["operator"] for s in sources if s["unit"] != "جهة حكومية"}

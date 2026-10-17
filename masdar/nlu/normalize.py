@@ -98,7 +98,7 @@ def contains_phrase(haystack: str, phrase: str) -> bool:
     if not needles:
         return False
     haystacks = []
-    for variant in (tokens(haystack), stems(haystack)):
+    for variant in (tokens(haystack), stems(haystack), _without_lam(haystack)):
         if variant:
             haystacks.append(" " + " ".join(variant) + " ")
             # How often a series is published is not what it is about:
@@ -111,6 +111,21 @@ def contains_phrase(haystack: str, phrase: str) -> bool:
 
 
 _FREQUENCY = frozenset({"سنوي", "شهري", "ربعي", "اسبوعي", "يومي"})
+
+
+def _without_lam(text: str) -> list[str]:
+    """Tokens read without a fused «ل» ("for"), articles stripped too.
+
+    «الرقم القياسي لأسعار المستهلك» names «أسعار المستهلك», and «لسوق العمل»
+    names «سوق العمل»; «لل» is the article's own form and `stems` handles it.
+    A third reading, never a replacement: «لحوم» keeps its «ل» in the others.
+    """
+    out = []
+    for token in tokens(text):
+        if token.startswith("ل") and not token.startswith("لل") and len(token) >= 4:
+            token = token[1:]
+        out.append(strip_article(token))
+    return out
 
 # Endings that turn a noun into its adjective or plural: «الكهرباء» and
 # «الكهربائية», «مستشفى» and «المستشفيات», «السكان» and «السكانية». Longest
@@ -254,13 +269,36 @@ _MONTHS = {normalize(name): number for number, names in enumerate((
 MONTH_WORDS = frozenset(_MONTHS)
 
 
+def months_named(text: str) -> frozenset[int]:
+    """The months a text names, 1-12: «لشهر مايو 2026» is {5}."""
+    found = set()
+    for token in tokens(text):
+        for word in (token, token[1:] if token.startswith("ل") else token):
+            if word in _MONTHS:
+                found.add(_MONTHS[word])
+    return frozenset(found)
+
+# An index's base year is not the period it covers: «مؤشر قيمة الصادرات
+# (2000 = 100)» is no release for the year 2000.
+_BASE_YEAR = re.compile(
+    r"(?:19|20)\d\d\s*=\s*100|100\s*=\s*(?:19|20)\d\d"
+    r"|(?:سنة|سنه|عام)\s+(?:ال)?[اأ]ساس\s*:?\s*\(?\s*(?:19|20)\d\d"
+    r"|base\s+year\s*:?\s*(?:19|20)\d\d",
+    re.IGNORECASE,
+)
+
+
+def _without_base_year(text: str) -> str:
+    return _BASE_YEAR.sub(" ", fold_digits(text))
+
+
 def period_grain(text: str) -> str | None:
     """'month', 'quarter' or 'year': what span of time a text names.
 
     «الرقم القياسي السنوي للإنتاج الصناعي لعام 2025» is a year,
     «... لشهر ديسمبر 2025» a month. None when it names no year.
     """
-    folded = normalize(fold_digits(text))
+    folded = normalize(_without_base_year(text))
     if not _TITLE_YEAR.search(folded):
         return None
     if any(w in _MONTHS for w in tokens(folded)):
@@ -276,7 +314,7 @@ def title_period(text: str) -> float | None:
     «لشهر أغسطس 2026» is 2026 and eight twelfths, «للربع الثاني 2026» 2026
     and a half, «لعام 2025» the end of 2025. None when no year is named.
     """
-    folded = normalize(fold_digits(text))
+    folded = normalize(_without_base_year(text))
     years = [int(y) for y in _TITLE_YEAR.findall(folded)]
     if not years:
         return None

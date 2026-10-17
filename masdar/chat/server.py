@@ -141,6 +141,7 @@ def _finding_payload(
         "evidence": coverage.origin.value,
         "matched_years": list(finding.matched_years),
         "missing_years": list(finding.missing_years),
+        "missing_dimensions": [d.label_ar for d in finding.missing_dimensions],
         "landing_url": _http_link(provenance.landing_url),
         # "site" when the link is the publisher's website rather than a page
         # for this dataset, so the button can say which it is.

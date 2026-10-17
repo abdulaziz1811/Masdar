@@ -22,7 +22,7 @@
     metadata_claim: "من وصف المصدر",
     inferred_title: "من العنوان فقط"
   };
-  var KIND_TAG = { "رسمي": "tag-official", "لحظي": "tag-live", "دولي": "tag-intl" };
+  var KIND_TAG = { "رسمي": "tag-official", "لحظي": "tag-live", "إقليمي": "tag-intl", "دولي": "tag-intl" };
   var ICONS = {
     check: "M20 6 9 17l-5-5",
     half: "M12 3a9 9 0 1 0 0 18V3Z M12 3a9 9 0 0 1 0 18",
@@ -496,8 +496,7 @@
     return b;
   }
   function kindOf(f) {
-    if (f.international) return "دولي";
-    return sourceKinds[f.source_id] || null;
+    return sourceKinds[f.source_id] || (f.international ? "دولي" : null);
   }
 
   function renderResult(f, highlight) {
@@ -525,7 +524,9 @@
     if (f.stale) sec.appendChild(banner("notice", "archive",
       "نسخة محفوظة؛ تعذّر الوصول إلى المصدر وقت الطلب."));
     if (f.international) sec.appendChild(banner("info", "globe",
-      "مصدر دولي؛ قد يختلف عن الرقم الرسمي المنشور محلياً."));
+      kindOf(f) === "إقليمي"
+        ? "مصدر إقليمي ينقل عن الجهات الرسمية في المملكة؛ قد يختلف عن آخر رقم منشور محلياً."
+        : "مصدر دولي؛ قد يختلف عن الرقم الرسمي المنشور محلياً."));
 
     var actions = el("div", "actions");
     if (f.download) {

@@ -29,6 +29,7 @@ from masdar.export import excel
 from masdar.export.tabular import Table, read_table
 from masdar.nlu.lexicon import Lexicon, load_lexicon
 from masdar.nlu.understand import LLM, Understanding, understand
+from masdar.pipeline import fit as fit_module
 from masdar.pipeline import resolve
 from masdar.pipeline import verify as verify_module
 from masdar.pipeline.reply import compose_message
@@ -41,9 +42,10 @@ from masdar.sources.registry import Registry
 class AgentConfig:
     # Enough for every verified source of a topic: several search a local
     # catalogue (specs, configured indicators) and cost no request to ask.
-    # Eight: GASTAT (three routes), the national platform, the live sources
-    # and the international fallback all fit; searches run in parallel.
-    max_sources: int = 8
+    # Nine: GASTAT (three routes), the national platform, the live sources
+    # and the regional and international fallbacks all fit; searches run in
+    # parallel.
+    max_sources: int = 9
     per_source_limit: int = 8
     # How many ranked candidates we are willing to open files for. Opening a
     # file is what upgrades a claim to OBSERVED_DATA, so this is the main
@@ -59,19 +61,6 @@ class AgentConfig:
     # background so its reply is cached for the next question. None: no
     # limit, sources asked one after another (the command line, the tests).
     answer_seconds: float | None = None
-
-
-RELEASE_NOTE = (
-    "هذا إصدار واحد من إصدارات الجهة (يغطي {held})، لا سلسلة كاملة؛ عدم ظهور "
-    "{asked} فيه لا يعني أنها لم تُنشر في إصدار آخر."
-)
-
-
-def _years_text(years) -> str:
-    years = sorted(years)
-    if not years:
-        return "—"
-    return str(years[0]) if len(years) == 1 else f"{years[0]}–{years[-1]}"
 
 
 # Of an answer's time limit, the share the search may use; the rest is for
@@ -435,6 +424,8 @@ class Agent:
                 if problem:
                     notes.append(problem)
                     audit.append(f"{candidate.title_ar}: {problem}")
+                if fetched is not None:
+                    notes.extend(n for n in getattr(fetched, "notes", ()) if n not in notes)
                 if fetched is not None and fetched.stale:
                     notes.append(
                         "تعذّر الوصول إلى المصدر الآن، فاستُخدمت آخر نسخة محفوظة منه "
@@ -459,44 +450,11 @@ class Agent:
                 notes.append("لا يتوفر ملف جدولي لهذه النتيجة، لذا لم يُنشأ ملف إكسل.")
 
             verification = verify_module.verify(request, coverage, today=today)
-            if (
-                candidate.is_release
-                and verification.verdict in (Verdict.NOT_AVAILABLE, Verdict.UNVERIFIED)
-                and verification.missing_years
-                and verification.coverage.years
-            ):
-                # The 2026 Hajj bulletin holds 2026; that is no evidence that
-                # 2023 was never published.
-                verification = replace(
-                    verification,
-                    verdict=Verdict.UNVERIFIED,
-                    notes=(
-                        *(n for n in verification.notes if n != verify_module.TITLE_YEAR_NOTE),
-                        RELEASE_NOTE.format(
-                            held=_years_text(verification.coverage.years),
-                            asked=_years_text(verification.missing_years),
-                        ),
-                    ),
-                )
+            fit = fit_module.judge(request, candidate, table, verification, self.lexicon, today)
+            verification = fit.verification
             notes.extend(verification.notes)
-
-            # In a workbook of tables, which one was read, and is it what was
-            # asked: «عدد المشتغلين» once got «التوزيع النسبي للمشتغلين (%)».
-            table_title = table.title if table is not None and table.sheet_name else ""
-            mismatch = bool(table_title) and resolve.text_measure_mismatch(request, table_title)
-            if mismatch:
-                notes.insert(0, "طُلب عدد، والجدول المقروء من الملف نسب أو معدلات.")
-
-            if table is not None:
-                present = table.observed_dimensions(self.lexicon.dimension_words)
-                # A source that grouped by a dimension provides it, whatever
-                # its column happens to be called.
-                present |= set(candidate.provided_dimensions)
-                for dimension in resolve.missing_dimensions(request, present):
-                    notes.append(
-                        "تنبيه: الملف لا يحتوي عموداً للتفصيل المطلوب "
-                        f"({dimension.label_ar})."
-                    )
+            notes[:0] = fit.leading_notes
+            table_title, mismatch, named = fit.table_title, fit.measure_mismatch, fit.names_subject
 
             provenance = self._provenance(candidate, descriptor, fetched)
             export_path: str | None = None
@@ -553,6 +511,8 @@ class Agent:
                     notes=tuple(notes),
                     table_title=table_title,
                     measure_mismatch=mismatch,
+                    names_subject=named,
+                    missing_dimensions=fit.missing_dimensions,
                 )
             )
 
@@ -565,6 +525,7 @@ class Agent:
                 and export_path
                 and request.period.years
                 and not mismatch
+                and named
             ):
                 break
 
@@ -788,7 +749,8 @@ def _absence_needs_every_lead(
         return findings
     lead = next((
         f for f in findings
-        if f.verdict is Verdict.UNVERIFIED and f.candidate.source_id not in international
+        if f.verdict is Verdict.UNVERIFIED and f.names_subject
+        and f.candidate.source_id not in international
     ), None)
     if lead is None:
         return findings
@@ -804,6 +766,11 @@ def _finding_sort_key(finding: Finding, international: frozenset[str] = frozense
     if finding.verdict is Verdict.UNVERIFIED and finding.coverage.is_empty:
         rank = _VERDICT_RANK[Verdict.NOT_AVAILABLE] + 0.5
     return (
+        # A result named for what was asked comes before one that only
+        # mentions it in its description, whatever their verdicts: a
+        # loosely related table holding the year must not answer for the
+        # closely matching ones that show the year is not published.
+        not finding.names_subject,
         rank,
         # At the same verdict, the Saudi publisher's own file comes before an
         # international compiler's copy; a better verdict still wins.

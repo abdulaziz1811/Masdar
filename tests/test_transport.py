@@ -256,7 +256,7 @@ class TestSaudiExitErrors:
 
         transport = FirecrawlTransport(api_key="test-key", wait_for_ms=0)
         transport._session.post = lambda *a, **k: SimpleNamespace(
-            status_code=code, text="{}", json=lambda: {})
+            status_code=code, text="{}", json=dict)
         return transport
 
     def test_a_busy_exit_is_tried_again(self):
@@ -308,7 +308,7 @@ class TestSaudiExitErrors:
             from types import SimpleNamespace
 
             sent.update(json)
-            return SimpleNamespace(status_code=402, text="{}", json=lambda: {})
+            return SimpleNamespace(status_code=402, text="{}", json=dict)
 
         transport._session.post = post
         with pytest.raises(SourceError):

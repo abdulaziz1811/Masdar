@@ -178,7 +178,7 @@ class TestSaudiFirst:
         # Only the fields the sort reads.
         return SimpleNamespace(candidate=candidate, verdict=verdict,
                                coverage=Coverage.unknown(), export_path="x.xlsx",
-                               measure_mismatch=False)
+                               measure_mismatch=False, names_subject=True)
 
     def test_at_the_same_verdict_the_saudi_finding_comes_first(self):
         foreign = self._finding("worldbank", Verdict.AVAILABLE, 30.0)

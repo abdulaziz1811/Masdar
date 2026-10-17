@@ -179,6 +179,16 @@ class TestWhatGastatsSiteTaught:
         assert contains_phrase("الرقم القياسي السنوي للإنتاج الصناعي لعام 2025",
                                "الرقم القياسي للإنتاج الصناعي")
 
+    def test_an_index_base_year_is_not_a_release_year(self):
+        # «مؤشر قيمة الصادرات (2000 = 100)» once took the bonus of a release
+        # for the year asked, over the exports themselves.
+        from masdar.nlu.normalize import period_grain, title_period
+
+        assert period_grain("مؤشر قيمة الصادرات (2000 = 100)") is None
+        assert period_grain("الرقم القياسي لأسعار المستهلك سنة الأساس 2018") is None
+        assert title_period("الرقم القياسي لأسعار المستهلك أغسطس 2026 (2023=100)") \
+            == pytest.approx(2026 + 8 / 12)
+
     def test_months_and_years_are_not_sent_to_the_sites_search(self):
         from masdar.sources.adapters.gastat_site import query_words
 
@@ -230,3 +240,65 @@ class TestNotAvailableNeedsEveryLead:
 
     def test_a_year_not_yet_over_is_still_not_available(self):
         assert self.held("معدل البطالة 2026")[0].verdict is Verdict.NOT_AVAILABLE
+
+
+class TestWhatTheOctoberBatteryFound:
+    """Faults found by a 45-question battery on 2026-10-17, one test each."""
+
+    def test_a_percent_share_is_no_count(self):
+        # normalize() turns «%» into a space, so the sign was never seen.
+        request = parse("عدد السكان 2024")
+        share = DatasetCandidate("x", "1", "تعداد السكان، إناث (% من الإجمالي)")
+        assert resolve.measure_mismatch(request, share)
+        assert resolve.measure_mismatch(request, DatasetCandidate("x", "2", "الكثافة السكانية"))
+        assert not resolve.measure_mismatch(request, DatasetCandidate("x", "3", "عدد السكان"))
+
+    def test_a_share_unasked_ranks_below_the_amount(self):
+        request = parse("إنتاج الكهرباء 2024")
+        amount = DatasetCandidate("x", "1", "إنتاج الكهرباء")
+        share = DatasetCandidate("x", "2", "إنتاج الكهرباء من المصادر النفطية (% من الإجمالي)")
+        scored = {c.dataset_id: resolve.score_candidate(request, c, today=TODAY) for c in
+                  (amount, share)}
+        assert scored["2"].score < scored["1"].score
+        assert any("نسبة مئوية" in r for r in scored["2"].match_reasons)
+        # Asked for a share, it is not marked down.
+        asked = resolve.score_candidate(parse("نسبة إنتاج الكهرباء من النفط"), share, today=TODAY)
+        assert not any("نسبة مئوية" in r for r in asked.match_reasons)
+
+    def test_a_fused_lam_still_names_the_topic(self):
+        request = parse("الرقم القياسي لأسعار المستهلك أغسطس 2026")
+        assert request.topic.id == "prices"
+        assert "أسعار المستهلك" in request.typed_phrases
+        # The month is when, not what; «لأسعار» is spent with its topic.
+        assert request.free_terms == ()
+
+    def test_the_month_asked_ranks_its_release_first(self):
+        request = parse("الرقم القياسي لأسعار المستهلك لشهر مايو 2026")
+        may = DatasetCandidate("x", "5", "الرقم القياسي لأسعار المستهلك لشهر مايو 2026")
+        august = DatasetCandidate("x", "8", "الرقم القياسي لأسعار المستهلك لشهر أغسطس 2026")
+        ranked = resolve.rank(request, [august, may], {}, load_lexicon(), TODAY)
+        assert ranked[0].dataset_id == "5"
+        assert resolve.other_month(request, august) == frozenset({8})
+        assert resolve.other_month(request, may) == frozenset()
+        assert resolve.other_month(parse("الرقم القياسي لأسعار المستهلك 2026"), august) \
+            == frozenset()
+
+    def test_another_subject_in_an_indicator_name_costs_more(self):
+        # «عدد وفيات المواليد» (infant deaths) came first for «عدد المواليد».
+        from masdar.sources.adapters.worldbank import _changes_subject
+
+        assert _changes_subject("فيات", ["عدد", "مواليد"])
+        # «الطاقة» in «الطاقة الكهربائية» is half of electricity's own name.
+        assert not _changes_subject("طاقه", ["استهلاك", "كهرباء"])
+
+    @pytest.mark.parametrize("question, flow", [
+        ("عدد الأطباء 2023", "MOBILE_DF_HTH_PHYSICIANS"),
+        ("عدد المدارس", "MOBILE_DF_EDU_SCHOOL"),
+        ("حالات الطلاق 2021", "MOBILE_DF_DIV_DIVORCE_CASES"),
+        ("عدد عقود الزواج 2021", "MOBILE_DF_MAR_MARRIAGE_CASES"),
+        ("عدد زوار المتاحف", "MOBILE_DF_CUL_MUES_VIST"),
+    ])
+    def test_questions_with_no_answer_offline_now_reach_gcc_stat(self, catalogues, question,
+                                                                 flow):
+        top = ranked_for(catalogues, question)
+        assert flow in [c.dataset_id for c in top[:3]]

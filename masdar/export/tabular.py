@@ -21,7 +21,8 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from masdar.nlu.normalize import contains_phrase, fold_digits, word_recall
+from masdar.domain.models import Dimension
+from masdar.nlu.normalize import contains_phrase, fold_digits, normalize, word_recall
 from masdar.nlu.parser import extract_years
 
 MAX_HEADER_SCAN = 15
@@ -180,14 +181,37 @@ class Table:
         }
         return len(listed) >= 3
 
-    def observed_dimensions(self, dimension_words: dict) -> set:
-        """Which breakdown axes the columns provide."""
+    def observed_dimensions(
+        self, dimension_words: dict, places: dict[str, tuple[str, ...]] | None = None
+    ) -> set:
+        """Which breakdown axes the table provides.
+
+        Named by a column header («المنطقة الإدارية»), or -- for regions,
+        which a bulletin often lists down its first column under «البيان» --
+        by the rows themselves: three or more of the Kingdom's regions named
+        in the first columns are a regional breakdown.
+        """
         present = set()
         header_text = " ".join(str(c) for c in self.columns)
         for dimension, words in dimension_words.items():
             if any(contains_phrase(header_text, word) for word in words):
                 present.add(dimension)
+        if places and Dimension.REGION not in present and self._names_regions(places):
+            present.add(Dimension.REGION)
         return present
+
+    def _names_regions(self, places: dict[str, tuple[str, ...]], at_least: int = 3) -> bool:
+        labels = {
+            normalize(str(cell))
+            for row in self.rows[:200]
+            for cell in row[:3]
+            if isinstance(cell, str) and cell.strip()
+        }
+        named = {
+            region for region, spellings in places.items()
+            if any(contains_phrase(label, s) for s in spellings for label in labels)
+        }
+        return len(named) >= at_least
 
     # -- cleaning ------------------------------------------------------
     def without_inapplicable_columns(self) -> tuple[Table, list[str]]:

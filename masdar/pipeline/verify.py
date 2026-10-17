@@ -121,8 +121,14 @@ def verify(request: DataRequest, coverage: Coverage, today: date | None = None) 
             notes=tuple([*notes, "تعذّر تحديد السنوات التي يغطيها هذا المصدر."]),
         )
 
+    # Nothing published can hold a year that has not begun: a projection
+    # would have shown it among the years the source does give. So a list of
+    # years that may be incomplete -- or only a title's -- still answers "not
+    # available" for it; the calendar answers, not the list.
+    future_only = not matched and min(missing) > today.year
+
     # A title hint can point the search at a dataset but can never answer it.
-    if coverage.origin is CoverageOrigin.INFERRED_TITLE:
+    if coverage.origin is CoverageOrigin.INFERRED_TITLE and not future_only:
         hint = (
             f"العنوان يشير إلى السنوات {sorted(coverage.years)} لكن لم يتم فتح "
             "الملف للتأكد، فلا يمكن تأكيد التوفر."
@@ -137,7 +143,7 @@ def verify(request: DataRequest, coverage: Coverage, today: date | None = None) 
 
     if coverage.origin is CoverageOrigin.METADATA_CLAIM:
         notes.append("التوفر مبني على البيانات الوصفية المعلنة من المصدر.")
-        if not matched and not coverage.is_exhaustive:
+        if not matched and not coverage.is_exhaustive and not future_only:
             # The declaration may simply be incomplete; that is not proof of
             # absence.
             return Verification(
@@ -151,7 +157,7 @@ def verify(request: DataRequest, coverage: Coverage, today: date | None = None) 
                 ]),
             )
 
-    if not matched and not coverage.is_exhaustive:
+    if not matched and not coverage.is_exhaustive and not future_only:
         # Read from the file, but only from a table's title: presence, not
         # absence, is what it can show.
         return Verification(
@@ -255,6 +261,10 @@ def newer_elsewhere(best: Finding, others: Sequence[Finding]) -> YearSuggestion 
     newest: Finding | None = None
     for finding in others:
         if finding is best or finding.provenance.sha256 is None:
+            continue
+        if not finding.names_subject:
+            # A table that only mentions the subject (an index listing
+            # «الكهرباء» among its activities) is no newer edition of it.
             continue
         if finding.coverage.origin is not CoverageOrigin.OBSERVED_DATA:
             continue

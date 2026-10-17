@@ -84,6 +84,10 @@ class SourceDescriptor:
     # World Bank, say): reliable, but second to the Saudi publisher of the
     # same figure, so it ranks below Saudi sources and every answer says so.
     international: bool = False
+    # Set with `international` for a Gulf body that republishes the member
+    # states' own figures (GCC-Stat): ranked as an international source, but
+    # named for what it is.
+    regional: bool = False
 
     def covers_topic(self, topic_id: str | None) -> bool:
         if topic_id is None:

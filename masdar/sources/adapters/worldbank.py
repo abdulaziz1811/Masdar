@@ -62,6 +62,10 @@ IN_QUALIFIER = 0.5
 MEASURE_WORD = 0.5
 EXTRA_IN_NAME = 0.08
 EXTRA_IN_QUALIFIER = 0.02
+# An unasked word in the main name that is itself a subject («وفيات» in
+# «عدد وفيات المواليد», asked «عدد المواليد») changes what is counted, not
+# how it is qualified: infant deaths are not births.
+EXTRA_SUBJECT_IN_NAME = 0.3
 # Below this an indicator is only loosely related, and an international
 # source should not be offered for it.
 MIN_RELEVANCE = 0.5
@@ -98,6 +102,41 @@ def _parse_date(text: object) -> date | None:
         return date.fromisoformat(str(text)[:10])
     except ValueError:
         return None
+
+
+@functools.lru_cache(maxsize=1)
+def _subject_phrases() -> tuple[frozenset[str], tuple[frozenset[str], ...]]:
+    """The lexicon's one-word subjects, and the stems of its longer phrases.
+
+    «الوفيات» alone names a subject; «الطاقة» does too, but «الطاقة
+    الكهربائية» shows it is also half of the name for electricity.
+    """
+    lexicon = load_lexicon()
+    single: set[str] = set()
+    phrases: list[frozenset[str]] = []
+    for topic in lexicon.topics:
+        for keyword in topic.keywords_ar:
+            words = _content_stems(keyword, lexicon.stopwords)
+            if len(words) == 1:
+                single.update(words)
+            elif words:
+                phrases.append(frozenset(words))
+    return frozenset(single) - _GENERIC, tuple(phrases)
+
+
+def _changes_subject(word: str, asked: list[str]) -> bool:
+    """Whether an unasked word names another subject, not a part of this one."""
+    single, phrases = _subject_phrases()
+    # `stems` reads a leading «و» as "and": «وفيات» arrives as «فيات».
+    readings = (word, f"و{word}")
+    if not any(_same_word(r, s) for r in readings for s in single):
+        return False
+    for phrase in phrases:
+        if any(_same_word(r, p) for r in readings for p in phrase) and any(
+            _same_word(a, p) for a in asked for p in phrase
+        ):
+            return False
+    return True
 
 
 @functools.lru_cache(maxsize=1)
@@ -180,13 +219,16 @@ class WorldBankAdapter(SourceAdapter):
         if not specific:
             return 0.0
         # Measure words ("total", "number") say nothing the question lacks.
-        extra_name = sum(1 for w in in_name if w not in _GENERIC and not found(w, asked))
+        extra = [w for w in in_name if w not in _GENERIC and not found(w, asked)]
+        extra_subjects = sum(1 for w in extra if _changes_subject(w, asked))
+        extra_name = len(extra) - extra_subjects
         extra_qualifier = sum(
             1 for w in in_qualifier if w not in _GENERIC and not found(w, asked)
         )
         score = (
             weight / total
             - EXTRA_IN_NAME * extra_name
+            - EXTRA_SUBJECT_IN_NAME * extra_subjects
             - EXTRA_IN_QUALIFIER * extra_qualifier
         )
         return max(0.0, min(1.0, score))

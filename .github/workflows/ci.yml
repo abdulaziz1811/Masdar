@@ -1,0 +1,21 @@
+# Lint and the full test suite on every push and pull request. The tests are
+# offline -- every source is a recorded response under tests/fixtures -- so
+# they need no key and no access to Saudi hosts.
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m ruff check masdar tests tools
+      - run: python -m pytest -q

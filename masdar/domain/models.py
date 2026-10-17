@@ -44,10 +44,6 @@ class Period:
     def __post_init__(self) -> None:
         object.__setattr__(self, "years", tuple(sorted(set(self.years))))
 
-    @property
-    def is_open_ended(self) -> bool:
-        return self.kind in (PeriodKind.LATEST, PeriodKind.UNSPECIFIED)
-
     def label(self) -> str:
         if not self.years:
             # Without a period the agent answers with the newest data it finds.
@@ -233,16 +229,6 @@ class Provenance:
     # The source could not be reached, and this is an older saved copy.
     stale: bool = False
 
-    def citation_ar(self) -> str:
-        parts = [self.publisher_ar]
-        if self.last_updated:
-            parts.append(f"آخر تحديث: {self.last_updated.isoformat()}")
-        else:
-            parts.append("آخر تحديث: غير معلن")
-        parts.append(f"تاريخ الاستخراج: {self.retrieved_at.date().isoformat()}")
-        parts.append(self.resource_url or self.landing_url)
-        return " — ".join(parts)
-
 
 @dataclass(frozen=True)
 class Resource:
@@ -372,6 +358,13 @@ class Finding:
     table_title: str = ""
     # Asked for a count, the table is a rate or a share («التوزيع النسبي»).
     measure_mismatch: bool = False
+    # False when only the description names what was asked: an industrial
+    # production index whose description lists «إمدادات الكهرباء» is not
+    # electricity statistics (see resolve.names_subject).
+    names_subject: bool = True
+    # Breakdowns asked for that the opened table does not have («حسب
+    # المناطق» from a national total). The verdict is then partial at best.
+    missing_dimensions: tuple[Dimension, ...] = ()
 
 
 @dataclass(frozen=True)

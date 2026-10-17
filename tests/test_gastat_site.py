@@ -290,3 +290,11 @@ class TestHajj:
         assert "غير موجودة" not in answer.message_ar
         assert any("إصدار واحد" in n for n in answer.primary.notes)
         assert 2026 in [s.year for s in answer.suggestions]
+
+    def test_a_year_not_yet_begun_is_not_available(self, tmp_path):
+        # No other release can hold 2027's Hajj before it happens: the rule
+        # above is for past years.
+        answer = agent(tmp_path).answer("عدد الحجاج 2027")
+        assert answer.verdict is Verdict.NOT_AVAILABLE
+        assert not any("إصدار واحد" in n for n in answer.primary.notes)
+        assert any("لم تبدأ بعد" in n for n in answer.primary.notes)

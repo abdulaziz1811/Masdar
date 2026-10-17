@@ -14,6 +14,7 @@ from masdar.domain.models import Calendar, DataRequest, Dimension, Period, Perio
 from masdar.nlu import hijri
 from masdar.nlu.lexicon import Lexicon, load_lexicon
 from masdar.nlu.normalize import (
+    MONTH_WORDS,
     contains_phrase,
     normalize,
     normalize_light,
@@ -308,13 +309,18 @@ def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
     # «للسعوديين» named the breakdown as surely as «السعوديين».
     consumed.update(strip_article(w) for w in (*dimension_words, *place_words))
     for hit in topic_hits:
-        consumed.update(normalize(hit).split())
+        words = normalize(hit).split()
+        # «لأسعار المستهلك» spent «أسعار» with its fused «ل».
+        consumed.update((*words, *(f"ل{strip_article(w)}" for w in words)))
     # "حسب"/"بحسب" only ever introduce a dimension, and the words that
     # signalled the period are not subject matter either.
     consumed.update(("حسب", "بحسب"))
     for marker in _LATEST_MARKERS:
         consumed.update(normalize(marker).split())
     consumed.update(normalize(period.raw).split())
+    # «لشهر أغسطس 2026»: the month is when, not what.
+    consumed.update(MONTH_WORDS)
+    consumed.update(f"ل{m}" for m in MONTH_WORDS)
 
     free = _free_terms(query, consumed, lexicon.stopwords)
 

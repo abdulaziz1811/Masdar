@@ -14,6 +14,7 @@ from masdar.nlu.lexicon import Lexicon, load_lexicon
 from masdar.nlu.normalize import (
     contains_phrase,
     mentions,
+    months_named,
     normalize,
     period_grain,
     stems,
@@ -35,6 +36,9 @@ W_FRESHNESS = 2.0
 # last LATEST_SPAN years: a month is a tenth of a point, above the noise of a
 # site's own ordering -- July's CPI once came before August's.
 W_LATEST_PERIOD = 1.2
+# The month asked, named in the title: «لشهر مايو 2026» is the May bulletin,
+# not August's, though both are 2026.
+W_MONTH = 3.0
 LATEST_SPAN = 3
 # A whole year asked, a release for the whole year found: GASTAT's annual
 # industrial production index before its December bulletin.
@@ -57,7 +61,16 @@ W_MEASURE = 2.0
 # A count asked, a rate found: «عدد المستشفيات» is not «أسرّة المستشفيات لكل
 # 1000 شخص». Worth the measure bonus in reverse, and said in the answer.
 W_MEASURE_MISMATCH = -2.0
-_RATE_MARKERS = ("%", "لكل", "per", "نسبه", "نسبي", "معدل")
+# A percentage share where the question asks for an amount and no share at
+# all: «إنتاج الكهرباء» is not «إنتاج الكهرباء من المصادر النفطية (% من
+# الإجمالي)». Half the count-for-rate penalty: the share may still be the
+# nearest thing published.
+W_SHARE_UNASKED = -1.0
+# Matched on normalised text, which turns «%» into a space; the percent
+# signs are looked for in the title as written (see text_measure_mismatch).
+# «الكثافة السكانية» is people per km², not a count of people.
+_RATE_MARKERS = ("لكل", "per", "نسبه", "نسبي", "معدل", "كثافه")
+_PERCENT_SIGNS = ("%", "٪")
 # Words the publishers use for the same thing, normalised.
 SYNONYMS = {
     "نفطيه": ("بتروليه",),
@@ -109,12 +122,18 @@ def score_candidate(
                 break
 
     shared = shared_measures(request.raw_query, candidate.title_ar or candidate.title_en)
-    if shared:
-        score += W_MEASURE * len(shared)
-        reasons.append(f"يطابق ما يُقاس في السؤال: {', '.join(shared)}")
-    elif measure_mismatch(request, candidate):
+    title = candidate.title_ar or candidate.title_en
+    # A rate or a share is that whatever else its title says: «تعداد السكان،
+    # إناث (% من الإجمالي)» shares «عدد» with «عدد السكان» and is no count.
+    if measure_mismatch(request, candidate):
         score += W_MEASURE_MISMATCH
         reasons.append("السؤال يطلب عدداً، والنتيجة نسبة أو معدل")
+    elif shared:
+        score += W_MEASURE * len(shared)
+        reasons.append(f"يطابق ما يُقاس في السؤال: {', '.join(shared)}")
+    elif _is_percent(title) and not asks_for_share(request):
+        score += W_SHARE_UNASKED
+        reasons.append("النتيجة نسبة مئوية، والسؤال لا يطلب نسبة")
 
     typed, typed_hits = typed_phrase_score(request, haystack)
     if typed:
@@ -177,12 +196,18 @@ def score_candidate(
             reasons.append(f"مصدر مرجعي: {descriptor.name_ar}")
         if descriptor.international:
             score += W_INTERNATIONAL
-            reasons.append(f"مصدر دولي، يأتي بعد الجهة السعودية: {descriptor.name_ar}")
+            kind = "مصدر إقليمي" if descriptor.regional else "مصدر دولي"
+            reasons.append(f"{kind}، يأتي بعد الجهة السعودية: {descriptor.name_ar}")
 
     fresh = _freshness(candidate.last_updated, today)
     if fresh > 0:
         score += fresh
         reasons.append(f"محدَّث في {candidate.last_updated}")
+
+    asked_months = months_named(request.raw_query)
+    if asked_months and asked_months & months_named(candidate.title_ar or candidate.title_en):
+        score += W_MONTH
+        reasons.append("العنوان يذكر الشهر المطلوب")
 
     # "The latest" with no year asked: of a series published per month or
     # quarter, the newest release -- «للربع الثاني 2026» before «للربع الأول».
@@ -320,6 +345,43 @@ def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:
     return len(named) >= (len(terms) + 1) // 2
 
 
+def names_subject(request: DataRequest, candidate: DatasetCandidate, table_title: str = "") -> bool:
+    """Whether the result's own name says what was asked, not only its description.
+
+    `on_subject` reads descriptions too, and a description lists everything a
+    dataset touches: GASTAT's industrial production index names «إمدادات
+    الكهرباء والغاز» among its activities, and once answered «إحصاءات الطاقة
+    الكهربائية 2026» as «متوفرة» for holding 2026. The title, the source's
+    curated keywords and the title of the table read from the file are what
+    a result is *about*. Without typed topic phrases there is nothing to hold
+    a name to, and every result passes.
+    """
+    if request.topic is None or not request.typed_phrases:
+        return True
+    named = " ".join(filter(None, (
+        candidate.title_ar, candidate.title_en, candidate.keywords, table_title,
+    )))
+    return any(
+        mentions(named, name)
+        for phrase in request.typed_phrases
+        for name in (phrase, *_aliases(phrase))
+    )
+
+
+def other_month(request: DataRequest, candidate: DatasetCandidate) -> frozenset[int]:
+    """The months a monthly release is for, when the question asked others.
+
+    «الرقم القياسي لأسعار المستهلك لشهر أغسطس 2026» holds 2026, but asked for
+    May, its year is no proof May is in it. Empty when no month was asked,
+    the title names none, or it names one asked.
+    """
+    asked = months_named(request.raw_query)
+    named = months_named(candidate.title_ar or candidate.title_en)
+    if not asked or not named or asked & named:
+        return frozenset()
+    return named
+
+
 def specific_terms(request: DataRequest) -> tuple[str, ...]:
     """The question's own words beyond the recognised topic («تملك», «النفطية»)."""
     return tuple(t for t in request.free_terms if t not in _PLAIN and len(t) >= 3)
@@ -360,15 +422,48 @@ def measure_mismatch(request: DataRequest, candidate: DatasetCandidate) -> bool:
     return text_measure_mismatch(request, candidate.title_ar or candidate.title_en)
 
 
+_SHARE_WORDS = ("نسبه", "نسبي", "معدل", "حصه", "مئويه")
+
+
+def asks_for_share(request: DataRequest) -> bool:
+    """Whether the question asks for a rate or a share («نسبة»، «معدل»، «%»)."""
+    text = normalize(request.raw_query)
+    return _is_percent(request.raw_query) or any(w in text for w in _SHARE_WORDS)
+
+
+def _is_percent(text: str) -> bool:
+    return any(sign in text for sign in _PERCENT_SIGNS)
+
+
 def text_measure_mismatch(request: DataRequest, title: str) -> bool:
     """The question asks for a count, and `title` names a rate or a share."""
     asked = set(stems(request.raw_query))
     if not asked & set(MEASURES[0]):
         return False
+    if _is_percent(title):
+        return True
     return any(marker in normalize(title) for marker in _RATE_MARKERS)
 
 
+def dimensions_named(
+    request: DataRequest, text: str, dimension_words: dict[Dimension, tuple[str, ...]]
+) -> set[Dimension]:
+    """Breakdowns the question asked for in words that `text` also uses.
 
+    «متوسط العمر المتوقع للسعوديين» asks for Saudis, and a dataset titled
+    «... للسعوديين» is that already: it needs no nationality column. Only the
+    question's own words count -- «حسب الجنسية» is not met by a title that
+    says «السكان السعوديين», which is one nationality, not the breakdown.
+    """
+    named: set[Dimension] = set()
+    for dimension in request.dimensions:
+        used = [
+            w for w in dimension_words.get(dimension, ())
+            if contains_phrase(request.raw_query, w)
+        ]
+        if any(contains_phrase(text, w) for w in used):
+            named.add(dimension)
+    return named
 
 
 def missing_dimensions(

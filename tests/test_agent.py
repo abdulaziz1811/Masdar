@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from openpyxl import load_workbook
 
-from masdar.domain.models import Verdict
+from masdar.domain.models import Dimension, Verdict
 from masdar.pipeline.orchestrator import Agent, AgentConfig
 from masdar.sources.base import SourceDescriptor
 from masdar.sources.http import HttpClient
@@ -130,10 +130,16 @@ class TestPartialRange:
 
 
 class TestMissingBreakdown:
-    def test_warns_when_the_requested_split_is_absent(self, agent):
-        # The electricity fixture has no gender column.
+    def test_the_year_without_the_split_asked_is_partial(self, agent):
+        # The electricity fixture has no gender column: 2024 is there, the
+        # breakdown is not, and «متوفرة» would say both are.
         answer = agent.answer("الكهرباء 2024 حسب الجنس")
-        assert any("لا يحتوي عموداً للتفصيل المطلوب" in n for n in answer.primary.notes)
+        assert answer.verdict is Verdict.PARTIAL
+        assert answer.primary.missing_dimensions == (Dimension.GENDER,)
+        assert any("لا يحتوي التفصيل المطلوب" in n for n in answer.primary.notes)
+        assert "غير متاح: التفصيل المطلوب (الجنس)" in answer.message_ar
+        # The national figures are still handed over, with the warning.
+        assert answer.primary.export_path
 
 
 class TestUnreachableSources:

@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
 # Optional: Claude reads questions the rule-based parser cannot (nlu/llm.py).
 ai = ["anthropic>=1.8"]
 
