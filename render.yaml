@@ -24,9 +24,13 @@ services:
       # practice: without it anyone with the link can use the service.
       - key: MASDAR_ACCESS_CODE
         sync: false
-      # Optional, one of the two: a language model reads questions the rules
-      # cannot (nlu/llm.py, nlu/gemini.py). Gemini has a free tier.
+      # Optional, any of them: a language model helps read questions
+      # (nlu/understand.py, nlu/chain.py). Gemini and Groq have free tiers
+      # and are tried first; with both set, one stands in when the other is
+      # busy or out of quota.
       - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false

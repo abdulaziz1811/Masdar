@@ -22,6 +22,7 @@ KEY_SHAPES = {
     "Google / Gemini": re.compile(r"AIza[0-9A-Za-z_\-]{35}"),
     "Anthropic": re.compile(r"sk-ant-[A-Za-z0-9_\-]{20,}"),
     "Firecrawl": re.compile(r"\bfc-[0-9a-f]{32}\b"),
+    "Groq": re.compile(r"\bgsk_[A-Za-z0-9]{40,}\b"),
     "GitHub": re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}\b"),
     "a key assigned in place": re.compile(
         r"(?i)\b(?:api[_-]?key|secret|token|password)\b\s*[:=]\s*['\"]?[A-Za-z0-9_\-]{24,}"
@@ -61,9 +62,10 @@ def test_no_file_holds_a_key():
 
 def test_the_scan_would_see_one(tmp_path):
     # A scan that cannot fail proves nothing.
-    sample = "GEMINI_API_KEY=AIza" + "x" * 35 + "\napikey: " + "A1b2C3d4" * 4
+    sample = ("GEMINI_API_KEY=AIza" + "x" * 35 + "\napikey: " + "A1b2C3d4" * 4
+              + "\nGROQ: gsk_" + "Ab3" * 18)
     hits = [s for s, shape in KEY_SHAPES.items() if shape.search(sample)]
-    assert "Google / Gemini" in hits and "a key assigned in place" in hits
+    assert {"Google / Gemini", "a key assigned in place", "Groq"} <= set(hits)
 
 
 def test_the_example_env_file_names_variables_and_holds_no_values():

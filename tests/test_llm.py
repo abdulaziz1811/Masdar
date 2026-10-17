@@ -207,7 +207,7 @@ class TestFailuresFallBackToTheRules:
 class TestConfiguration:
     @pytest.fixture(autouse=True)
     def no_gemini(self, monkeypatch):
-        for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "MASDAR_LLM_PROVIDER"):
+        for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GROQ_API_KEY", "MASDAR_LLM_PROVIDER"):
             monkeypatch.delenv(name, raising=False)
 
     def test_off_without_a_key(self, lexicon, monkeypatch):
@@ -217,9 +217,11 @@ class TestConfiguration:
         assert llm is None and "ANTHROPIC_API_KEY" in status
 
     def test_explicitly_disabled(self, lexicon, monkeypatch):
+        from masdar.nlu.chain import from_environment
+
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-not-a-real-key")
         monkeypatch.setenv("MASDAR_LLM", "off")
-        llm, _ = LlmUnderstanding.from_environment(lexicon)
+        llm, _ = from_environment(lexicon)
         assert llm is None
 
     def test_on_with_a_key_and_the_key_is_never_echoed(self, lexicon, monkeypatch):

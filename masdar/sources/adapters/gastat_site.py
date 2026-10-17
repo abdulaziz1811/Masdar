@@ -179,6 +179,14 @@ def _fit(request: DataRequest, words: list[str], result: dict) -> float:
     return score + (released.toordinal() / 1e7 if released else 0.0)
 
 
+_ARABIC_LETTER = re.compile(r"[ء-ي]")
+
+
+def _arabic(phrases: tuple[str, ...]) -> list[str]:
+    """The Arabic ones: the site's search is in Arabic."""
+    return [p for p in phrases if _ARABIC_LETTER.search(p)]
+
+
 def _interleave(lists: list[list[dict]]) -> list[dict]:
     """Each search's results in turn, so neither crowds the other out."""
     merged: list[dict] = []
@@ -239,6 +247,10 @@ class GastatSiteAdapter(SourceAdapter):
         # nothing where «الحج» finds the Hajj bulletin.
         named = [n for n in subject_aliases(request)
                  if not any(normalize(n) == normalize(w) for w in words)]
+        if not named:
+            # Else a language model's wording of the subject, as a publisher
+            # would title it («ملكية المساكن» for «تملك البيوت»).
+            named = _arabic(request.expansions)[:1]
         queries = [" ".join(words)] + ([" ".join(named)] if named else [])
         template = str(self.descriptor.api.get("search_path") or DEFAULT_SEARCH)
         with ThreadPoolExecutor(max_workers=len(queries)) as pool:

@@ -38,14 +38,16 @@ topics:
                   القوى العاملة, التوطين, المناصب الإدارية, المشتغلين, تعويضات المشتغلين,
                   العمالة, الرواتب, متوسط الرواتب, متوسط الأجور, الأجر الشهري,
                   المشاركة الاقتصادية, معدل المشاركة, قوة العمل, السعودة,
-                  السعوديين في القطاع الخاص, العمالة المنزلية]
+                  السعوديين في القطاع الخاص, العمالة المنزلية,
+                  يشتغلون, يشتغل, يعملون, العمل عن بعد, يشتغل عن بعد, المتعطلين, الباحثين عن عمل, العاطلين]
     keywords_en: [labour, labor, unemployment, employment, wages, workforce, managerial positions]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, hrsd_live, gccstat, worldbank]
 
   - id: education
     label_ar: التعليم
     label_en: Education
-    keywords_ar: [التعليم, المدارس, الطلاب, الجامعات, المعلمين, التعليم العالي]
+    keywords_ar: [التعليم, المدارس, الطلاب, الجامعات, المعلمين, التعليم العالي,
+                  المبتعثين, الابتعاث, الخريجين, الطالبات, رياض الأطفال, الأمية, محو الأمية]
     keywords_en: [education, schools, students, universities, teachers]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, gccstat, worldbank]
 
@@ -54,7 +56,9 @@ topics:
     label_en: Health
     keywords_ar: [الصحة, المستشفيات, أسرة المستشفيات, الأسرة في المستشفيات,
                   الأطباء, المراكز الصحية, الأمراض,
-                  متوسط العمر المتوقع, العمر المتوقع, معدل الوفيات, الحالة الصحية, سوء التغذية, التغذية, الممارسين الصحيين]
+                  متوسط العمر المتوقع, العمر المتوقع, معدل الوفيات, الحالة الصحية, سوء التغذية, التغذية, الممارسين الصحيين,
+                  الصيدليات, صيدلية, صيدليات, الصيادلة, الممرضين, التمريض, أطباء الأسنان,
+                  المستشفى, مستشفى, المراكز الصحية الأولية]
     keywords_en: [health, hospitals, beds, physicians, clinics, diseases,
                   life expectancy, mortality, death rate, malnutrition, nutrition]
     preferred_sources: [moh, gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, gccstat, worldbank]
@@ -100,7 +104,9 @@ topics:
   - id: tourism
     label_ar: السياحة
     label_en: Tourism
-    keywords_ar: [السياحة, السياح, الزوار, الفنادق, الرحلات, الحج, العمرة, الحجاج, المعتمرين]
+    keywords_ar: [السياحة, السياح, الزوار, الفنادق, الرحلات, الحج, العمرة, الحجاج, المعتمرين,
+                  سائح, سياح, زائر, الإنفاق السياحي, السياحة الوافدة, السياحة المحلية,
+                  مرافق الإيواء, الليالي السياحية, المتاحف]
     keywords_en: [tourism, tourists, visitors, hotels, hajj, umrah, pilgrims]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, gccstat, worldbank]
 
@@ -108,7 +114,8 @@ topics:
     label_ar: النقل
     label_en: Transport
     keywords_ar: [النقل, الطيران, المطارات, الطرق, المرور, الحوادث, الموانئ, السكك,
-                  السيارات, المركبات, رخص القيادة, المسافرين, الركاب]
+                  السيارات, المركبات, رخص القيادة, المسافرين, الركاب,
+                  الحوادث المرورية, حوادث الطرق, الرحلات الجوية]
     keywords_en: [transport, aviation, airports, roads, traffic, accidents, ports]
     preferred_sources: [gastat_cdata, kapsarc, gastat_db, saudi_open_data, gastat, worldbank]
 
@@ -133,7 +140,8 @@ topics:
     label_en: Agriculture
     keywords_ar: [الزراعة, المحاصيل, الثروة الحيوانية, الأسماك, النخيل, الإبل,
                   النحل, خلايا النحل, الصيد, رخص الصيد, الصيادين, المواشي,
-                  التمور, التمر, الدواجن, الأغنام, الأبقار, الإنتاج الزراعي]
+                  التمور, التمر, الدواجن, الأغنام, الأبقار, الإنتاج الزراعي,
+                  القمح, الحبوب, الشعير, الخضروات, الفواكه, الأعلاف, المزارع, الحيازات الزراعية]
     keywords_en: [agriculture, crops, livestock, fisheries, camels, bees, fishing]
     preferred_sources: [mewa, gastat_cdata, kapsarc, gastat_db, gastat, saudi_open_data, mewa_live, gccstat, worldbank]
 
@@ -174,7 +182,7 @@ topics:
     label_ar: العدل والقضاء
     label_en: Justice
     keywords_ar: [القضايا, المحاكم, الأحكام القضائية, الوكالات, الصكوك, التوثيق,
-                  القضايا المنجزة, طلبات التنفيذ, عقود الزواج, الطلاق]
+                  القضايا المنجزة, طلبات التنفيذ, عقود الزواج, الطلاق, الزواج, صكوك الطلاق]
     keywords_en: [court cases, courts, judiciary, notarization, powers of attorney]
     preferred_sources: [saudi_open_data, gastat, gccstat]
 
@@ -192,9 +200,10 @@ dimensions:
   sector: [القطاع, قطاع, القطاعات, حسب القطاع, النشاط الاقتصادي, sector, sectors, by sector, economic activity]
   gender: [الجنس, ذكور, إناث, حسب الجنس, رجال, نساء, gender, sex, male, female, by gender]
   nationality: [الجنسية, غير سعودي, غير السعوديين, سعودي وغير سعودي, حسب الجنسية,
-                الوافدين, السعوديين, nationality, saudi, non-saudi, expatriates,
+                الوافدين, السعوديين, السعوديات, nationality, saudi, non-saudi, expatriates,
                 by nationality]
-  age: [العمر, الفئات العمرية, حسب العمر, فئة عمرية, فئات العمر, فئات عمرية, age, age group, age groups, by age]
+  age: [العمر, الفئات العمرية, حسب العمر, فئة عمرية, فئات العمر, فئات عمرية, الشباب, كبار السن,
+        age, age group, age groups, by age, youth]
   month: [شهري, الشهور, حسب الشهر, شهرياً, الأشهر, month, monthly, months, by month]
   quarter: [ربعي, الربع, ربع سنوي, الأرباع, حسب الربع, quarter, quarterly, quarters, by quarter]
   season: [الفصل, فصل, الفصول, حسب الفصل, الشتاء, شتاء, الصيف, صيف,

@@ -13,15 +13,7 @@ from dataclasses import dataclass, field
 
 from masdar.domain.models import DataRequest
 from masdar.nlu.lexicon import Lexicon
-from masdar.nlu.understand import RULES, understand
-
-
-@dataclass
-class Turn:
-    request: DataRequest
-    follow_up: bool
-    method: str = RULES
-    note: str = ""
+from masdar.nlu.understand import Understanding, understand
 
 
 @dataclass
@@ -34,7 +26,7 @@ class Conversation:
     turns: int = 0
     lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
-    def understand(self, message: str) -> Turn:
+    def understand(self, message: str) -> Understanding:
         self.turns += 1
         result = understand(message, self.lexicon, self.last, self.root, self.llm)
         if result.follow_up:
@@ -43,7 +35,7 @@ class Conversation:
         elif result.request.is_answerable:
             self.last = result.request
             self.root = message.strip()
-        return Turn(result.request, result.follow_up, result.method, result.note)
+        return result
 
     def reset(self) -> None:
         self.last = None

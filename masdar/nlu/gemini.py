@@ -5,25 +5,29 @@ Claude version: the instructions, the JSON schema, and the validation in
 `LlmUnderstanding._to_reading`. Only the call differs, and it is made over
 plain HTTPS with `requests`, so no Google library is needed.
 
-The key goes in the `x-goog-api-key` header, never in the URL, so it cannot
-end up in a log line or an error message that quotes the address.
+One key serves two models with a free tier: Flash first, and Flash-Lite,
+lighter and with its own quota, when Flash is busy or out of quota
+(`readers`). The key goes in the `x-goog-api-key` header, never in the URL,
+so it cannot end up in a log line or an error message that quotes the
+address.
 """
 
 from __future__ import annotations
 
 import requests
 
+from masdar.nlu.http_model import TRANSIENT_STATUS, HttpUnderstanding
 from masdar.nlu.lexicon import Lexicon
 from masdar.nlu.llm import (
     API_MESSAGE_CHARS,
     MAX_TOKENS,
-    TIMEOUT_SECONDS,
     LlmUnavailable,
-    LlmUnderstanding,
     model_from_env,
+    retry_after,
 )
 
 DEFAULT_MODEL = "gemini-3.8-flash"
+FALLBACK_MODEL = "gemini-3.5-flash-lite"
 API = "https://generativelanguage.googleapis.com/v1beta/models/{model}"
 KEY_NAMES = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
 # Mapping a question to a handful of fields is a light task. Gemini 3 models
@@ -81,42 +85,50 @@ def describe_response_error(response) -> str:
     return f"خطأ من Google ({code}){suffix}"
 
 
-class GeminiUnderstanding(LlmUnderstanding):
+def unavailable(response) -> LlmUnavailable:
+    """A failed reply as the reason, marked transient when it will pass."""
+    return LlmUnavailable(
+        describe_response_error(response),
+        transient=response.status_code in TRANSIENT_STATUS,
+        retry_after=retry_after(response),
+    )
+
+
+def readers(lexicon: Lexicon) -> list[GeminiUnderstanding]:
+    """The Gemini readers the key allows, in the order to ask them.
+
+    MASDAR_LLM_MODEL (a «gemini-…» name) replaces the first; Flash-Lite
+    follows unless it is the one chosen.
+    """
+    key = api_key()
+    if not key:
+        return []
+    session = requests.Session()
+    first = model_from_env("gemini") or DEFAULT_MODEL
+    models = [first] + ([FALLBACK_MODEL] if first != FALLBACK_MODEL else [])
+    return [GeminiUnderstanding(session, lexicon, key, model=m) for m in models]
+
+
+class GeminiUnderstanding(HttpUnderstanding):
     """Maps a free-form question to a `DataRequest` with Gemini."""
 
-    def __init__(
-        self,
-        session,
-        lexicon: Lexicon,
-        key: str,
-        model: str = DEFAULT_MODEL,
-        today=None,
-    ):
-        super().__init__(None, lexicon, model=model, today=today)
-        self._session = session
-        self._key = key
+    NAME = "Gemini"
+    VENDOR = "Google"
+
+    def __init__(self, session, lexicon: Lexicon, key: str, model: str = DEFAULT_MODEL,
+                 today=None):
+        super().__init__(session, lexicon, key, model=model, today=today)
 
     @classmethod
     def from_environment(cls, lexicon: Lexicon) -> tuple[GeminiUnderstanding | None, str]:
-        key = api_key()
-        if not key:
+        found = readers(lexicon)
+        if not found:
             return None, "غير مفعّل — أضف GEMINI_API_KEY لتفعيله"
-        model = model_from_env("gemini") or DEFAULT_MODEL
-        return cls(requests.Session(), lexicon, key, model=model), f"مفعّل (Gemini · {model})"
+        return found[0], f"مفعّل ({found[0].label})"
 
     # -- transport -----------------------------------------------------
     def _headers(self) -> dict[str, str]:
         return {"x-goog-api-key": self._key, "Content-Type": "application/json"}
-
-    def _request(self, method: str, url: str, **kwargs):
-        try:
-            return self._session.request(
-                method, url, headers=self._headers(), timeout=TIMEOUT_SECONDS, **kwargs
-            )
-        except requests.Timeout as exc:
-            raise LlmUnavailable("انتهت مهلة الاتصال بـ Google") from exc
-        except requests.RequestException as exc:
-            raise LlmUnavailable("تعذّر الاتصال بـ Google") from exc
 
     def verify(self) -> tuple[bool, str]:
         """Whether the key works for this model; looking a model up is free."""
@@ -142,11 +154,11 @@ class GeminiUnderstanding(LlmUnderstanding):
             "generationConfig": config,
         }
 
-    def _ask(self, user: str) -> str:
+    def _ask(self, user: str, timeout: float | None = None) -> str:
         url = API.format(model=self.model) + ":generateContent"
-        response = self._request("POST", url, json=self._body(user))
+        response = self._request("POST", url, timeout, json=self._body(user))
         if response.status_code != 200:
-            raise LlmUnavailable(describe_response_error(response))
+            raise unavailable(response)
         try:
             data = response.json()
         except ValueError as exc:

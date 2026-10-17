@@ -51,6 +51,7 @@ CATALOG_SELECT = (
 )
 MAX_COVERAGE_PROBES = 5
 MAX_SEARCH_TERMS = 6
+MAX_EXPANSIONS = 2
 _TAGS = re.compile(r"<[^>]+>")
 _ARABIC = re.compile(r"[؀-ۿ]")
 _TIME_NAMES = ("year", "السنة", "date", "period", "time", "month", "quarter")
@@ -124,8 +125,12 @@ class OpendatasoftAdapter(SourceAdapter):
             terms.append(request.topic.label_ar)
         terms.extend(request.typed_phrases[:2])
         terms.extend(t for t in request.free_terms if not t.isdigit())
-        unique = list(dict.fromkeys(t.strip() for t in terms if t and t.strip()))
-        return unique[:MAX_SEARCH_TERMS]
+        unique = list(dict.fromkeys(t.strip() for t in terms if t and t.strip()))[
+            :MAX_SEARCH_TERMS]
+        # A language model's wordings on top of the asker's own terms rather
+        # than in place of any; its English ones first, as the titles are.
+        english_first = sorted(request.expansions, key=lambda t: bool(_ARABIC.search(t)))
+        return unique + [t for t in english_first if t not in unique][:MAX_EXPANSIONS]
 
     def search(self, request: DataRequest, limit: int = 10) -> list[DatasetCandidate]:
         if self.http is None:

@@ -15,7 +15,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.6"]
-# Optional: Claude reads questions the rule-based parser cannot (nlu/llm.py).
+# Optional: Claude, the paid model at the end of the chain (nlu/chain.py).
+# Gemini and Groq are reached over plain HTTPS and need no library.
 ai = ["anthropic>=1.8"]
 
 [project.scripts]

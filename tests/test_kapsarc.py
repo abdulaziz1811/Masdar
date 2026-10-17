@@ -88,6 +88,19 @@ class TestCatalogSearch:
         assert '"Electricity"' in where and '"الطاقة الكهربائية"' in where
         assert " OR " in where
 
+    def test_a_models_english_wording_is_searched_too(self):
+        from dataclasses import replace
+
+        from masdar.nlu.parser import parse
+
+        transport = KapsarcTransport()
+        request = replace(parse("استهلاك الكهرباء 2025"),
+                          expansions=("الاستهلاك السكني للكهرباء", "residential electricity"))
+        registry(transport).adapter("kapsarc").search(request)
+        where = dict(parse_qsl(urlsplit(transport.urls[0]).query))["where"]
+        # On top of the asker's own terms, the English one first.
+        assert '"residential electricity"' in where and '"Electricity"' in where
+
     def test_publisher_is_the_originating_body_credited_via_kapsarc(self):
         from masdar.nlu.parser import parse
 

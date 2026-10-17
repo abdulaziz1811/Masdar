@@ -315,6 +315,8 @@ class SaudiOpenDataAdapter(SourceAdapter):
                 score += 2.0
             elif any(contains_phrase(text, w) for w in lexicon.alternatives(term)):
                 score += 1.5  # the publisher's word for it («التدريب» for «معسكرات»)
+        # A wording a language model suggested: a hint, not the asker's word.
+        score += sum(1.0 for t in request.expansion_hints() if contains_phrase(text, t))
         if score <= 0:
             return 0.0  # a breakdown word alone is not a match
         # Worded like the question: a publisher's catalogue holds dozens of

@@ -1,5 +1,9 @@
 """Tests for Arabic normalisation, Hijri handling and query parsing."""
 
+from datetime import date
+
+import pytest
+
 from masdar.domain.models import Calendar, Dimension, PeriodKind
 from masdar.nlu import hijri
 from masdar.nlu.normalize import contains_phrase, fold_digits, normalize, stems
@@ -115,3 +119,64 @@ class TestParser:
         r = parse("أحدث بيانات الكهرباء لسنة 2023")
         assert r.period.kind is PeriodKind.SINGLE
         assert r.period.years == (2023,)
+
+
+class TestRelativePeriods:
+    """«العام الماضي» and the like, read against the day the question is asked."""
+
+    TODAY = date(2026, 10, 17)
+
+    @pytest.mark.parametrize("question, years", [
+        ("كم عدد السكان العام الماضي", [2025]),
+        ("البطالة السنة اللي فاتت", [2025]),
+        ("عدد السياح هذا العام", [2026]),
+        ("استهلاك الكهرباء قبل سنتين", [2024]),
+        ("الصادرات قبل 3 سنوات", [2023]),
+        # «The last five years» of statistics end last year: this year's
+        # annual figures are not out until it ends.
+        ("معدل التضخم آخر خمس سنوات", [2021, 2022, 2023, 2024, 2025]),
+        ("معدل البطالة خلال آخر 3 سنوات", [2023, 2024, 2025]),
+        ("السكان في السنوات الثلاث الأخيرة", [2023, 2024, 2025]),
+        ("unemployment last 5 years", [2021, 2022, 2023, 2024, 2025]),
+    ])
+    def test_relative_years(self, question, years):
+        request = parse(question, today=self.TODAY)
+        assert list(request.period.years) == years
+        # The words of the period are spent, not read as the subject.
+        assert request.free_terms == ()
+
+    def test_an_explicit_year_wins(self):
+        assert parse("البطالة 2023 مقارنة بالعام الماضي", today=self.TODAY).period.years \
+            == (2023,)
+
+    def test_a_count_is_never_the_start_of_a_longer_number(self):
+        # «قبل 100 عام» is not «قبل 10» (ten years ago) with a zero after it.
+        assert parse("عدد السكان قبل 100 عام", today=self.TODAY).period.years == ()
+
+    def test_the_latest_is_still_the_latest(self):
+        request = parse("أحدث بيانات البطالة", today=self.TODAY)
+        assert request.period.kind is PeriodKind.LATEST and request.period.years == ()
+
+
+class TestWordsPeopleUse:
+    """Words found missing by probing colloquial questions (2026-10-17)."""
+
+    @pytest.mark.parametrize("question, topic", [
+        ("ابي اعرف كم صيدلية في الرياض", "health"),
+        ("كم سائح جا المملكة 2024", "tourism"),
+        ("انتاج القمح في المملكة", "agriculture"),
+        ("عدد الطلاب المبتعثين 2023", "education"),
+        ("احصائيات الزواج والطلاق 2022", "justice"),
+        ("كم واحد يشتغل عن بعد في السعودية", "labour"),
+        ("عدد الحوادث المرورية 2023", "transport"),
+    ])
+    def test_the_topic_is_found(self, question, topic):
+        assert parse(question).topic.id == topic
+
+    def test_youth_asks_for_the_age_breakdown(self):
+        assert Dimension.AGE in parse("وش نسبة البطالة عند الشباب").dimensions
+
+    def test_joined_letters_do_not_leave_words_behind(self):
+        # «والطلاق» spent with its topic; «لبيانات» is a stopword with «ل».
+        assert parse("احصائيات الزواج والطلاق 2022").free_terms == ()
+        assert parse("آخر تحديث لبيانات السكان").free_terms == ()

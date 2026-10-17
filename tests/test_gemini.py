@@ -12,9 +12,10 @@ from datetime import date
 import pytest
 import requests
 
-from masdar.nlu.gemini import DEFAULT_MODEL, GeminiUnderstanding
+from masdar.nlu.chain import from_environment as models_from_environment
+from masdar.nlu.gemini import DEFAULT_MODEL, FALLBACK_MODEL, GeminiUnderstanding
 from masdar.nlu.lexicon import load_lexicon
-from masdar.nlu.llm import LlmUnavailable, LlmUnderstanding
+from masdar.nlu.llm import LlmUnavailable
 from masdar.nlu.understand import LLM, understand
 
 TODAY = date(2026, 9, 29)
@@ -181,48 +182,58 @@ class TestKeyCheck:
 
 class TestChoosingTheProvider:
     NAMES = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "GEMINI_API_KEY", "GOOGLE_API_KEY",
-             "MASDAR_LLM", "MASDAR_LLM_PROVIDER", "MASDAR_LLM_MODEL")
+             "GROQ_API_KEY", "MASDAR_LLM", "MASDAR_LLM_PROVIDER", "MASDAR_LLM_MODEL",
+             "MASDAR_GROQ_MODEL")
 
     @pytest.fixture(autouse=True)
     def clean(self, monkeypatch):
         for name in self.NAMES:
             monkeypatch.delenv(name, raising=False)
 
-    def test_a_gemini_key_turns_gemini_on(self, lexicon, monkeypatch):
+    def test_a_gemini_key_turns_on_flash_then_flash_lite(self, lexicon, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", KEY)
-        llm, status = LlmUnderstanding.from_environment(lexicon)
-        assert isinstance(llm, GeminiUnderstanding) and llm.model == DEFAULT_MODEL
+        llm, status = models_from_environment(lexicon)
+        assert [type(r) for r in llm.readers] == [GeminiUnderstanding, GeminiUnderstanding]
+        assert [r.model for r in llm.readers] == [DEFAULT_MODEL, FALLBACK_MODEL]
         assert "Gemini" in status and KEY not in status
 
-    def test_with_both_keys_gemini_is_used_unless_claude_is_chosen(self, lexicon, monkeypatch):
+    def test_with_both_keys_gemini_comes_first_unless_claude_is_chosen(self, lexicon,
+                                                                        monkeypatch):
+        pytest.importorskip("anthropic")
         monkeypatch.setenv("GEMINI_API_KEY", KEY)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-not-a-real-key")
-        llm, _ = LlmUnderstanding.from_environment(lexicon)
-        assert isinstance(llm, GeminiUnderstanding)
-        pytest.importorskip("anthropic")
+        llm, _ = models_from_environment(lexicon)
+        assert [r.NAME for r in llm.readers] == ["Gemini", "Gemini", "Claude"]
         monkeypatch.setenv("MASDAR_LLM_PROVIDER", "claude")
-        llm, status = LlmUnderstanding.from_environment(lexicon)
-        assert not isinstance(llm, GeminiUnderstanding) and "Claude" in status
+        llm, status = models_from_environment(lexicon)
+        assert [r.NAME for r in llm.readers] == ["Claude"] and "Claude" in status
 
     def test_a_claude_model_name_is_not_sent_to_gemini(self, lexicon, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", KEY)
         monkeypatch.setenv("MASDAR_LLM_MODEL", "claude-opus-5-5")
-        llm, _ = LlmUnderstanding.from_environment(lexicon)
+        llm, _ = models_from_environment(lexicon)
         assert llm.model == DEFAULT_MODEL
 
     def test_a_gemini_model_can_be_chosen(self, lexicon, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", KEY)
         monkeypatch.setenv("MASDAR_LLM_MODEL", "gemini-3.5-flash-lite")
-        llm, _ = LlmUnderstanding.from_environment(lexicon)
-        assert llm.model == "gemini-3.5-flash-lite"
+        llm, _ = models_from_environment(lexicon)
+        # Chosen, it is not asked twice.
+        assert [r.model for r in llm.readers] == ["gemini-3.5-flash-lite"]
 
     def test_a_placeholder_is_no_key(self, lexicon, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", "-")
-        llm, status = LlmUnderstanding.from_environment(lexicon)
+        llm, status = models_from_environment(lexicon)
         assert llm is None and "GEMINI_API_KEY" in status
 
     def test_off_means_off(self, lexicon, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", KEY)
         monkeypatch.setenv("MASDAR_LLM", "off")
-        llm, _ = LlmUnderstanding.from_environment(lexicon)
+        llm, _ = models_from_environment(lexicon)
         assert llm is None
+
+    def test_a_chosen_provider_without_a_key_is_said(self, lexicon, monkeypatch):
+        monkeypatch.setenv("GEMINI_API_KEY", KEY)
+        monkeypatch.setenv("MASDAR_LLM_PROVIDER", "groq")
+        llm, status = models_from_environment(lexicon)
+        assert llm is None and "Groq" in status

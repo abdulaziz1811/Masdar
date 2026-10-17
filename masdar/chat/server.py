@@ -183,8 +183,9 @@ def answer_payload(
             "dimensions": [d.label_ar for d in request.dimensions],
             "places": list(request.places),
             "follow_up": follow_up,
-            # "llm" when Claude read the question; `note` is its restatement,
-            # or why it could not help.
+            # "llm" when a model read the question, "assisted" when it added
+            # to the rules' reading; `note` is its restatement, or why it
+            # could not help.
             "method": method,
             "note": note,
         },
@@ -213,6 +214,8 @@ def answer_payload(
             {"label": label, "url": link}
             for label, link in answer.elsewhere if _http_link(link)
         ],
+        # Questions to try instead, from the model, when nothing was found.
+        "rephrasings": list(answer.rephrasings),
     }
 
 
@@ -290,6 +293,7 @@ class ChatApp:
             turn = conversation.understand(message)
             with self.answer_lock:
                 answer = self.agent.answer_request(turn.request)
+            answer = self.agent.explained(answer, turn, message)
         payload = answer_payload(
             answer, self.downloads, turn.follow_up, turn.method, turn.note, self.international,
             self.sites,

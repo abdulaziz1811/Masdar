@@ -590,6 +590,7 @@
     if (u.dimensions && u.dimensions.length) chip("التفصيل", u.dimensions.join("، "));
     if (u.places && u.places.length) chip("المنطقة", u.places.join("، "));
     if (u.method === "llm") row.appendChild(el("span", "chip chip-ai", "فُهم بالذكاء الاصطناعي"));
+    if (u.method === "assisted") row.appendChild(el("span", "chip chip-ai", "بحث موسّع بالذكاء الاصطناعي"));
     return row;
   }
 
@@ -604,6 +605,10 @@
     head.appendChild(understoodChips(data.understood));
     if (data.understood.method === "llm" && data.understood.note) {
       head.appendChild(el("p", "restatement", "«" + data.understood.note + "»"));
+    } else if (data.understood.method === "assisted" && data.understood.note) {
+      // The rules read the question; what the model added to the search.
+      head.appendChild(el("p", "restatement", "أضاف الذكاء الاصطناعي إلى البحث — " +
+                          data.understood.note));
     } else if (data.understood.note) {
       // The model was asked and could not help (the rules answered instead):
       // say why, so a key problem is visible while testing.
@@ -627,6 +632,23 @@
         if (b) onward.appendChild(b);
       });
       if (onward.childNodes.length) box.appendChild(onward);
+    }
+
+    if ((data.rephrasings || []).length) {
+      // Nothing was found: other ways to ask, from the model, each sent as a
+      // new question when clicked.
+      var re = el("div", "suggest");
+      re.appendChild(el("div", "label", "جرّب صياغة أخرى:"));
+      var reRow = el("div", "suggest-row");
+      data.rephrasings.forEach(function (q) {
+        var b = el("button", "suggestion");
+        b.type = "button";
+        b.appendChild(el("strong", null, q));
+        b.addEventListener("click", function () { ask(q); });
+        reRow.appendChild(b);
+      });
+      re.appendChild(reRow);
+      box.appendChild(re);
     }
 
     if (data.suggestions.length) {

@@ -62,10 +62,12 @@ class TestFollowUps:
         assert turn.request.dimensions == ()
 
     def test_new_search_words_are_a_new_question(self, conversation):
+        # Words the dictionary does not know still name a new subject.
         conversation.understand(FIRST)
-        turn = conversation.understand("عدد الصيدليات 2023")
+        turn = conversation.understand("عدد الخيول المسجلة 2023")
         assert not turn.follow_up
         assert turn.request.topic is None
+        assert "الخيول" in turn.request.free_terms
 
     def test_the_first_message_is_never_a_follow_up(self, conversation):
         assert not conversation.understand("2022").follow_up

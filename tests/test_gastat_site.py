@@ -261,6 +261,31 @@ class TestHajj:
         assert answer.verdict is Verdict.AVAILABLE
         assert answer.primary.candidate.title_ar == "إحصاءات الحج لعام 2026"
 
+    def test_a_models_wording_is_searched_as_gastat_would_title_it(self, tmp_path):
+        # «ضيوف الرحمن» is another name for the pilgrims that no rule knows;
+        # the site finds nothing under it, and a model's wording finds the
+        # bulletin.
+        from masdar.domain.models import DataRequest, Period, PeriodKind
+        from masdar.nlu.llm import LlmReading
+
+        class Model:
+            def read(self, message, previous=None, timeout=None):
+                request = DataRequest(
+                    raw_query=message, topic=load_lexicon().get("tourism"),
+                    period=Period(years=(2026,), kind=PeriodKind.SINGLE),
+                    free_terms=("إحصاءات الحج",),
+                )
+                return LlmReading(request, False, "عدد الحجاج لعام 2026", model="Fake")
+
+        transport = SiteTransport()
+        hajj = agent(tmp_path, transport)
+        hajj.llm = Model()
+        answer = hajj.answer("كم عدد ضيوف الرحمن 2026")
+        searched = [dict(parse_qsl(urlsplit(u).query))["q"] for u in transport.urls
+                    if urlsplit(u).path == "/ar/search"]
+        assert searched == ["ضيوف الرحمن", "إحصاءات الحج"]
+        assert answer.primary.candidate.title_ar == "إحصاءات الحج لعام 2026"
+
     def test_the_workbooks_link_is_read_as_the_site_now_writes_it(self):
         files = document_links(_page("bulletin_hajj_2026.html"),
                                "https://www.stats.gov.sa" + HAJJ_2026)

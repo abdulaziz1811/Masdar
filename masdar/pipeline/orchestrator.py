@@ -28,7 +28,7 @@ from masdar.domain.models import (
 from masdar.export import excel
 from masdar.export.tabular import Table, read_table
 from masdar.nlu.lexicon import Lexicon, load_lexicon
-from masdar.nlu.understand import LLM, Understanding, understand
+from masdar.nlu.understand import ASSISTED, LLM, Understanding, rephrasings, understand
 from masdar.pipeline import fit as fit_module
 from masdar.pipeline import resolve
 from masdar.pipeline import verify as verify_module
@@ -112,9 +112,16 @@ class Agent:
 
     # -- public --------------------------------------------------------
     def answer(self, query: str) -> Answer:
-        understood = understand(query, self.lexicon, llm=self.llm)
-        answer = self.answer_request(understood.request)
-        return replace(answer, audit=(*understanding_audit(understood), *answer.audit))
+        understood = understand(query, self.lexicon, llm=self.llm, today=self.config.today)
+        return self.explained(self.answer_request(understood.request), understood, query)
+
+    def explained(self, answer: Answer, understood: Understanding, message: str) -> Answer:
+        """`answer` with how the question was read first in its audit, and,
+        when nothing was found, other ways to ask for it."""
+        answer = replace(answer, audit=(*understanding_audit(understood), *answer.audit))
+        if answer.verdict is Verdict.NO_SOURCE and answer.request.is_answerable:
+            answer = replace(answer, rephrasings=rephrasings(understood, message, self.llm))
+        return answer
 
     def answer_request(self, request: DataRequest) -> Answer:
         """Answer an already-understood request.
@@ -668,9 +675,12 @@ class Agent:
 
 def understanding_audit(understood: Understanding) -> tuple[str, ...]:
     """How the question was read, first in the audit trail."""
+    by = f" ({understood.model})" if understood.model else ""
+    if understood.method == ASSISTED:
+        return (f"قرأت القواعد السؤال، وأضاف إليها نموذج لغوي{by}: {understood.note}",)
     if understood.method == LLM:
-        line = "فُهم السؤال بمساعدة نموذج لغوي (لم تحدد القواعد موضوعاً)"
-        return (f"{line}: {understood.note}",) if understood.note else (line,)
+        line = f"فُهم السؤال بمساعدة نموذج لغوي{by}، إذ لم تحدد القواعد موضوعاً"
+        return (f"{line}: {understood.note}" if understood.note else line,)
     return (understood.note,) if understood.note else ()
 
 

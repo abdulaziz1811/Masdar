@@ -9,6 +9,7 @@ failure mode that would make the whole agent untrustworthy.
 from __future__ import annotations
 
 import re
+from datetime import date
 
 from masdar.domain.models import Calendar, DataRequest, Dimension, Period, PeriodKind, Topic
 from masdar.nlu import hijri
@@ -50,6 +51,36 @@ _LATEST_MARKERS = (
 
 # Public name for other modules: words about the period, not the subject.
 LATEST_MARKERS = _LATEST_MARKERS
+
+# Counts as people write them in a period («آخر خمس سنوات», «قبل سنتين»).
+# Normalised spelling: «ثلاث» and «ثمان» lose nothing, the ta marbuta is «ه».
+_COUNTS = {
+    "سنتين": 2, "عامين": 2, "سنتان": 2, "عامان": 2,
+    "ثلاث": 3, "ثلاثه": 3, "اربع": 4, "اربعه": 4, "خمس": 5, "خمسه": 5,
+    "ست": 6, "سته": 6, "سبع": 7, "سبعه": 7, "ثمان": 8, "ثماني": 8, "ثمانيه": 8,
+    "تسع": 9, "تسعه": 9, "عشر": 10, "عشره": 10,
+}
+# A one- or two-digit count, never the start of a longer number («قبل 100 عام»).
+_COUNT = r"(\d{1,2}(?!\d)|" + "|".join(sorted(_COUNTS, key=len, reverse=True)) + ")"
+_YEARS_WORD = r"(?:سنوات|سنين|اعوام|سنه|عام|سنتين|عامين|سنتان|عامان)"
+# Read on normalised text: «الماضية» arrives as «الماضيه», «إلى» as «الي».
+_LAST_N = (
+    re.compile(rf"(?:(?:خلال|في)\s+)?اخر\s+{_COUNT}\s*{_YEARS_WORD}?"),
+    re.compile(rf"(?:ال)?(?:سنوات|اعوام|سنين)\s+(?:ال)?{_COUNT}\s+(?:الاخيره|الماضيه)"),
+    re.compile(r"(?i)\b(?:last|past)\s+(\d{1,2})\s+years\b"),
+)
+_YEARS_AGO = (
+    re.compile(rf"قبل\s+{_COUNT}\s*{_YEARS_WORD}?"),
+    re.compile(r"(?i)\b(\d{1,2})\s+years\s+ago\b"),
+)
+# (offset from this year, phrases) -- «العام الماضي» is last year.
+_RELATIVE_YEARS = (
+    (-1, ("العام الماضي", "السنه الماضيه", "السنه اللي فاتت", "السنه الي فاتت",
+          "العام المنصرم", "العام الفائت", "السنه السابقه", "العام السابق", "last year")),
+    (0, ("هذا العام", "هذه السنه", "هذي السنه", "السنه الحاليه", "العام الحالي",
+         "السنه ذي", "this year")),
+    (1, ("العام القادم", "السنه القادمه", "السنه الجايه", "العام المقبل", "next year")),
+)
 
 
 # Phrases that mean "give me the file" rather than naming a subject.
@@ -95,7 +126,12 @@ def _expand(year: int, calendar: Calendar) -> tuple[int, ...]:
     return (year,)
 
 
-def parse_period(text: str) -> Period:
+def parse_period(text: str, today: date | None = None) -> Period:
+    """The period a question asks for, in Gregorian years.
+
+    Explicit years win («2019-2024», «1445هـ»); then periods relative to
+    `today` («العام الماضي», «قبل سنتين», «آخر خمس سنوات»); then «the latest».
+    """
     light = normalize_light(text)
     flat = normalize(text)
 
@@ -136,10 +172,45 @@ def parse_period(text: str) -> Period:
         raw = " ".join(str(y) for y, _ in found)
         return Period(years=tuple(years), kind=kind, calendar=calendar, raw=raw)
 
+    relative = _relative_period(flat, (today or date.today()).year)
+    if relative is not None:
+        return relative
+
     if any(contains_phrase(flat, marker) for marker in _LATEST_MARKERS):
         return Period(kind=PeriodKind.LATEST, raw="latest")
 
     return Period(kind=PeriodKind.UNSPECIFIED)
+
+
+def _count(word: str) -> int:
+    return int(word) if word.isdigit() else _COUNTS.get(word, 0)
+
+
+def _relative_period(flat: str, this_year: int) -> Period | None:
+    """«آخر خمس سنوات», «قبل سنتين», «العام الماضي», read against this year.
+
+    «The last five years» of statistics are the five years before this one:
+    this year's annual figures are not out until it ends, and asking for
+    them anyway would only say so five times over. `raw` is the phrase as
+    matched, so the parser spends its words and they are not read as subject.
+    """
+    for pattern in _LAST_N:
+        match = pattern.search(flat)
+        if match and 1 <= _count(match.group(1)) <= 30:
+            n = _count(match.group(1))
+            years = tuple(range(this_year - n, this_year))
+            return Period(years=years, kind=PeriodKind.RANGE, raw=match.group(0))
+    for pattern in _YEARS_AGO:
+        match = pattern.search(flat)
+        if match and 1 <= _count(match.group(1)) <= 50:
+            year = this_year - _count(match.group(1))
+            return Period(years=(year,), kind=PeriodKind.SINGLE, raw=match.group(0))
+    for offset, phrases in _RELATIVE_YEARS:
+        for phrase in phrases:
+            if contains_phrase(flat, phrase):
+                return Period(years=(this_year + offset,), kind=PeriodKind.SINGLE,
+                              raw=normalize(phrase))
+    return None
 
 
 def _score_topic(text: str, topic: Topic) -> tuple[float, tuple[str, ...]]:
@@ -260,8 +331,9 @@ def _free_terms(text: str, consumed: set[str], stopwords: frozenset[str]) -> tup
             continue
         if token in stopwords or stem in stopwords:
             continue
-        # «وفي», «وكم», «وعن»: a joined «و» before a word that carries nothing.
-        if token.startswith("و") and token[1:] in stopwords:
+        # «وفي», «وكم», «لبيانات»: a joined «و» or «ل» before a word that
+        # carries nothing.
+        if token[:1] in ("و", "ل") and token[1:] in stopwords:
             continue
         if token in consumed or stem in consumed:
             continue
@@ -288,11 +360,15 @@ def detect_language(text: str) -> str:
     return "ar" if arabic >= latin else "en"
 
 
-def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
-    """Parse a user question into a `DataRequest`."""
+def parse(query: str, lexicon: Lexicon | None = None, today: date | None = None) -> DataRequest:
+    """Parse a user question into a `DataRequest`.
+
+    `today` anchors relative periods («العام الماضي»); the default is the
+    real date, and tests pass their own.
+    """
     lexicon = lexicon or load_lexicon()
 
-    period = parse_period(query)
+    period = parse_period(query, today)
     topic, topic_hits = detect_topic(query, lexicon)
     # Words that named the topic are spent: "متوسط العمر المتوقع" is life
     # expectancy, and its "العمر" must not also request an age breakdown.
@@ -310,8 +386,11 @@ def parse(query: str, lexicon: Lexicon | None = None) -> DataRequest:
     consumed.update(strip_article(w) for w in (*dimension_words, *place_words))
     for hit in topic_hits:
         words = normalize(hit).split()
-        # «لأسعار المستهلك» spent «أسعار» with its fused «ل».
-        consumed.update((*words, *(f"ل{strip_article(w)}" for w in words)))
+        # «لأسعار المستهلك» spent «أسعار» with its fused «ل», and «والطلاق»
+        # its «و» and article.
+        consumed.update(words)
+        consumed.update(strip_article(w) for w in words)
+        consumed.update(f"ل{strip_article(w)}" for w in words)
     # "حسب"/"بحسب" only ever introduce a dimension, and the words that
     # signalled the period are not subject matter either.
     consumed.update(("حسب", "بحسب"))

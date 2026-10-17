@@ -123,11 +123,20 @@ class DataRequest:
     # Parts of the question the parser could not resolve; surfaced to the
     # user instead of being silently dropped.
     unresolved: tuple[str, ...] = ()
+    # Other wordings of what is asked, as a publisher might title it,
+    # suggested by a language model (`nlu/understand.py`). They widen the
+    # search and add a little to the ranking; whether a result is about the
+    # question is still decided by the asker's own words, never by these.
+    expansions: tuple[str, ...] = ()
 
     @property
     def is_answerable(self) -> bool:
         """Enough signal to attempt a search at all."""
         return bool(self.topic or self.free_terms)
+
+    def expansion_hints(self) -> tuple[str, ...]:
+        """Expansions not already among the search words: what may add to a score."""
+        return tuple(t for t in self.expansions if t not in self.free_terms)
 
     def search_terms(self) -> tuple[str, ...]:
         terms: list[str] = []
@@ -135,6 +144,7 @@ class DataRequest:
             terms.extend([self.topic.label_ar, self.topic.label_en])
             terms.extend(self.topic.keywords_ar)
         terms.extend(self.free_terms)
+        terms.extend(self.expansions)
         seen: dict[str, None] = {}
         for t in terms:
             if t:
@@ -401,6 +411,9 @@ class Answer:
     # Where a reader can look on, as (label, url): GASTAT's own search for the
     # same words when nothing was found here.
     elsewhere: tuple[tuple[str, str], ...] = ()
+    # Other ways to ask for the same data, suggested by a language model when
+    # nothing was found; offered as questions to try, never as findings.
+    rephrasings: tuple[str, ...] = ()
     message_ar: str = ""
 
     @property

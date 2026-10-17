@@ -70,6 +70,8 @@ class LiveDataAdapter(SourceAdapter):
         )
         score, _ = typed_phrase_score(request, text)
         score += sum(2.0 for t in request.free_terms if contains_phrase(text, t))
+        # A wording a language model suggested: a hint, not the asker's word.
+        score += sum(1.0 for t in request.expansion_hints() if contains_phrase(text, t))
         if score <= 0:
             # Sharing a topic is not enough: a question about camels must not
             # open the bee-colony counter because both are "agriculture".

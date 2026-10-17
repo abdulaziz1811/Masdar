@@ -16,8 +16,8 @@ from pathlib import Path
 
 from masdar.domain.models import Answer, Verdict
 from masdar.envfile import load_env_file
+from masdar.nlu.chain import from_environment as models_from_environment
 from masdar.nlu.lexicon import load_lexicon
-from masdar.nlu.llm import LlmUnderstanding
 from masdar.nlu.parser import parse as parse_query
 from masdar.pipeline.orchestrator import Agent, AgentConfig
 from masdar.sources.base import SourceError, SourceRejected, SourceUnreachable
@@ -73,6 +73,7 @@ def _answer_to_dict(answer: Answer) -> dict:
             for s in answer.suggestions
         ],
         "source_errors": [{"source_id": s, "reason": r} for s, r in answer.source_errors],
+        "rephrasings": list(answer.rephrasings),
         "audit": list(answer.audit),
         "message_ar": answer.message_ar,
     }
@@ -94,7 +95,7 @@ def cmd_ask(args: argparse.Namespace) -> int:
         today=date.fromisoformat(args.today) if args.today else None,
     )
     lexicon = load_lexicon()
-    llm, _ = LlmUnderstanding.from_environment(lexicon)
+    llm, _ = models_from_environment(lexicon)
     agent = Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
     answer = agent.answer(args.query)
 
@@ -102,6 +103,10 @@ def cmd_ask(args: argparse.Namespace) -> int:
         print(json.dumps(_answer_to_dict(answer), ensure_ascii=False, indent=2))
     else:
         print(answer.message_ar)
+        if answer.rephrasings:
+            print("\nجرّب صياغة أخرى:")
+            for question in answer.rephrasings:
+                print(f"   • {question}")
         if args.explain:
             print("\n" + "─" * 60)
             print("سجل البحث:")
@@ -159,10 +164,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     registry = load_registry(demo=args.demo, http=http)
 
     print(f"منفذ الجلب: {http.describe_transport()}")
-    llm, llm_status = LlmUnderstanding.from_environment(load_lexicon())
+    llm, llm_status = models_from_environment(load_lexicon())
     if llm is not None:
         ok, why = llm.verify()
-        llm_status = f"{llm_status} — المفتاح يعمل" if ok else f"لا يعمل: {why}"
+        llm_status = (f"مفعّل ({llm.label}) — المفتاح يعمل" + (f"؛ لا يعمل: {why}" if why else "")
+                      if ok else f"لا يعمل: {why}")
     print(f"الفهم بالذكاء الاصطناعي: {llm_status}")
     if http.transport.name == "direct":
         print(
@@ -419,15 +425,16 @@ def cmd_serve(args: argparse.Namespace) -> int:
         return Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm,
                      slow=slow_sources)
 
-    llm, llm_status = LlmUnderstanding.from_environment(lexicon)
+    llm, llm_status = models_from_environment(lexicon)
     llm_state = "off"
     if llm is not None:
+        # A model whose key does not work is dropped (`ModelChain.verify`):
+        # each question would otherwise wait on a failing call.
         ok, why = llm.verify()
         if ok:
             llm_state = "on"
+            llm_status = f"مفعّل ({llm.label})" + (f" — لا يعمل: {why}" if why else "")
         else:
-            # A key that does not work is not used: each question would
-            # otherwise wait on a failing call before falling back.
             llm, llm_state, llm_status = None, "error", f"لا يعمل: {why}"
     agent = make_agent(llm)
     warm = None
@@ -496,7 +503,7 @@ def cmd_warmup(args: argparse.Namespace) -> int:
     http = HttpClient(timeout=args.timeout)
     registry = load_registry(http=http)
     lexicon = load_lexicon()
-    llm, _ = LlmUnderstanding.from_environment(lexicon)
+    llm, _ = models_from_environment(lexicon)
     config = AgentConfig(out_dir=Path(args.out), max_sources=args.max_sources)
     agent = Agent(registry=registry, http=http, config=config, lexicon=lexicon, llm=llm)
     questions = [e["q"] for e in SHOWCASE] + list(args.questions or [])

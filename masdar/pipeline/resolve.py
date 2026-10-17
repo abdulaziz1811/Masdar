@@ -47,6 +47,11 @@ W_WHOLE_YEAR = 2.0
 # «لأسعار المستهلك» is the consumer price index, while «مؤشر ثقة المستهلك»
 # shares two words with «مؤشر لأسعار المستهلك» but none of its pairs.
 W_WORD_PAIR = 1.5
+# Per wording a language model suggested (`DataRequest.expansions`) found in
+# the title, up to MAX_EXPANSION_HITS of them: a hint, worth less than one of
+# the asker's own words, and never a reason to keep an off-subject result.
+W_EXPANSION = 1.0
+MAX_EXPANSION_HITS = 2
 # An international compiler's copy of a figure ranks below the Saudi
 # publisher's own, even when both match the question equally.
 W_INTERNATIONAL = -3.0
@@ -157,6 +162,12 @@ def score_candidate(
     if hits:
         score += W_TERM * len(hits)
         reasons.append(f"تطابق مصطلحات: {', '.join(hits)}")
+
+    title = " ".join(filter(None, (candidate.title_ar, candidate.title_en)))
+    suggested = [t for t in request.expansion_hints() if contains_phrase(title, t)]
+    if suggested:
+        score += W_EXPANSION * min(len(suggested), MAX_EXPANSION_HITS)
+        reasons.append(f"يطابق صياغة مقترحة للبحث: {', '.join(suggested)}")
 
     requested = frozenset(request.period.years)
     if requested and candidate.claimed_coverage.years:
@@ -321,9 +332,12 @@ def on_subject(request: DataRequest, candidate: DatasetCandidate) -> bool:
     )
     if request.topic is not None:
         if not request.typed_phrases:
-            # The topic came from elsewhere (a language model's reading):
-            # the sources were searched for it, and that is all there is.
-            return True
+            # The topic came from a language model's reading, with the
+            # phrases it says name the subject: a result naming none of them
+            # is about something else under the same topic. Without phrases
+            # the sources were searched for the topic, and that is all there is.
+            return not request.free_terms or any(
+                mentions_term(candidate, t) for t in request.free_terms)
         return any(
             mentions(haystack, name)
             for phrase in request.typed_phrases
