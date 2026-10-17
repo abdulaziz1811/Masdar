@@ -1,13 +1,13 @@
 ---
-name: مصدر أو مؤشر جديد
-about: جهة رسمية أو مجموعة بيانات يُقترح إضافتها
+name: New source or indicator
+about: An official publisher or dataset to add
 labels: source
 ---
 
-**الجهة**
+**Publisher**
 
-**رابط البيانات أو الواجهة البرمجية**
+**Link to the data or API**
 
-**هل تحتاج مفتاحاً؟** (اذكر اسم البوابة فقط، لا المفتاح)
+**Does it need a key?** (name the portal only, never the key)
 
-**أسئلة يجيب عنها** (مثال: «عدد المستشفيات حسب المنطقة 2024»)
+**Questions it would answer** (for example «عدد المستشفيات حسب المنطقة 2024»)

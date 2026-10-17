@@ -1,40 +1,42 @@
-# الأمان
+# Security
 
-## المفاتيح
+## Credentials
 
-«مصدر» يقرأ مفاتيحه من البيئة وحدها، بأسمائها:
+Masdar reads its credentials from the environment only, by name:
 
-| المتغيّر | لماذا |
+| Variable | Used for |
 |---|---|
-| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Gemini، لفهم الأسئلة (اختياري) |
-| `GROQ_API_KEY` | Groq، لفهم الأسئلة (اختياري) |
-| `ANTHROPIC_API_KEY` | Claude، لفهم الأسئلة (اختياري) |
-| `GASTAT_API_KEY` / `GASTAT_API_SECRET` | بوابة مطوّري الهيئة العامة للإحصاء |
-| `FIRECRAWL_API_KEY` | المنفذ السعودي للمنصة الوطنية من خارج المملكة |
-| `MASDAR_ACCESS_CODE` | رمز الدخول إلى الصفحة المستضافة |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Gemini, to help read questions (optional) |
+| `GROQ_API_KEY` | Groq, to help read questions (optional) |
+| `ANTHROPIC_API_KEY` | Claude, to help read questions (optional) |
+| `GASTAT_API_KEY` / `GASTAT_API_SECRET` | The GASTAT developer portal |
+| `FIRECRAWL_API_KEY` | A Saudi exit for the National Open Data Platform from a server abroad |
+| `MASDAR_ACCESS_CODE` | The access code of a hosted page |
 
-- تُوضع في `.env` (مستثنى من git؛ `.env.example` يحمل الأسماء بلا قيم) أو في
-  إعدادات الاستضافة.
-- لا يُطبع مفتاح في سجل ولا رسالة خطأ: السجلات تذكر **أسماء** المتغيّرات فقط.
-- مفاتيح النماذج تُرسل في ترويسة الطلب لا في عنوانه، فلا تظهر في سجل يقتبس العنوان.
-- `FirecrawlTransport` يرفض أي طلب يحمل مفتاحاً، فلا يمرّ مفتاح مصدر عبر طرف ثالث.
-- `tests/test_no_secrets.py` يفحص كل ملف مرفوع بحثاً عن نص بشكل مفتاح.
+- They go in `.env` (git-ignored; `.env.example` lists the names with no values) or in the host's
+  settings.
+- No key is ever printed in a log or an error message. Logs name the variables only.
+- Model keys travel in request headers, never in URLs, so they cannot appear in a log that quotes
+  an address.
+- `FirecrawlTransport` refuses any request that carries a key, so no source credential passes
+  through a third party.
+- `tests/test_no_secrets.py` scans every committed file for credential-shaped text.
 
-## ما يغادر الجهاز
+## What leaves the machine
 
-- **إلى المصادر الرسمية**: كلمات البحث وطلبات الملفات.
-- **إلى نموذج لغوي** (إن هُيّئ مفتاحه): نص السؤال وحده، وفقط إن لم تفهمه القواعد
-  كاملاً (`MASDAR_LLM_ROLE`). لا يُرسل ملف ولا مفتاح ولا بيانات مستخدم. وفي
-  الاستخدام المجاني قد يستخدم المزوّد النصوص المرسلة لتحسين منتجاته.
+- **To the official sources:** search words and file requests.
+- **To a language model** (if a key is configured): the question text only, and only when the
+  rules did not read it completely (`MASDAR_LLM_ROLE`). No file, key or user data is sent. On free
+  tiers, the provider may use the text it receives to improve its products.
 
-## إن رُفع مفتاح بالخطأ
+## If a key is committed by mistake
 
-1. **ألغِ المفتاح فوراً** من لوحة مزوّده وأنشئ غيره؛ حذفه من الملف وحده لا يكفي، لأنه
-   باقٍ في تاريخ git وفي أي نسخة سُحبت.
-2. ضع الجديد في `.env` أو إعدادات الاستضافة.
-3. شغّل `python -m pytest tests/test_no_secrets.py`.
+1. **Revoke it at once** in the provider's console and create a new one. Deleting it from the
+   file is not enough: it remains in the git history and in every clone.
+2. Put the new key in `.env` or the host's settings.
+3. Run `python -m pytest tests/test_no_secrets.py`.
 
-## الإبلاغ عن ثغرة
+## Reporting a vulnerability
 
-لا تفتح Issue عاماً لثغرة. راسل صاحب المستودع مباشرة عبر GitHub، مع وصف الثغرة
-وخطوات إعادتها.
+Please do not open a public issue. Contact the repository owner directly through GitHub with a
+description and steps to reproduce.

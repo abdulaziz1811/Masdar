@@ -1,790 +1,274 @@
-# مصدر (Masdar)
+<div align="center">
+
+# Masdar · مصدر
+
+**An evidence-first research agent for Saudi official open data.**
+
+Ask in natural Arabic. Masdar searches the official publishers and returns a ready-to-use Excel
+file, the publishing body, the date of the last update and a link to the source.
+If the year asked for has not been published, it says so plainly and offers the latest year that has.
 
 [![checks](https://github.com/abdulaziz1811/Masdar/actions/workflows/ci.yml/badge.svg)](https://github.com/abdulaziz1811/Masdar/actions/workflows/ci.yml)
-
-وكيل بحث في البيانات المفتوحة الرسمية السعودية بواجهة محادثة. تسأله بالعربية
-الطبيعية، فيبحث في المصادر الرسمية ويعيد: **الملف جاهزاً بصيغة إكسل + الجهة
-الناشرة + تاريخ آخر تحديث + رابط المصدر**. وإذا كانت السنة المطلوبة غير متوفرة،
-يقولها صريحة ويقترح أحدث سنة موجودة — بضغطة تُجهّز ملفها.
-
-### على رابط، بلا تثبيت (للعرض)
+![Python](https://img.shields.io/badge/python-3.11%2B-3776AB)
+![Tests](https://img.shields.io/badge/tests-700%2B%20offline-2E7D32)
+![Interface](https://img.shields.io/badge/interface-Arabic-0B7A75)
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/abdulaziz1811/Masdar)
 
-زر واحد ينشره مجاناً على Render ويعطيك رابطاً يفتحه أي أحد (برمز دخول تختاره).
-ولتشمل منصة البيانات المفتوحة الوطنية أيضاً — لا تُفتح إلا من داخل المملكة — انشره
-على Google Cloud في الدمام بـ `./deploy/cloudrun.sh`. التفاصيل والمقارنة في
-[دليل العرض](docs/PRESENTER.md).
+[Quick start](#quick-start) · [How it works](#how-it-works) · [Sources](#data-sources) ·
+[Configuration](#configuration) · [Development](#development) · [Arabic guide](docs/README.ar.md)
 
-### على جهازك
+</div>
 
-`start.bat` على ويندوز، أو `./start.sh` على ماك ولينكس: أول مرة يجهّز البيئة بنفسه،
-ثم يفتح الصفحة على <http://127.0.0.1:8000>.
+---
+
+![Masdar home page](docs/landing.png)
+
+## Why Masdar
+
+A search over government data is only worth its accuracy. A fluent answer that says "available"
+because a file *title* mentions 2026, or "not available" because a server timed out, is worse than
+no answer at all. Masdar is built around one rule:
+
+> **Nothing is said that cannot be proven.**
+
+Every answer is tied to the strength of the evidence behind it, every figure comes from the
+publisher's own file, and a source that could not be reached is never reported as data that does
+not exist.
+
+## Features
+
+- **Conversational Arabic.** Dialect, Hijri years (`1447هـ`), ranges (`2019–2022`), relative
+  periods («آخر 3 سنوات», «العام الماضي») and follow-ups («طيب 2021», «وحسب الجنس»).
+- **Official sources only.** GASTAT (APIs, database and website), the National Open Data
+  Platform (37 publishers), KAPSARC, live ministry indicators, with GCC-Stat and the World Bank
+  ranked after the Saudi publisher.
+- **Verified against the file.** The requested years are read from inside the downloaded data,
+  not from titles or metadata alone.
+- **Excel with provenance.** A data sheet plus a source sheet: publisher, links, declared update
+  date, retrieval time and the SHA-256 of the original file.
+- **Honest verdicts.** Six distinct outcomes, from *available* to *source unreachable*, each with
+  the nearest available year when the one asked for is missing.
+- **Optional AI understanding.** Free models (Gemini, Groq) help read unusual phrasing and widen
+  the search, but never decide availability or produce a figure.
+- **Ready to present.** One-click hosting, an access code, start-up warm-up, and saved copies
+  when a source goes down.
+
+![An answer with its file, chart and source](docs/chat.png)
+
+## Quick start
+
+**Run locally.** On Windows run `start.bat`; on macOS or Linux run `./start.sh`. The first run sets
+up the environment, then opens <http://127.0.0.1:8000>. Or by hand:
 
 ```bash
+git clone https://github.com/abdulaziz1811/Masdar.git && cd Masdar
 pip install -e .
-masdar serve --open        # أو يدوياً: واجهة الشات على http://127.0.0.1:8000
+masdar serve --open
 ```
 
-وفي المحادثة تكمل على نفس السؤال: «طيب 2022»، «وحسب الجنس»، «اعطني الأحدث».
-
-> **ستعرض المشروع؟** اقرأ [دليل العرض](docs/PRESENTER.md): تجهيز الرابط،
-> وسيناريو عرض، وإجابات الأسئلة المتوقعة، وخطة بديلة بلا إنترنت.
->
-> **ستطوّر عليه؟** ابدأ بـ [دليل المطوّر](docs/DEVELOPER.md): خريطة الكود، ورحلة
-> سؤال واحد في الملفات، والقواعد التي لا تُكسر، وكيف تضيف مصدراً وتختبره.
-> و`make check` (ruff ثم الاختبارات، بلا إنترنت) قبل كل دفع.
-
-## الفكرة الأصلية، بنداً بنداً
-
-| المطلوب | كيف يتحقق | أين |
-|---|---|---|
-| وكيل بواجهة **شات** | صفحة محادثة عربية، تفهم المتابعة («طيب 2021»، «وحسب الجنس») | `chat/` |
-| **يفهم السؤال** مثل «احصاءات الطاقه الكهربائيه لسنه 2026 حسب المناطق» | محلل عربي (عامية، همزات، هجري، نطاقات)، ونموذج لغوي مجاني (Gemini أو Groq) لما هو خارج المعجم | `nlu/` |
-| يبحث في **المواقع الرسمية**: سدايا، الإحصاء، الوزارات | منصة البيانات المفتوحة (سدايا، ٣٧ جهة)، واجهتا الهيئة العامة للإحصاء، الموارد البشرية، البيئة، كابسارك، والبنك الدولي كمصدر دولي بعدها | `sources/` |
-| يجيب **آخر تحديث وتاريخه** | أحدث سنة **من داخل الملف**، وتاريخ التحديث المعلن من الجهة — وإن لم تعلنه (كواجهة الهيئة) يُقال ذلك ويُذكر تاريخ الاستخراج، لا يُخترع تاريخ | `pipeline/verify.py` |
-| **ملف إكسل جاهز** | ورقة البيانات + ورقة «المصدر» (الجهة، الرابط، تاريخ التحديث، وقت الاستخراج، بصمة SHA-256) | `export/excel.py` |
-| **المصدر** | اسم الجهة ورابط صفحتها ورابط الملف الأصلي في كل جواب | الواجهة والإكسل |
-| إذا السنة **غير موجودة** يقولها | «غير متوفرة» فقط بعد فتح الملف والتأكد، ويقترح أحدث سنة بضغطة؛ و«تعذّر الوصول» حالة منفصلة لا تُقرأ كعدم توفر | `pipeline/` |
-| **السنة الجديدة تُسحب تلقائياً** (لذلك API) | يسأل المصادر وقت السؤال؛ النسخة المحفوظة صالحة ٦ ساعات فقط | `sources/http.py` |
-| **يُعرض على مجموعة بسهولة** | رابط برمز دخول، يجهّز الأمثلة عند التشغيل، ومصدر متوقف لا يوقف العرض | `render.yaml`، `deploy/` |
-
-![الصفحة الرئيسية](docs/landing.png)
-
-![جواب بملف ورسم بياني](docs/chat.png)
-
-ومن سطر الأوامر (المثال بالمصادر التجريبية، `--demo`):
-
-```
-$ masdar ask "ابي احصاءات الطاقه الكهربائيه لسنه 2026 حسب المناطق" --demo
-
-❌ لا تتوفر بيانات «الطاقة الكهربائية» للفترة 2026.
-
-عُثر على مجموعة البيانات، لكن الفترة المطلوبة غير موجودة فيها:
-📊 بيانات تجريبية: الطاقة الكهربائية حسب المناطق
-   🏛 الجهة الناشرة: مصدر تجريبي (غير رسمي)
-   📅 آخر تحديث معلن: 2025-06-30
-   📚 تغطية المصدر: 2015–2024
-   🔗 صفحة المصدر: …
-   🔍 أساس التحقق: تم فتح الملف والتحقق من السنوات الموجودة فيه
-
-ملاحظات:
-   • سنة 2026 لم تنتهِ بعد؛ الإحصاءات السنوية الكاملة لها عادةً تُنشر بعد نهاية السنة.
-
-🔄 البديل المتاح:
-   • 2024 — أحدث سنة متاحة في هذا المصدر
-```
-
-## المبدأ الأساسي
-
-> **لا يُقال شيء لا يمكن إثباته.**
-
-وكيل بحث في البيانات الحكومية تكون قيمته في دقته، لا في طلاقته. لذلك بُني
-النظام حول تصنيف صريح لقوة الدليل، وكل جواب مربوط بمستوى الدليل الذي يسنده:
-
-| أساس التحقق | يُثبت التوفر؟ | يُثبت عدم التوفر؟ |
-|---|---|---|
-| `OBSERVED_DATA` — فُتح الملف وقُرئت السنوات من داخله | ✅ | ✅ |
-| `METADATA_CLAIM` — تغطية معلنة في بيانات المصدر الوصفية | ✅ | فقط إذا كانت القائمة معلنة كاملة |
-| `INFERRED_TITLE` — سنة مستنتجة من العنوان أو اسم الملف | ❌ | ❌ |
-
-النتيجة أن الوكيل لا يستطيع بنيوياً أن يقول «متوفرة» لأن عنوان ملف ذكر سنة.
-وإذا لم يجد دليلاً كافياً يقول «غير مؤكَّدة» بدل أن يخمّن.
-
-### تمييز مهم: «غير متوفرة» ≠ «ما قدرت أوصل»
-
-أسوأ ما يمكن أن يفعله هذا النظام هو أن يقول «لا توجد بيانات» بينما الحقيقة أن
-الاتصال بالمصدر فشل. لذلك الحالتان منفصلتان في النموذج والرسالة:
-
-- `NOT_AVAILABLE` — وصلنا للمصدر، وتأكدنا أن السنة غير موجودة فيه.
-- `SOURCE_UNREACHABLE` — لم نصل للمصدر، ولا نحكم على التوفر إطلاقاً.
-
-## التشغيل
+**Try it offline** with generated demo sources (clearly labelled, never mixed with real ones):
 
 ```bash
-pip install -e .
-
-masdar serve                   # واجهة الشات (محلياً على 127.0.0.1:8000)
-masdar serve --demo --offline  # جرّب الواجهة بمصادر تجريبية بدون إنترنت
-masdar ask "احصاءات الطاقه الكهربائيه لسنه 2024 حسب المناطق"
-masdar ask "…" --json          # مخرجات JSON للاستخدام البرمجي
-masdar ask "…" --explain       # مع سجل البحث خطوة بخطوة
-masdar ask "…" --demo          # مع مصادر تجريبية تعمل بدون إنترنت
-masdar parse "…"               # اعرض كيف فُهم السؤال فقط
-masdar sources                 # سجل المصادر
-masdar doctor                  # افحص الوصول إلى كل مصدر فعلياً
-masdar warmup                  # جهّز أسئلة العرض مسبقاً وافحص جاهزيتها
+masdar serve --demo --offline
+masdar ask "الكهرباء 2026 حسب المناطق" --demo --max-sources 0   # not available + alternative
+masdar ask "الكهرباء 2024 حسب المناطق" --demo --max-sources 0   # available + Excel file
 ```
 
-### تجربة كاملة بدون إنترنت
+**Host it.** The *Deploy to Render* button above publishes it for free behind an access code you
+choose. To include the National Open Data Platform, which only answers from inside the Kingdom,
+deploy to Google Cloud in Dammam with `./deploy/cloudrun.sh`, or give a Render host a Saudi exit
+with `FIRECRAWL_API_KEY`. A `Dockerfile` is included. Step-by-step instructions are in the
+[presenter guide](docs/PRESENTER.md) (Arabic).
 
-```bash
-masdar ask "الكهرباء 2026 حسب المناطق" --demo --max-sources 0   # ← غير متوفرة + بديل
-masdar ask "الكهرباء 2024 حسب المناطق" --demo --max-sources 0   # ← متوفرة + ملف إكسل
+### Command line
+
+| Command | Purpose |
+|---|---|
+| `masdar serve` | The chat interface (`--open`, `--demo`, `--offline`, `--answer-seconds 25`) |
+| `masdar ask "…"` | One question; `--json` for machine output, `--explain` for the search log |
+| `masdar parse "…"` | How a question is understood, without searching |
+| `masdar doctor` | Contact every source and model key and diagnose what is in the way |
+| `masdar warmup` | Ask the showcase questions ahead of a presentation and report readiness |
+| `masdar sources` · `masdar specs` | The source registry and the known GASTAT datasets |
+| `masdar import-spec` | Import GASTAT OpenAPI specifications as dataset configuration |
+| `masdar publishers` | Discover National Open Data Platform publishers and their topics |
+| `masdar worldbank-catalogue` | Rebuild the local World Bank indicator catalogue |
+
+## How it works
+
+```mermaid
+flowchart LR
+    Q["Question<br/>(Arabic)"] --> U["Understand<br/>rules first, model if needed"]
+    U --> P["Plan<br/>sources by topic"]
+    P --> S["Search<br/>in parallel, time-boxed"]
+    S --> R["Rank<br/>explained scores"]
+    R --> V["Verify<br/>open the file, read the years"]
+    V --> F["Fit<br/>subject, breakdown, month, measure"]
+    F --> A["Answer<br/>Excel + provenance"]
 ```
 
-المصادر التجريبية بيانات مُولّدة للاختبار، معزولة في ملف منفصل ولا تدخل أي
-بحث عادي، وكل ملف إكسل يُنتج منها يحمل تحذيراً بأنها ليست بيانات رسمية.
+1. **Understand.** A rule-based Arabic parser extracts the topic, period, breakdowns and places.
+   A language model is consulted only when the rules leave something unread (see below).
+2. **Plan and search.** Sources are chosen by topic, verified ones first, and queried in parallel
+   within a time budget. A source that does not answer in time is named in the answer.
+3. **Rank.** Every point of a result's score carries a readable reason (`resolve.py`). A result
+   whose *title* names the subject ranks above one that only mentions it in a description.
+4. **Verify.** The file is downloaded and read, and the requested years are checked against the
+   evidence.
+5. **Fit.** The answer must be the data asked for: the right subject, the requested breakdown
+   («حسب المناطق» answered with a national total is *partial*), the right month, and a count
+   rather than a rate when a count was asked.
+6. **Answer.** The message is composed from the verdict, never the other way round, and the
+   Excel file carries its full provenance.
 
-### واجهة الشات
+### Evidence levels
 
-`masdar serve` يشغّل خادماً محلياً بلا أي مكتبة إضافية، ويفتح صفحة عربية:
+| Evidence | Proves availability? | Proves absence? |
+|---|---|---|
+| `OBSERVED_DATA`: years read from inside the file | Yes | Yes |
+| `METADATA_CLAIM`: coverage declared by the source | Yes | Only if declared exhaustive |
+| `INFERRED_TITLE`: a year guessed from a title or file name | No | No |
 
-- **الصفحة الرئيسية**: رسمية وخالية من الشرح: عنوان، وأسئلة مقترحة تُضغط
-  مباشرة، وسطر بأسماء الجهات التي يبحث فيها هذا الخادم. أما شرح الفكرة وطريقة
-  العمل فمكانه العرض التقديمي المصاحب، لا المنصة.
-- **بطاقة الجواب**: الحكم (متوفرة / جزئياً / غير متوفرة / غير مؤكدة / تعذّر
-  الوصول)، وما فُهم من السؤال، والجهة الناشرة، وتاريخ آخر تحديث معلن، وأحدث
-  سنة، وزر **تنزيل ملف الإكسل**، ورابط المصدر. ثم تبويبات: **رسم بياني**،
-  و**البيانات**، و**ملاحظات**. وأسفلها «المصادر التي بُحث فيها»: كل مصدر سُئل، ومن لم يُجب.
-- **المعاينة من الملف نفسه**: تُقرأ من ملف الإكسل الذي سيُنزَّل، فما يُعرض هو
-  ما في الملف بالضبط.
-- **الرسم فقط حين لا يحتاج اختياراً**: قيمة واحدة لكل سنة، أو تفصيل واحد (المناطق
-  مثلاً) لأحدث سنة، مع استبعاد صف الإجمالي والتنبيه لذلك. أما ملف بتفصيلين
-  (المنطقة والجنس) فيبقى جدولاً: رسمٌ يجمع أو يختار شريحة من تلقاء نفسه قد يضلّل.
-- **البدائل أزرار**: «سنة 2024 — أحدث سنة متاحة» يسأل عنها ويجهّز ملفها.
-- **المتابعة**: رسالة تغيّر السنة أو تضيف تفصيلاً فقط («طيب 2021»، «وحسب
-  الجنس») تُكمل السؤال السابق. ورسالة فيها موضوع أو كلمات بحث جديدة سؤال جديد.
-- **المظهر**: خط IBM Plex Sans Arabic مضمَّن (يعمل بلا إنترنت)، ومظهر فاتح وداكن،
-  وتصميم يعمل على الجوال.
-- **الأمان**: يعمل على `127.0.0.1` افتراضياً. لا يُنزَّل إلا ملف أنتجه الخادم
-  نفسه، برمز يُعطى عند إنتاجه لا بمسار من الطلب. ونصوص المصادر تُعرض نصاً لا
-  HTML، ولا يُعرض رابط إلا إن كان http(s). ولا سكربت ولا تنسيق مضمَّن في الصفحة،
-  فسياسة المحتوى تمنعهما كلياً.
+### Verdicts
 
-### جاهز للعرض
+| Verdict | Shown as | Meaning |
+|---|---|---|
+| `AVAILABLE` | متوفرة | The requested years are in sufficient evidence, with the breakdown asked for |
+| `PARTIAL` | متوفرة جزئياً | Some of the years, or all of them without the requested breakdown |
+| `UNVERIFIED` | لم يتسنَّ التحقق | Not enough evidence either way |
+| `NOT_AVAILABLE` | غير متوفرة | The evidence proves the year is absent; the nearest available year is offered |
+| `SOURCE_UNREACHABLE` | تعذّر الوصول | The source was not reached; nothing is claimed about the data |
+| `NO_SOURCE` | لم يُعثر | No result is about the subject asked |
 
-- **`masdar warmup`**: يسأل أسئلة العرض مسبقاً فتصير الإجابات فورية، ويطبع لكل
-  سؤال هل أجاب ومن أي جهة وكم استغرق — بروفة قبل العرض.
-- **مهلة للجواب** (`masdar serve --answer-seconds 25`): الصفحة تسأل المصادر معاً لا
-  واحداً بعد الآخر، ولا تنتظر مصدراً بطيئاً أكثر من حصته من المهلة: يُذكر أنه «لم يُجب»،
-  ويُترك دقيقتين قبل أن يُسأل مجدداً، ويكمل في الخلفية فيُحفظ رده للسؤال التالي.
-- **مصدر متوقف لا يُسقط العرض**: إذا تعذّر الوصول لمصدر، يُجاب من آخر نسخة
-  محفوظة منه (حتى 90 يوماً)، ويُكتب ذلك في الجواب وفي ورقة «المصدر» بالإكسل: «نسخة
-  محفوظة، وقد تكون نُشرت بيانات أحدث». `MASDAR_STALE_MAX_DAYS=0` يعطّله.
-- **النشر على رابط**: `render.yaml` (زر Render، مجاني، فرانكفورت) و
-  `deploy/cloudrun.sh` (Google Cloud، الدمام). `MASDAR_ACCESS_CODE` يضع رمز دخول قبل
-  أي سؤال أو تنزيل (كعكة HttpOnly وSameSite=Strict)، فلا يستهلك أحد من الإنترنت
-  مفتاح الذكاء الاصطناعي. والخادم يستمع على منفذ المنصة (`PORT`).
-- **خادم خارج المملكة** (`MASDAR_OUTSIDE_KSA=1`): تحقّقنا من خارج المملكة أن كل
-  المصادر تُجيب عدا منصة البيانات المفتوحة الوطنية؛ فلا تُسأل هناك أصلاً (بدل انتظار
-  مهلة في كل سؤال)، ولا تظهر في سطر المصادر بالصفحة الرئيسية.
-- **يجهّز نفسه عند التشغيل** (`MASDAR_WARMUP_ON_START=1`): الاستضافة المجانية تنام
-  وتفقد النسخ المحفوظة، فيسأل الخادم أسئلة العرض بنفسه حين يصحو، وتعرض الصفحة
-  «جارٍ التجهيز ٣/٨» ثم «جاهز»، وتُخفي أي سؤال مقترح لم يُجبه مصدر.
-- **مصدر لا يستجيب لا يُبطئ كل سؤال**: بعد فشل الاتصال بمضيف لا يُعاد سؤاله
-  دقيقتين، وتُجيب النسخة المحفوظة إن وُجدت.
+## AI-assisted understanding (optional)
 
-### الفهم بالذكاء الاصطناعي (اختياري)
+The rules read every question first. A model is consulted in two cases:
 
-المحلل العربي يقرأ كل سؤال أولاً، ويفهم ما في معجمه: «احصاءات الطاقة الكهربائية
-2024 حسب المناطق». ويُسأل نموذج لغوي في حالتين فقط:
+1. **The rules find no topic.** «ودي اعرف كم كيلوات صرفته البيوت بكل منطقة» is mapped to the same
+   structured request the rules produce: a topic from a closed list, years, breakdowns and search
+   phrases.
+2. **The rules find a topic but leave words unread.** For «نسبة تملك المساكن», the rules' reading
+   stands. The model only adds formal wordings as publishers title their data («ملكية المساكن»),
+   used to widen the search, plus any breakdown or period the rules missed.
 
-1. **لا تجد القواعد موضوعاً** — «ودي اعرف كم كيلوات صرفته البيوت بكل منطقة»: يحوّل
-   النموذج السؤال إلى الطلب نفسه (موضوع من القائمة، سنوات، تفصيل، عبارات بحث).
-2. **تجد موضوعاً وتبقى كلمات لم تفهمها** — «نسبة **تملك** المساكن للأسر»: تبقى قراءة
-   القواعد كما هي (موضوعها وسنواتها وعباراتها)، ويضيف النموذج فقط صياغات بالفصحى كما
-   تكتبها الجهات في عناوينها («ملكية المساكن»)، فتُبحث المصادر بها أيضاً، وتفصيلاً
-   فاتها، وفترة إن لم تجد فترة.
+When nothing is found, the model's alternative phrasings are offered as one-click suggestions.
 
-وإن لم يُعثر على شيء يقترح النموذج **صياغات أخرى للسؤال** تظهر أزراراً تحت الجواب
-«جرّب صياغة أخرى»، يكفي الضغط على أحدها.
+**Free models first, each covering for the next.** Any one key is enough. With several, they are
+tried in order. A model that is rate-limited, busy or timing out is rested for the wait its provider
+asks for (or a minute), and the next one is asked, all within 12 seconds per question:
 
-**نماذج مجانية أولاً، كل واحد يغطي الآخر.** يكفي مفتاح واحد؛ وإن وُضع أكثر من مفتاح
-تُجرَّب بالترتيب، وإذا كان أحدها مزدحماً أو انتهت حصته المجانية يُترك دقيقة (أو المدة
-التي يطلبها مزوده) ويُسأل التالي، كل ذلك في حد أقصى 12 ثانية للسؤال:
-
-| الترتيب | النموذج | المفتاح | الكلفة |
+| Order | Model | Key | Cost |
 |---|---|---|---|
-| 1 | Gemini 3.8 Flash ثم Gemini 3.5 Flash-Lite | `GEMINI_API_KEY` من <https://aistudio.google.com/apikey> | مجاني ضمن الحدود |
-| 2 | `openai/gpt-oss-120b` عبر Groq | `GROQ_API_KEY` من <https://console.groq.com/keys> | مجاني (1000 طلب يومياً) |
-| 3 | Claude | `ANTHROPIC_API_KEY` (ويتطلب `pip install -e '.[ai]'`) | مدفوع |
+| 1 | Gemini 3.8 Flash, then Gemini 3.5 Flash-Lite | `GEMINI_API_KEY` ([AI Studio](https://aistudio.google.com/apikey)) | Free tier |
+| 2 | `openai/gpt-oss-120b` on Groq | `GROQ_API_KEY` ([Groq console](https://console.groq.com/keys)) | Free plan |
+| 3 | Claude | `ANTHROPIC_API_KEY` (requires `pip install -e '.[ai]'`) | Paid |
+
+What the model is **not** allowed to do is as deliberate as what it does:
+
+- It never answers the question or states a figure. Availability, years and numbers come from the
+  sources and the evidence rules.
+- Its suggested wordings never make a result count as being about the question. Only the user's
+  own words do that.
+- Its output is constrained to one JSON schema for every provider, then validated again in code.
+  Unknown topics, breakdowns or implausible years are dropped.
+- A question the rules read completely never leaves the machine. When a model is asked, only the
+  question text is sent, never a key or a file.
+- Any failure (no key, network, refusal, malformed output) falls back to the rules' reading, and
+  the reason is recorded in the search log.
+
+## Data sources
+
+All sources below were verified with live requests (September–October 2026). Most need no key.
+
+| Source | Access | What it provides |
+|---|---|---|
+| GASTAT statistics API (`api.stats.gov.sa`) | Public | 95 datasets imported from 30 OpenAPI specifications; server-side breakdowns; years enumerated by the source |
+| GASTAT website (`stats.gov.sa`) | Public | Search over ~4,100 data tables and ~1,400 bulletins; bulletin workbooks are opened and read |
+| GASTAT database (`database.stats.gov.sa`) | Public | ~2,600 indicators; returned HTTP 500 at the last check (server-side fault) |
+| National Open Data Platform (`open.data.gov.sa`) | Saudi IPs only | 37 publishers (ministries and authorities) with dataset files and declared update dates |
+| KAPSARC Data Portal | Public | Searchable catalogue, real modification dates, the originating publisher credited |
+| HRSD and MEWA live data | Public | Labour-market snapshots and ministry counters, labelled as snapshots, not annual statistics |
+| GCC-Stat SDMX (regional) | Public | 24 indicators with verified units; ranked after the Saudi publisher |
+| World Bank WDI (international) | Public | 1,037 indicators for Saudi Arabia; ranked after the Saudi publisher and labelled international |
+| GASTAT developer portal | `GASTAT_API_KEY` | Datasets whose gateway requires a key, sent only to GASTAT |
+
+Each source's verification details, quirks and known gaps are documented in the
+[Arabic guide](docs/README.ar.md#المصادر-الرسمية-ما-تم-التحقق-منه).
+
+## Configuration
+
+Every setting is an environment variable. All are optional, except an access code when the
+service is hosted. Copy `.env.example` to `.env` (git-ignored) for local use, or set them in your
+host's dashboard.
+
+| Variable | Purpose |
+|---|---|
+| `MASDAR_ACCESS_CODE` | Code the page asks for before the first question. **Required when hosted** |
+| `GEMINI_API_KEY`, `GROQ_API_KEY`, `ANTHROPIC_API_KEY` | Optional AI understanding (free models first) |
+| `MASDAR_LLM_ROLE` | `assist` (default), `fallback` (only questions without a topic) or `always` |
+| `MASDAR_LLM_PROVIDER` | Use one provider alone: `gemini`, `groq` or `claude` |
+| `MASDAR_LLM_MODEL`, `MASDAR_GROQ_MODEL` | Another Gemini/Claude model, or another model on Groq |
+| `MASDAR_LLM=off` | Disable AI understanding entirely |
+| `GASTAT_API_KEY`, `GASTAT_API_SECRET` | GASTAT developer-portal credentials |
+| `MASDAR_OUTSIDE_KSA=1` | The server is outside the Kingdom: geo-restricted sources are not queried directly |
+| `FIRECRAWL_API_KEY` | A Saudi exit for the National Open Data Platform from a server abroad |
+| `MASDAR_HTTP_BACKEND` | `direct` (default) or `firecrawl` for every request |
+| `MASDAR_CACHE_MAX_AGE_HOURS` | How long a cached response may stand in for the source (default 6) |
+| `MASDAR_STALE_MAX_DAYS` | Answer from a saved copy when a source is down, up to this age (default 90) |
+| `MASDAR_WARMUP_ON_START=1` | Ask the showcase questions in the background at start-up |
+
+## Project structure
+
+```
+masdar/
+├── nlu/         Arabic normalisation, Hijri calendar, rule-based parser, model chain
+├── sources/     source registry, one adapter per source, HTTP and transports
+├── pipeline/    orchestration, ranking (resolve), evidence (verify), fit, reply
+├── export/      reading published tables, writing Excel with provenance
+├── domain/      the types that enforce the evidence rules
+├── chat/        conversation state, HTTP server, the chat page
+└── config/      sources and topics as data (YAML), not code
+tests/           700+ offline tests over recorded real responses
+tools/           the question battery used to tune ranking
+docs/            developer guide, architecture decisions, presenter guide (Arabic)
+```
+
+## Development
 
 ```bash
-# في ملف .env (لا يُرفع للمستودع)، مفتاح واحد أو أكثر:
-GEMINI_API_KEY=...
-GROQ_API_KEY=...
+make install   # the package with test and lint tools
+make check     # ruff, then the full test suite (offline, about two minutes), as CI runs it
+make battery   # how ~45 real questions are read and ranked, before and after a change
 ```
 
-- **لا يجيب ولا يكتب أرقاماً**: دوره الفهم فقط. التوفر والسنوات والأرقام تأتي
-  من المصادر وقواعد الدليل كما هي. ومخرجاته مقيّدة بمخطط JSON واحد لكل النماذج، ثم
-  يُتحقق منها مجدداً: موضوع غير معروف أو سنة غير معقولة تُحذف.
-- **لا يقرر أن النتيجة عن السؤال**: صياغاته توسّع البحث وتضيف قليلاً للترتيب، لكن
-  النتيجة لا تُقبل إلا إذا ذكرت ما كتبه السائل.
-- **لا يُستدعى إلا عند الحاجة**: سؤال يفهمه المحلل كاملاً لا يغادر جهازك. وحين
-  يُستدعى يُرسل نص السؤال وحده إلى مزوّد النموذج. (في الاستخدام المجاني قد يستخدم
-  المزوّد النصوص المرسلة لتحسين منتجاته؛ الأسئلة هنا عن إحصاءات عامة.)
-- **فشله لا يُسقط الجواب**: بلا مفتاح، أو انقطاع، أو رد غير صالح — يعود لقراءة
-  القواعد، ويُذكر السبب في سجل البحث.
-- **يظهر في الواجهة**: «فُهم بالذكاء الاصطناعي» مع جملة تعيد صياغة السؤال، أو «بحث
-  موسّع بالذكاء الاصطناعي» حين أضاف صياغات فقط؛ وسجل البحث يذكر النموذج الذي قرأه.
-- **تُفحص المفاتيح عند التشغيل**: `masdar serve` يتحقق مرة واحدة أن كل مفتاح يعمل
-  (طلب مجاني لا يولّد نصاً)، ويستبعد ما لا يعمل ويذكر سببه في أعلى الصفحة.
-- **الإعدادات**: `MASDAR_LLM_ROLE` = `assist` (الافتراضي، الحالتان أعلاه) أو
-  `fallback` (الحالة الأولى فقط) أو `always` (كل سؤال). `MASDAR_LLM_PROVIDER` =
-  `gemini` أو `groq` أو `claude` لاستخدام مزوّد واحد وحده. `MASDAR_LLM_MODEL` لنموذج
-  Gemini أو Claude آخر، و`MASDAR_GROQ_MODEL` لنموذج آخر على Groq. ويُعطَّل كله بـ
-  `MASDAR_LLM=off`. `masdar doctor` و`masdar serve` يطبعان حالته.
+The tests never touch the network. Every source is a real response recorded under
+`tests/fixtures/`, replayed through the same code path as live data. A dedicated test scans every
+committed file for anything shaped like a credential.
 
-## هل يسحب البيانات الجديدة تلقائياً؟
+New to the code? Start with the [developer guide](docs/DEVELOPER.md): a map of the code, one
+question's path through it, the rules no change may break, and how to add and test a source.
+The reasoning behind each design decision is in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Both are in Arabic.
 
-نعم — وهذا سبب الاعتماد على الواجهات البرمجية (API) لا على ملفات منسوخة. الوكيل
-**لا يخزّن البيانات**: عند كل سؤال يسأل المصدر نفسه أي السنوات موجودة الآن، وينزّل
-الملف في لحظتها.
+## Documentation
 
-| ما يتغيّر عند المصدر | هل يراه الوكيل بلا تدخل؟ |
+| Document | For |
 |---|---|
-| سنة جديدة في مجموعة موجودة (واجهة الإحصاء cdata) | ✅ في السؤال التالي |
-| ملف أو مجموعة جديدة لجهة مضافة في المنصة الوطنية | ✅ فهرس الجهة يُقرأ من المنصة عند كل سؤال |
-| مجموعة جديدة في KAPSARC أو مؤشر جديد في قاعدة بيانات الإحصاء | ✅ بحث مباشر في فهرسيهما |
-| واجهة (API) جديدة تطلقها الهيئة في بوابة المطوّرين | ⚠️ مرة واحدة: `masdar import-spec` لملفها، لأن الواجهة لا توفّر فهرساً |
-| جهة جديدة في المنصة الوطنية | ⚠️ مرة واحدة: سطر بمعرّفها في `sources.yaml` |
-
-**النسخة المحفوظة**: الردود تُحفظ مؤقتاً حتى لا يُعاد تنزيل الشيء نفسه لكل رسالة
-في المحادثة، وتنتهي صلاحيتها بعد **6 ساعات** (`MASDAR_CACHE_MAX_AGE_HOURS`، و`0`
-يعني اسأل المصدر دائماً). وقبل هذا الإصلاح كانت النسخة لا تنتهي أبداً — أي أن
-سنة تُنشر بعد أول سؤال ما كانت لتظهر. وإذا استُخدمت نسخة محفوظة يذكر الجواب
-تاريخ جلبها.
-
-**والأحدث بين المصادر**: الجواب يُختار للأقرب لسؤالك، لكن إن فتح الوكيل ملفاً
-آخر فيه سنة أحدث، يعرضها بديلاً باسم جهتها («2024 — أحدث سنة وجدتها في مصدر
-آخر: وزارة الطاقة»). وسؤال «الأحدث» لا يتوقف عند أول مجموعة فيها بيانات.
-
-## البنية
-
-```
-صفحة الشات (chat/static)  ←→  chat/server.py  (masdar serve)
-      │
-      ▼
- chat/session.py  المتابعة →  «طيب 2021» تُكمل السؤال السابق
-      │
-      ▼
- nlu/        فهم الطلب  →  DataRequest (موضوع، فترة، تفصيل)
-      │                    يطبّع الأرقام العربية والهمزات، ويحوّل الهجري
-      ▼
- sources/    البحث       →  DatasetCandidate[]  (محوّل لكل مصدر)
-      │                    الفشل يُبلَّغ كفشل، لا كنتيجة فارغة
-      ▼
- pipeline/   الترتيب     →  resolve.py  (نقاط + سبب مقروء لكل نقطة)
-      │      التحقق      →  verify.py   (الحكم بحسب قوة الدليل)
-      ▼
- export/     الإخراج     →  ملف إكسل + ورقة «المصدر» بالإسناد الكامل
-      │
-      ▼
- pipeline/reply.py       صياغة الجواب من الحكم، لا قبله
-```
-
-| الطبقة | المسؤولية |
-|---|---|
-| `masdar/domain/` | نموذج المجال: الأنواع التي تفرض قاعدة الإثبات |
-| `masdar/nlu/` | تطبيع عربي، تحويل هجري، تحليل السؤال، وفهم اختياري بنموذج لغوي (Gemini، Groq، Claude) |
-| `masdar/sources/` | سجل المصادر + محوّل لكل مصدر + طبقة HTTP |
-| `masdar/pipeline/` | الترتيب، التحقق، تنسيق الجواب |
-| `masdar/export/` | قراءة الجداول المنشورة وكتابة الإكسل |
-| `masdar/config/` | المصادر والمواضيع كبيانات، لا كود |
-| `masdar/chat/` | جلسة المحادثة، والخادم المحلي، وصفحة الشات |
-
-تفاصيل القرارات الهندسية في [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-## التوسيع بدون كتابة كود
-
-**إضافة موضوع أو مفردات** — `masdar/config/topics.yaml`:
-
-```yaml
-  - id: electricity
-    label_ar: الطاقة الكهربائية
-    keywords_ar: [كهرباء, استهلاك الكهرباء, الأحمال الكهربائية]
-    preferred_sources: [wera, saudi_open_data, moenergy, gastat]
-```
-
-المطابقة تتم بعد التطبيع، فاكتب المفردات بالإملاء العادي. زيادة المفردات
-تزيد الاستدعاء (recall) ولا تضر.
-
-**إضافة مصدر** — `masdar/config/sources.yaml`:
-
-```yaml
-  - id: wera
-    name_ar: هيئة تنظيم المياه والكهرباء
-    base_url: https://wera.gov.sa
-    adapter: html_index          # أو saudi_open_data
-    authority: 95                # قربه من كونه منشئ الإحصاءة
-    api_verified: false
-    topics: [electricity, water, energy]
-```
-
-المحوّلات المتاحة: `saudi_open_data` (واجهة JSON)، `gastat_site` (بحث موقع
-الهيئة: نشرات وجداول)، `html_index` (صفحة نشرات HTML)، `fixture` (ملفات محلية). محوّل جديد = صف واحد في
-`masdar/sources/registry.py` وصنف يورث `SourceAdapter`.
-
-## المصادر الرسمية: ما تم التحقق منه
-
-فُحصت المصادر فعلياً بتاريخ 2026-09-27.
-
-### ✅ موقع الهيئة العامة للإحصاء — بحث النشرات والجداول
-
-معظم ما تنشره الهيئة (نحو 4,100 جدول بيانات و1,400 نشرة) في موقعها لا في
-واجهتيها البرمجيتين. `GET www.stats.gov.sa/ar/search?q=<كلمات>` صفحة HTML
-تُبنى في الخادم وتعمل من خارج المملكة (تحقّق من منفذ ألماني، 2026-09-30):
-
-| النتيجة | كيف تُعرف | ما يُفعل بها |
-|---|---|---|
-| خبر | تحت `/ar/w/news/` | تُستبعد |
-| نشرة («الرقم القياسي لأسعار المستهلك لشهر أغسطس 2026») | مقتطفها يسمّي مرفقاتها `.xlsx` | تُفتح صفحتها، ويُنزَّل ملف Excel من `/documents/` ويُقرأ كأي ملف |
-| جدول بيانات | مقتطفها فيه عرض Tableau | لا ملف له: يُقدَّم رابطاً، وحكمه «غير مؤكدة» |
-
-وحين لا يُعثر على شيء، يعرض الجواب زر «ابحث في موقع الهيئة العامة للإحصاء»
-بنفس الكلمات.
-
-### ⚠️ قاعدة بيانات الهيئة العامة للإحصاء (معطّلة حالياً)
-
-يوم 2026-09-30 أعادت هذه الواجهة HTTP 500 (`read ECONNRESET`) من منفذ سعودي
-وأمريكي معاً، فالعطل في خادم الهيئة. تُسأل كالعادة، ويُذكر في الجواب أنها لم تُجب.
-
-`database.stats.gov.sa/gastatapi/portal/api/v1/` — **بلا مفتاح، بلا تسجيل**،
-تم التحقق منها بطلب مباشر (HTTP 200، `application/json`):
-
-| المسار | يُعيد |
-|---|---|
-| `indicators/cardsinfo` | `{"info": [...]}` — المؤشرات الرئيسية، بحقول `ar_title`/`en_title`/`obsvalue`/`frequency` |
-| `indicators/public` | فهرس المؤشرات، نحو 2,600 مؤشر (~4.5MB) |
-| `indicators/getDataForChart?api=<token>` | مشاهدات المؤشر بشكل OData: `{"value":[…]}` |
-
-نقطتان غيّرتا التصميم:
-
-- **لا بحث من جهة الخدمة** — جدار الحماية يرفض معاملات الاستعلام على الفهرس،
-  فيُجلب الفهرس كاملاً مرة واحدة (مع تخزين مؤقت على القرص) ويُصفّى محلياً.
-- **`frequency_en` تعني التكرار لا التغطية** — قيمتها «Annual» لا قائمة سنوات.
-  لذلك لا يُدّعى شيء عن التغطية، وتُستخرج السنوات من المشاهدات نفسها، فيصبح
-  الحكم `OBSERVED_DATA` أي قاطعاً.
-
-أعمدة `getDataForChart` تُسمّى حسب المؤشر (`ELEC_TIME`، `ELEC_OBSV`)، فلا يمكن
-إيجاد عمود السنة بالاسم — وكشف السنوات بالمحتوى الموجود أصلاً التقطه تلقائياً.
-
-### ✅ الأفضل: واجهة cdata — `api.stats.gov.sa`
-
-`GET https://api.stats.gov.sa/v1/stats/{dataset_id}` — مواصفة OpenAPI 3.0،
-**والواجهات العامة لا تحتاج مفتاحاً**؛ تم التحقق بطلب مباشر (HTTP 200).
-
-هذه أفضل مسار بيانات، لثلاثة أسباب:
-
-- **التجميع في الخادم**: `dimensions[]=REGION&dimensions[]=YEAR` — فطلب «حسب
-  المناطق» يُنفَّذ في المصدر لا بمعالجة لاحقة.
-- **التغطية باستعلام رخيص**: `dimensions[]=YEAR` وحده يُعيد صفاً لكل سنة
-  متاحة. فتُعرف السنوات بدليل من المصدر نفسه قبل تنزيل أي شيء.
-- **أعمدة موسومة بدورها**: `YEAR_TIME` للفترة، `*_OBSV` للقيم،
-  `*_ARAB`/`*_ENGL`/`*_CODE` للمسميات. وتدعم `format=CSV|JSON|HTML`
-  و`$top`/`$skip`/`$orderby`.
-
-> **تحذير مهم عن هذه الواجهة: تجمع القيم بصمت.** أي بُعد لا يُطلب تُجمع قيمه.
-> طلب متوسط العمر المتوقع بالسنة وحدها أعاد لعام 2022 **234.09 سنة** — وهو
-> مجموع الإناث (80.89) والإجمالي (77.90) والذكور (75.30). وجمع المعدلات لا
-> معنى له، ولأن الأبعاد تحتوي صف «المجموع» بجانب أجزائه، فحتى جمع الأعداد يحسب
-> مرتين. لذلك **يطلب النظام كل أبعاد المجموعة دائماً**، فتصل الأرقام كما نشرها
-> المصدر ولا يُجمع أي شيء. ولأن ذلك يزيد الصفوف، تُجلب البيانات صفحة صفحة حتى
-> صفحة فارغة، ويُرفض التصدير — بدل تسليم جزء على أنه كامل — إن تكررت صفوف بين
-> الصفحات أو زادت الصفحات عن الحد.
-
-**المجموعات المُضافة** (كلها مُتحقَّقة بطلب مباشر):
-
-| المعرّف | المحتوى | الأبعاد |
-|---|---|---|
-| `DPV_HES_EHE_IT_HES0303` | **استهلاك** الكهرباء في المساكن بالكيلوواط | الفصل، المنطقة، السنة |
-| `DPV_HES_EHE_IT_HES0301` | المساكن **المتصلة** بالكهرباء | شبكة الكهرباء، نوع المسكن، الحيازة، المنطقة، السنة |
-| `DPV_HLTH13_DPHLTH1304` وأربع أخرى | متوسط العمر المتوقع، معدلات الوفيات والخصوبة | المؤشر، الجنس، العمر، الجنسية، السنة |
-
-المجموعتان مختلفتان: الأولى كميات مستهلكة، والثانية عدد مساكن موصولة. سؤال عن
-«الاستهلاك» يختار `HES0303`، وهو ما يطابق الطلب الأصلي.
-
-**وبعد استيراد ملفات المواصفات الثلاثين من البوابة: 95 مجموعة** تُبحث محلياً
-دون أي طلب شبكة، وتُطلب بياناتها عند الحاجة فقط:
-
-| المجال | المجموعات | أمثلة |
-|---|---|---|
-| أهداف التنمية المستدامة (2–17) | 30 | وفيات الأمومة، التقزّم، الكهرباء، تكاليف التحويلات |
-| إحصاءات الأعمال والمنشآت الصغيرة والمتوسطة | 14 | عدد المنشآت، الإيرادات والنفقات التشغيلية |
-| السكان والصحة | 12 | متوسط العمر المتوقع، الوفيات، الخصوبة |
-| الأسعار (العقار، الجملة، المستهلك) | 10 | التضخم الشهري، أسعار العقار الربعية |
-| الحسابات القومية | 8 | الناتج المحلي حسب النشاط وطريقة الدخل وبنود الإنفاق، الدخل القومي |
-| الطاقة (الكهرباء ووقود الأسر) | 6 | استهلاك الكهرباء حسب المنطقة والفصل، الطاقة الشمسية في المساكن |
-| الإنتاج الصناعي | 5 | الرقم القياسي حسب النشاط |
-| الحج والعمرة | 4 | الحجاج من الخارج والداخل، المعتمرون |
-| البحث والتطوير | 3 | الإنفاق حسب القطاع، عدد الباحثين |
-| الثقافة وأساليب الحياة | 3 | المكتبات المنزلية، قراءة الصحف |
-
-`masdar specs` يعرضها كلها. جداول أهداف التنمية تُعيد صفوفها كما هي مهما طُلب
-من أبعاد (تم التحقق: `DPV_SDG10_C_1`)، ومعها عشرات الأعمدة قيمتها
-«لاينطبق» في كل صف؛ فتُحذف هذه الأعمدة من ملف الإكسل — لا تغيّر أي رقم —
-وتُذكر أسماؤها في الملاحظات.
-
-التغطية الحقيقية للمجموعتين عند الفحص:
-**2017، 2018، 2019، 2021، 2022** — لا يوجد **2020**، ولا شيء بعد 2022. لذلك:
-
-```
-$ masdar ask "ابي احصاءات الطاقه الكهربائيه لسنه 2020 حسب المناطق"
-
-❌ لا تتوفر بيانات «الطاقة الكهربائية» للفترة 2020.
-   📚 تغطية المصدر: 2017–2022 (ناقصة: 2020)
-   🔍 أساس التحقق: تم فتح الملف والتحقق من السنوات الموجودة فيه
-🔄 البديل المتاح:
-   • 2022 — أحدث سنة متاحة في هذا المصدر
-   • 2019 — أقرب سنة متاحة قبل 2020
-   • 2021 — أقرب سنة متاحة بعد 2020
-```
-
-لاحظ «(ناقصة: 2020)»: كتابة «2017–2022» وحدها تُقرأ كتسلسل غير منقطع، فالثغرات
-تُسمّى صراحة.
-
-### إضافة الواجهات: ملفات المواصفات هي الإعداد
-
-لا يوجد في الواجهة مسار فهرس، فمعرفة المجموعات المتاحة تأتي من بوابة المطوّرين.
-وبدل نقلها يدوياً — وهو بالضبط نوع الخطأ الصامت الذي وُجد المشروع لمنعه — تُقرأ
-ملفات OpenAPI مباشرة:
-
-1. في البوابة، افتح صفحة الواجهة ← قائمة الصفحة ← **تنزيل المواصفات** (JSON).
-2. ارفع الملفات إلى مجلد `incoming/` في المستودع، ثم
-   `masdar import-spec incoming/*.json`.
-3. `masdar specs` — يعرض كل مجموعة: معرّفها، عنوانها، بُعدها الزمني، أبعادها،
-   ومواضيعها المستنتجة من عنوانها.
-
-كل مسار `/v1/stats/<id>` في الملف يصبح مجموعة قابلة للبحث: العنوان من
-`summary`، الأبعاد من قائمة `dimensions[]`، البُعد الزمني من معاملات `*_TIME`،
-والقياسات من حقول `*_OBSV` في مخطط الاستجابة. ويعمل الاستيراد مع المعاملات
-المضمّنة ومع `$ref` معاً، لأنه لم يُتحقَّق أيهما تصدره البوابة.
-
-ويحرس الاستيراد أمرين:
-
-- **يرفض ملفاً يحتوي مفتاحاً**. بعض البوابات تضع مفتاح المستخدم في الأمثلة،
-  والمواصفات تُرفع للمستودع.
-- **لا يثق بعنوان خادم أجنبي**. حقل `servers` في المواصفة يحدد إلى أين تُرسل
-  الطلبات — ومعها المفتاح — فلا يُقبل إلا على المضيف المُعدّ للمصدر.
-
-والمجموعة المُعلنة يدوياً في `sources.yaml` تُدمج مع نظيرتها المستوردة بنفس
-المعرّف: حقولها المنقّحة (العنوان، الكلمات) تتقدّم، والمواصفة تكمل ما تركته
-(القياسات، التصنيفات). فلا تُمحى المراجعة اليدوية بإعادة الاستيراد، ولا تظهر
-المجموعة مرتين.
-
-**المفاتيح**: الواجهات العامة لا تحتاجها. إن احتاجت واجهة مفتاحاً، يُقرأ من
-`GASTAT_API_KEY` في البيئة — انظر `.env.example`. **لا أسرار في المستودع**،
-ويفشل اختبار إذا ظهر في أي ملف منشور نص بصيغة مفتاح (`tests/test_no_secrets.py`).
-
-### ✅ منصة البيانات المفتوحة الوطنية — `open.data.gov.sa`
-
-الواجهة موثّقة في [دليل المطورين](https://open.data.gov.sa/ar/pages/developers-api)
-للمنصة، وتم التحقق منها بطلبات مباشرة (2026-09-28). التخمين السابق
-`/data/api/v1/datasets` كان خاطئاً — ولهذا رفضه جدار الحماية.
-
-| المسار | يُعيد |
-|---|---|
-| `/data/api/organizations?organization=<id>` | الجهة وكل مجموعاتها بعناوين **عربية** |
-| `/data/api/datasets?dataset=<id>` | الناشر، **تاريخ آخر تحديث**، الفترة المعلنة، الوسوم |
-| `/data/api/datasets/resources?dataset=<id>` | ملفات CSV وXLSX بروابط تنزيل مباشرة |
-
-لا يوجد مسار عام يسرد الجهات ولا مسار بحث، فيُبنى الفهرس من قائمة جهات مُعدّة
-في `sources.yaml`. الجهات المُعدّة حالياً **37 جهة** (نحو 4,860 مجموعة للـ28 التي حُسبت)
-(كل معرّف تأكّد بطلب مباشر به؛ الأعداد تقريبية وقت الفحص):
-
-| الجهة | المجموعات | تُسأل في مواضيع |
-|---|---|---|
-| وزارة العدل | 1,598 | العدل والقضاء، الإسكان |
-| هيئة الزكاة والضريبة والجمارك | ~287 | التجارة، المالية، الأعمال |
-| وزارة السياحة | 240 | السياحة |
-| وزارة البيئة والمياه والزراعة | 183 | المياه، الزراعة، البيئة |
-| وزارة الحج والعمرة | ~174 | السياحة (الحج والعمرة) |
-| وزارة النقل والخدمات اللوجستية | ~158 | النقل |
-| وزارة التعليم | 134 | التعليم، البحث |
-| المؤسسة العامة للتأمينات الاجتماعية | ~131 | سوق العمل، المالية |
-| وزارة الإعلام | ~128 | الثقافة، الاتصالات |
-| وزارة الموارد البشرية والتنمية الاجتماعية | 122 | سوق العمل، السكان |
-| وزارة الاقتصاد والتخطيط | ~114 | الناتج المحلي، السكان، العمل، الأسعار |
-| وزارة التجارة | 113 | الأعمال، التجارة، الأسعار |
-| الهيئة العامة للطيران المدني | ~108 | النقل، السياحة |
-| وزارة الثقافة | ~107 | الثقافة |
-| وزارة الطاقة | 100 | الكهرباء، الطاقة، البيئة |
-| وزارة الصحة | 100 | الصحة، السكان |
-| وزارة المالية | ~97 | المالية، الناتج المحلي |
-| الهيئة العامة للإحصاء | 84 | كل المواضيع |
-| وزارة الاتصالات وتقنية المعلومات | ~80 | الاتصالات |
-| وزارة الرياضة | ~45 | الثقافة والرياضة |
-| وزارة الاستثمار | ~40 | الأعمال، المالية |
-| البنك المركزي السعودي | ~37 | المالية، الأسعار، الناتج المحلي |
-| هيئة السوق المالية | ~214 | المالية، الأعمال |
-| الهيئة العامة للعقار | ~200 | الإسكان، الأسعار |
-| الهيئة العامة للموانئ | ~154 | النقل، التجارة |
-| هيئة الاتصالات والفضاء والتقنية | ~77 | الاتصالات |
-| المركز الوطني للأرصاد | ~20 | البيئة والطقس، المياه |
-| وزارة الداخلية | 19 | كل المواضيع |
-| الهيئة العامة للغذاء والدواء | — | الصحة، الأعمال |
-| مجلس الضمان الصحي | — | الصحة، المالية |
-| هيئة الهلال الأحمر السعودي | — | الصحة |
-| الهيئة العامة للنقل | — | النقل |
-| صندوق التنمية العقارية | — | الإسكان، المالية |
-| هيئة تقويم التعليم والتدريب | — | التعليم |
-| صندوق تنمية الموارد البشرية (هدف) | — | سوق العمل، التعليم |
-| هيئة التأمين | — | المالية |
-| الهيئة العامة للأوقاف | — | المالية |
-
-مواضيع الجهات التسع الأخيرة من عناوين مجموعاتها الفعلية، لا من أسمائها.
-
-عمود «تُسأل في مواضيع» يحدد متى تُفتح فهرسة الجهة: سؤال عن الكهرباء لا يطلب فهرس
-وزارة العدل (1,598 عنواناً عن القضايا) — أسرع، وبلا نتائج دخيلة. والجهة بلا قائمة
-مواضيع (الهيئة العامة للإحصاء) تُسأل دائماً، وكذلك كل الجهات لسؤال بلا موضوع.
-والفهارس تُجلب بالتوازي.
-
-**السنة في العنوان**: جهات كثيرة تنشر السلسلة الواحدة مجموعةً لكل سنة أو ربع
-(«الأسماء التجارية المحجوزة لعام 2022 الربع الثالث»). ولا يُفتح إلا أول بضع نتائج،
-فالعنوان الذي يذكر السنة المطلوبة يتقدّم، وعنوان سنة أخرى يتأخر دون أن يُحذف (قد
-يكون أحدث سنة موجودة). ولسؤال «الأحدث» يتقدّم الأحدث سنةً ثم ربعاً.
-
-**سدايا**: المنصة نفسها تديرها الهيئة السعودية للبيانات والذكاء الاصطناعي، فالبحث
-فيها هو البحث في «سدايا». أما صفحة سدايا كجهة ناشرة فلم تُضف: اسمها الكامل يرفضه
-جدار الحماية، و«سدايا» ليس اسماً مسجلاً.
-
-ومنها ما طُلب في السؤال الأول حرفياً: «استهلاك مناطق المملكة من الكهرباء حسب
-المناطق التشغيلية».
-
-**المعرّف والاسم معاً**: كل جهة مُعدّة بمعرّفها واسمها العربي الدقيق، والواجهة تقبل
-أيهما. يُطلب بالمعرّف أولاً (يصمد أمام تغيير الاسم)، فإن رُدّ بـ«غير موجود» يُطلب
-بالاسم (يصمد أمام معرّف أُعيد إصداره أو نُسخ خطأ). وجهة بالاسم وحده تكفي.
-
-**اكتشاف كل الجهات — من جهازك**:
-
-```bash
-masdar publishers                 # قائمة المنصة كاملة (من داخل المملكة)
-masdar publishers --names names.txt   # أو أسماء عربية دقيقة، اسم في كل سطر
-```
-
-الأمر يسرد جهات المنصة، ويترك المُعدّة منها، ثم يفتح فهرس كل جهة جديدة ويصنّف
-مواضيعها **من عناوين مجموعاتها** (موضوع يحمله 15% من العناوين على الأقل)، ويكتب
-`masdar/config/publishers_discovered.yaml` للمراجعة. المحوّل يقرأ الملف مع
-`sources.yaml` (والمُعدّ يتقدّم عند التعارض). وجهة لم يناسب عناوينها موضوع
-تُسأل فقط في الأسئلة التي بلا موضوع.
-
-- مسار القائمة (`/api/publishers`) هو ما تستخدمه صفحة الجهات في المنصة، وحقوله
-  (`publisherID`، `nameAr`، `numberOfDatasets`) مأخوذة من كود الصفحة نفسها.
-  **لم يُختبر حياً**: لا يُجيب من خارج المملكة. إن فشل يقول الأمر ذلك ويقترح
-  `--names`، الذي يمر بالمسار الموثّق المُتحقَّق منه.
-- لا يُعتمد على قِصر الصفحة لإنهاء القائمة (قد يحدّ الخادم حجم الصفحة): ينتهي
-  بوسم الخادم «آخر صفحة» أو بصفحة فارغة أو بصفحة لا تضيف جديداً.
-
-لم يُعثر بالاسم على: «وزارة الصناعة والثروة المعدنية»، «وزارة البلديات والإسكان»،
-«الهيئة العامة للمنشآت الصغيرة والمتوسطة»، «هيئة الحكومة الرقمية». ورفض جدار
-الحماية من خارج المملكة أسماء «الهيئة السعودية للبيانات والذكاء الاصطناعي»
-و«وزارة الشؤون الإسلامية والدعوة والإرشاد» و«المؤسسة العامة للتدريب التقني
-والمهني» — ويجرّبها `masdar publishers` من جهازك.
-
-الفترة المعلنة (`timePeriod`) ادعاء لا دليل، فالنظام يفتح الملف ويقرأ السنوات
-منه. وإن تعذّر فتح ملف (XLSX تالف مثلاً) يُجرَّب الملف التالي (CSV)، ويُسند الجواب
-للملف الذي قُرئ فعلاً — ببصمته هو.
-
-**صفحة «واجهات البيانات اللحظية»** (`/ar/pages/real-time-api`) دليل روابط لا
-بيانات: 19 خدمة لجهات مختلفة، فُحصت كلها (2026-09-28):
-
-- **نحو نصفها خدمات تحقق لسجل واحد** — واثق (السجل التجاري)، العنوان الوطني،
-  قوائم (القوائم المالية) وأمثالها: تُسأل عن منشأة أو عنوان بعينه، وتحتاج
-  اشتراكاً، ولا تُعيد إحصاءات. خارج نطاق مصدر عمداً.
-- **رابط البنك المركزي** في الصفحة يُعيد 404.
-- **أُضيفت بعد التحقق**: البيانات اللحظية لوزارة الموارد البشرية (ثلاثة ملفات)،
-  وعدّادات وزارة البيئة والمياه والزراعة (ثلاثة من خمسة) — انظر «البيانات اللحظية».
-- **لم تُضف**: مجلس الضمان الصحي يعرض رسوماً بأرقام مقرّبة («4.65 مليون») بلا ملف
-  بيانات (وأُضيف كجهة في المنصة الوطنية بدلاً من ذلك)؛ ومركز بيانات KAPSARC لا يستجيب.
-
-### ✅ البيانات اللحظية — الموارد البشرية والبيئة والمياه والزراعة
-
-| المصدر | المؤشرات |
-|---|---|
-| وزارة الموارد البشرية | مؤشرات قطاع العمل (إجمالي العمالة، السعوديون وغيرهم حسب الجنس)؛ مؤشرات التنمية الاجتماعية؛ توزيع القوى العاملة في القطاع العام حسب المنطقة والجنس والعمر |
-| وزارة البيئة والمياه والزراعة | عدد الإبل؛ خلايا النحل؛ رخص الصيد |
-
-الرقم اللحظي **لقطة**، لا إحصاء سنوي:
-
-- كل صف يُختم بتاريخ الاستخراج، والتغطية سنة الاستخراج وحدها. سؤال عن سنة سابقة
-  يُجاب «غير متوفرة هنا» ويُقترح المصدر السنوي.
-- كل جواب يقول إنه ليس إحصاءً سنوياً مكتملاً.
-- البصمة المذكورة بصمة ما أرسله المصدر نفسه، قبل إضافة عمود التاريخ.
-- عدّادا الآبار والمزارع في دليل الوزارة لا يُرجعان قيمة حالياً، فلم يُضافا. والرد
-  الفعلي يحمل القيمة في `Data` لا `Count` كما في الدليل.
-
-### ✅ البنك الدولي — مؤشرات التنمية العالمية (مصدر دولي)
-
-`api.worldbank.org` مفتوح بلا مفتاح، وتم التحقق منه بطلبات مباشرة. أُضيف لأنه
-موثوق وطويل المدى (من 1960)، ويسدّ فجوات مثل استهلاك الكهرباء للفرد ومعدل
-الخصوبة والعمر المتوقع — لكنه **مصدر دولي لا الجهة المنتجة**:
-
-- **يأتي بعد الجهة السعودية دائماً**: عند تساوي الحكم يُقدَّم ملف الجهة
-  السعودية، وفي الترتيب يُخصم منه. ولا يتقدّم إلا إذا كان وحده عنده السنة المطلوبة.
-- **كل جواب يقول إنه دولي** ويذكر الجهة التي أخذ البنك الأرقام منها، واسم المؤشر
-  بالإنجليزية ورمزه — لأن بعض الترجمات العربية لدى البنك خاطئة (`IT.NET.SECR.P6`
-  خوادم إنترنت آمنة، واسمه العربي «مستخدمو الإنترنت»).
-- **القيمة الفارغة ليست قيمة**: البنك يدرج سنوات بلا رقم (`null`) — استهلاك
-  الكهرباء للفرد 2024 و2025 مثلاً — فتُستبعد ولا تُعد متوفرة.
-- **الفهرس محلي والقيم حية**: 1,037 مؤشراً فيها قيمة للمملكة بين 2019 و2024،
-  بأسماء البنك العربية والإنجليزية (`config/worldbank/wdi_sau.json`). القيم تُجلب
-  وقت السؤال، وتاريخ التحديث يُقرأ من `lastupdated` في الرد. `masdar
-  worldbank-catalogue` يعيد بناء الفهرس.
-- **يختار أبسط مؤشر يطابق السؤال**: كلمات الاسم الأساسي تُحسب كاملة، وكلمات ما بين
-  القوسين نصفاً («التجارة (% من الناتج المحلي)» ليست الناتج المحلي)، وكل كلمة
-  زائدة تُخصم — فـ«عدد السكان» يجد «تعداد السكان، الإجمالي» لا «الإناث».
-
-### ✅ المركز الإحصائي الخليجي (GCC-Stat) — واجهة SDMX (مصدر إقليمي)
-
-`sdmx.marsa.gccstat.org` خدمة SDMX عامة **بلا مفتاح**، تم التحقق منها بطلبات
-مباشرة يوم 2026-10-04 (قائمة السلاسل 234، وبنية البيانات، وسلسلة المملكة لكل مؤشر
-مضاف). المركز ينقل أرقام الدول الأعضاء عن أجهزتها الرسمية — للمملكة غالباً عن
-الهيئة العامة للإحصاء — فهو **نسخة ثانية** من الرقم السعودي:
-
-- **يأتي بعد الجهة السعودية** مثل البنك الدولي، ويُعرض «إقليمياً» لا «دولياً»،
-  وقبل البنك الدولي في ترتيب المصادر (سلطته 85 مقابل 70).
-- **24 مؤشراً بالعربية مع وحدة كل مؤشر**: السكان والسعوديون والمواليد والوفيات
-  والزواج والطلاق، والمشتغلون والبطالة، والتضخم، والناتج المحلي ونصيب الفرد، والصادرات،
-  والسياح وإنفاقهم، واستهلاك الكهرباء وإنتاجها، وإنتاج النفط، والمياه المحلاة،
-  وطلاب التعليم العالي والمدارس، والمستشفيات والأطباء، وزوار المتاحف، والتمور (`sources.yaml` → `gccstat`).
-- **الوحدة متحقَّق منها لا مفترضة**: سلاسل المركز المبسطة لا تذكر وحدتها، فطابقنا
-  قيمة كل مؤشر بجداول المركز التفصيلية التي تذكرها (الناتج 2024 = 1,254.1 =
-  1,254,141 مليون دولار؛ الكهرباء 340,430 جيجاواط ساعة؛ السياح 29,727.4 ألف)،
-  أو بحجم الرقم المعروف.
-- **حواشي المركز تظهر في الجواب والملف**: «السعودية: بيان 2023م مرحل من عام
-  2022م» في عمود «ملاحظة» لسنتها. والحاشية التي تخص دولاً أخرى لا تُنقل.
-- **القيمة المكررة يُنبَّه إليها**: سلسلة الوفيات تنتهي بـ 80,246 لكل السنوات
-  2018–2022، والمواليد 577,593 للسنوات 2019–2022 — قيمة مرحّلة لا عدّ جديد. تبقى
-  القيم كما نشرها المركز، ويقول الجواب والملف إنها مكررة.
-
-### ✅ KAPSARC — فهرس بحث حقيقي وتاريخ تحديث معلن
-
-`datasource.kapsarc.org` (مركز الملك عبدالله للدراسات والبحوث البترولية) منصة
-Opendatasoft، بلا مفتاح، تم التحقق منها بطلبات مباشرة. وفيها ما ينقص واجهة
-الإحصاء:
-
-- **فهرس بحث**: `where="electricity consumption"` أعاد 75 مجموعة.
-- **تاريخ آخر تحديث حقيقي** (`modified`) لكل مجموعة — وهو ما طُلب من البداية.
-- **الجهة الناشرة الأصلية**: KAPSARC تعيد نشر بيانات الهيئة والبنك المركزي
-  والوزارات، فيُنسب الرقم لمصدره ويُذكر أنه «عبر KAPSARC».
-- **تغطية من البيانات**: `group_by=year(year)` يُعيد السنوات الموجودة. مجموعة
-  مشتركي الكهرباء يقول وصفها «2005-2022» وبياناتها فعلياً حتى **2025** — والنظام
-  يعتمد البيانات لا الوصف.
-- **تصدير كامل** بصيغة JSON، ويُقارن عدد الصفوف بـ `total_count`، ويُرفض
-  التصدير الناقص بدل تسليمه.
-
-العناوين إنجليزية حتى في حقول `_ar`، فيُبحث بالكلمات الإنجليزية للموضوع مع
-كلمات السؤال.
-
-### العقبات في المصادر الأخرى
-
-| المصدر | يُستجيب؟ | العقبة |
-|---|---|---|
-| `api.stats.gov.sa` (cdata) | ✅ مؤكَّد ويعمل، بلا مفتاح | — |
-| `database.stats.gov.sa` | ⚠️ HTTP 500 يوم 2026-09-30 | عطل في خادم الهيئة |
-| `datasource.kapsarc.org` | ✅ مؤكَّد ويعمل، بلا مفتاح | عناوين إنجليزية فقط |
-| `api.worldbank.org` | ✅ مؤكَّد ويعمل، بلا مفتاح | مصدر دولي: يأتي بعد الجهة السعودية |
-| `sdmx.marsa.gccstat.org` | ✅ مؤكَّد ويعمل، بلا مفتاح | مصدر إقليمي؛ السلاسل بلا وحدة (أُضيفت يدوياً بعد التحقق) |
-| `www.stats.gov.sa` | ✅ مؤكَّد ويعمل من الخارج | البحث `/ar/search?q=` يعمل؛ جداول Tableau بلا ملف |
-| `open.data.gov.sa` | ✅ مؤكَّد ويعمل، بلا مفتاح | مقيَّد جغرافياً؛ لا يوجد بحث (فهرس من قائمة جهات) |
-| بقية النطاقات | لم تُفحص | محجوبة عن بيئة البناء بسياسة الشبكة |
-
-**1. التقييد الجغرافي.** كل محاولات الوصول إلى `open.data.gov.sa` من منافذ غير
-سعودية فشلت، ونفس الرابط أعاد HTTP 200 من منفذ سعودي. فمن **داخل السعودية**
-يعمل النظام مباشرة بلا إعداد. ومن خارجها، مفتاح Firecrawl وحده يكفي:
-
-```bash
-export MASDAR_OUTSIDE_KSA=1
-export FIRECRAWL_API_KEY=...      # المنصة الوطنية وحدها عبر منفذ سعودي
-```
-
-الواجهة (JSON) تمر عبر المنفذ (تحقّق 2026-09-30، رصيد واحد لكل طلب)، وبقية
-المصادر تبقى مباشرة. **الملفات** (`/odp-public/…`) يرفضها المنفذ، فتُقدَّم
-روابط يفتحها القارئ من متصفحه داخل المملكة، والحكم مبني على الفترة المعلنة.
-وبلا مفتاح لا تُسأل المنصة، ويقول الجواب ذلك صراحة حين لا يُعثر على شيء.
-
-**2. جدار الحماية يردّ بحالة 200.** `open.data.gov.sa` يعيد صفحة
-`Request Rejected` مع رقم دعم — **بحالة HTTP 200**. لو عُوملت كصفحة عادية
-لقُرئت كقائمة فارغة، أي «لا توجد بيانات» بينما الطلب رُفض. لذلك تُكتشف صراحة
-وتُرفع كـ `SourceRejected`، ولا يُعاد المحاولة عليها.
-
-**3. تطبيق صفحة واحدة.** البوابة الوطنية تطبيق Angular وبياناتها عبر XHR، فقراءة
-HTML تعطي هيكلاً فارغاً. لذلك يرفض `html_index` مصدراً `rendering: spa` عبر HTTP
-عادي ويشرح البديل، ويسمح به عبر منفذ يُنفّذ جافاسكربت.
-
-**4. GASTAT (الموقع).** بوابة Liferay تُرجع HTML حقيقياً: جداول البيانات 4113،
-النشرات 1418، APIs 60، والسنوات **2016–2025** — تأكيد واقعي أن 2026 غير منشورة.
-
-`masdar doctor` يميّز «تعذّر الوصول» من «رُفض من جدار الحماية» من «خطأ في
-المسار»، ويطبع لكل حالة ما يجب عمله.
-
-## مفاتيح المصادر الرسمية: ما يحتاج مفتاحاً وكيف تحصل عليه
-
-أغلب المصادر المستخدمة **لا تحتاج مفتاحاً** (cdata، موقع الهيئة، المنصة الوطنية،
-KAPSARC، البيانات اللحظية، البنك الدولي، المركز الخليجي). المفاتيح أدناه تفتح
-بيانات إضافية. **لا تُلصق المفاتيح في المحادثة ولا في المستودع**: تُوضع في ملف
-`.env` على جهازك (مُستثنى من git) أو في إعدادات الاستضافة (Render → Environment)،
-ويقرؤها النظام من البيئة وقت الطلب، ولا تُسجَّل ولا تُرسل عبر Firecrawl.
-
-| المصدر | كيف تحصل على المفتاح | متغيّر البيئة | الحالة في مصدر |
-|---|---|---|---|
-| بوابة مطوري الهيئة العامة للإحصاء | سجّل في `dp.stats.gov.sa`؛ المفتاح يصدر من صفحة «تطبيقاتي»، وخدمة «Batch Data» من الخدمات التي تتطلبه | `GASTAT_API_KEY`، `GASTAT_API_SECRET` | ✅ مدعوم: يُرسل في ترويسة `apikey` للمسارات التي ترد 401 بدونه |
-| بيانات السياحة (وزارة السياحة) | سجّل في `developer.tourism.sa`، ثم صفحة «Tokens» ← عميل واحد يعطي `integrationKey` و`integrationSecret` | — | ⏳ موثَّق ولم يُربط: الواجهة (`customer-gateway.tourism.sa`) تبادل المفتاحين برمز مؤقت ثم تُسأل بطلبات POST عن الطلب السياحي المحلي والوافد شهرياً، وشكل الطلب لا يظهر إلا بعد تسجيل الدخول؛ يُربط حين يُتحقَّق منه بمفتاح فعلي |
-| البنك المركزي السعودي (ساما) | — | — | ⚠️ لم نجد واجهة برمجية عامة موثّقة؛ قاعدة البيانات الإحصائية في `sama.gov.sa` صفحات وملفات، وتصل بياناته عبر KAPSARC والمنصة الوطنية |
-| Firecrawl (منفذ سعودي من الخارج) | `firecrawl.dev` ← API Keys | `FIRECRAWL_API_KEY` | ✅ للمنصة الوطنية وحدها من خادم خارج المملكة |
-
-## الحالة الحالية
-
-**جاهز ومختبَر** (أكثر من 480 اختباراً، كلها تعمل بدون شبكة):
-
-- فهم السؤال بالعربية: الأرقام العربية (٢٠٢٦)، التشكيل، الهمزات، التاء
-  المربوطة، النطاقات (`من 2019 إلى 2022`، `2023-2024`)، التقويم الهجري
-  (`1447هـ` ← 2025/2026)، «أحدث بيانات…»
-- قراءة الجداول المنشورة: تخطيط طولي وعرضي (السنوات كأعمدة)، صفوف عناوين
-  فوق الترويسة، BOM، فواصل مختلفة، تحويل الأرقام لأرقام حقيقية
-- منطق الأحكام الستة كاملاً مع اقتراح أقرب سنة متاحة
-- إخراج إكسل مع ورقة إسناد (المصدر، تاريخ التحديث، وقت الاستخراج،
-  بصمة SHA-256، الترخيص)
-- طبقة جلب قابلة للاستبدال (مباشر / Firecrawl بمنفذ سعودي)، وكشف صفحات
-  جدار الحماية، وتمييز الرفض الدائم من الفشل المؤقت
-
-- محوّلان مؤكَّدان للهيئة العامة للإحصاء (cdata بـ 95 مجموعة من 30 واجهة،
-  وقاعدة البيانات)، وقارئ JSON/OData، ووصف تغطية يُسمّي الثغرات
-- منصة البيانات المفتوحة الوطنية وKAPSARC
-
-- واجهة شات عربية (`masdar serve`) بجلسة تفهم المتابعة، وتنزيل الإكسل من الصفحة
-- صلاحية محدودة للنسخ المحفوظة، ومقارنة الأحدث بين المصادر، ومصدر متعطّل يُبلَّغ
-  كـ«تعذّر الوصول» ولا يُضيّع على المصادر العاملة فرصتها
-
-- فهم اختياري بالذكاء الاصطناعي (Gemini وGroq مجاناً، أو Claude) للأسئلة التي لا يلتقطها المحلل كاملة
-- 37 جهة في المنصة الوطنية، وأمر `masdar publishers` لاكتشاف البقية، وموضوع العدل والقضاء
-- بيانات لحظية من الموارد البشرية والبيئة والمياه والزراعة
-- ترتيب يقرأ السنة والربع من عنوان المجموعة
-- البنك الدولي (1,037 مؤشراً للمملكة) كمصدر دولي يأتي بعد الجهات السعودية
-- واجهة احترافية: صفحة رئيسية، ورسوم بيانية، ومعاينة الملف، ومظهر داكن، وجوال
-- جاهزية العرض: `warmup`، ونسخة محفوظة معلَّمة عند توقف مصدر، وتشغيل بضغطة،
-  وDocker برمز دخول، و[دليل العرض](docs/PRESENTER.md)
-
-**الخطوة التالية**: التحقق من المصادر المرشّحة أعلاه، وإيجاد الصيغة الدقيقة
-لأسماء جهات لم تُعثر بعد (الصناعة، البلديات، منشآت)، ودمج الملفات الربعية لسنة
-واحدة في ملف واحد.
-
-**ملاحظة على المفاتيح**: بعض المسارات تتطلب مفتاحاً فعلاً — `HES0302` ردّ
-`401: Failed to resolve API Key variable request.header.apikey`. الترويسة
-اسمها `apikey`، وتُقرأ من `GASTAT_API_KEY` في ملف `.env` على جهازك، وتُرسل مع
-كل طلب لهذا المصدر: فحص التغطية وتنزيل البيانات معاً. **ولا تُرسل أبداً عبر
-Firecrawl** — المنفذ يرفض طلباً يحمل مفتاحاً بدل أن يسلّمه لطرف ثالث. ومثل
-رفض 401 يُبلَّغ كـ«يحتاج مفتاحاً» لا كـ«لا توجد بيانات».
-
-## الاختبارات
-
-```bash
-make check      # ruff ثم pytest، كما يشغّله GitHub مع كل push
-make battery    # ~45 سؤالاً: كيف تُقرأ وما يأتي أولاً (ليس اختباراً، بل مرآة للترتيب)
-```
-
-الاختبارات (~720) تشتغل بلا شبكة: كل مصدر فيها رد حقيقي مسجَّل تحت
-`tests/fixtures/` يمر بنفس المسار الذي يمر به أي ملف حقيقي، فنجاحها دليل على
-أنها لم تلمس الشبكة. واختبار يمسح كل الملفات المنشورة بحثاً عن مفتاح بأي من صيغ
-الخدمات المستخدمة (`tests/test_no_secrets.py`). كيف تسجّل رداً جديداً وتكتب
-اختباراً له: [دليل المطوّر](docs/DEVELOPER.md#6-الاختبارات).
-
-## المساهمة
-
-- [دليل المطوّر](docs/DEVELOPER.md): من أين تبدأ في الكود.
-- [CONTRIBUTING.md](CONTRIBUTING.md): ما يلزم قبل كل تغيير وبعده.
-- [SECURITY.md](SECURITY.md): المفاتيح، وما يغادر الجهاز، وماذا تفعل إن رُفع مفتاح.
-- [CHANGELOG.md](CHANGELOG.md): أهم ما تغيّر.
-
-لم تُحدَّد رخصة للمشروع بعد؛ يختارها صاحب المستودع (ملف `LICENSE`).
+| [CONTRIBUTING.md](CONTRIBUTING.md) | What every change needs before it is pushed |
+| [SECURITY.md](SECURITY.md) | Keys, what leaves the machine, and what to do if a key is committed |
+| [CHANGELOG.md](CHANGELOG.md) | Notable changes, newest first |
+| [docs/README.ar.md](docs/README.ar.md) | The full guide in Arabic, including per-source verification notes |
+| [docs/DEVELOPER.md](docs/DEVELOPER.md) | Developer onboarding (Arabic) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Design decisions and their reasons (Arabic) |
+| [docs/PRESENTER.md](docs/PRESENTER.md) | Hosting, demo script and troubleshooting (Arabic) |
+
+## Security
+
+Credentials are read from the environment only and never logged, written or forwarded to a third
+party. Model keys travel in request headers, never in URLs. See [SECURITY.md](SECURITY.md).
+
+## License
+
+No license has been chosen yet; that is the repository owner's decision. Until a `LICENSE` file is
+added, default copyright applies.

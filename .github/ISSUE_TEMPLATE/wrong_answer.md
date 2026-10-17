@@ -1,15 +1,15 @@
 ---
-name: جواب خاطئ
-about: سؤال أعطى جواباً غير صحيح أو مضللاً
+name: Wrong answer
+about: A question that got an incorrect or misleading answer
 labels: wrong-answer
 ---
 
-**السؤال كما كُتب**
+**The question, as typed**
 
-**الجواب كما ظهر** (الحكم، والمصدر، وعنوان النتيجة)
+**The answer, as shown** (verdict, source and result title)
 
-**ما كان ينبغي أن يكون**
+**What it should have been**
 
-**أين** (الرابط المستضاف أو جهازك، وتاريخ السؤال)
+**Where** (hosted link or local run, and the date asked)
 
-<!-- لا تلصق أي مفتاح أو رمز دخول هنا. -->
+<!-- Never paste a key or an access code here. -->
